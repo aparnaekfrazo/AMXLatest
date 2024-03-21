@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Invoice</title>
+    <!-- Latest compiled and minified CSS -->
+    <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css"> -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        table tr th,
+        table tr td {
+            width: max-content;
+            text-align: center;
+            border:1px solid #d8d2d2;
+        }
+
+        .table>thead>tr>th {
+            background: #012762 !important;
+            vertical-align: middle;
+            /* border-bottom: 2px solid #100f0f; */
+            color: white !important;
+            border: 1px solid #d8d2d2;
+        }
+
+        table {
+            border:1px solid #d8d2d2;
+        }
+        .invoice_detail{
+            float: inline-end;
+        }
+
+        .table>tfoot>tr>th {
+            color: white;
+            border: none;
+            text-align: right;
+            border: 1px solid #d8d2d2;
+        }
+
+        .table>tfoot>tr>td {
+            border: none;
+            border: 1px solid #d8d2d2;
+        }
+        .comp_logo{
+            height: 70px !important;
+            width: 120px !important;
+            text-align: right;
+        }
+
+        hr {
+            display: block;
+            height: 1px;
+            border: 0;
+            border-top: 1px solid #d8d2d2;
+            margin: 1em 0;
+            padding: 0;
+        }
+      .total_bill{
+        margin-bottom: 20px !important;
+      }
+      .qrcode{
+        /* width:180px;
+        height:180px; */
+      }
+        .border-secondary {
+            border: 1px solid #e0dcdc;
+            padding: 10px;
+        }
+
+        .no-padding {
+            padding: 0!important;
+        }
+
+        .no-margin {
+            margin: 0!important;
+        }
+
+        h2{
+        font-family: "Open SansBold";
+        font: 500 20px / 32px Roboto,"Helvetica Neue", sans-serif;
+        letter-spacing: normal;
+        margin: 0 0 16px;
+        font-weight:600;
+        }
+
+        h1 {
+        font: 400 24px / 32px Roboto, "Helvetica Neue", sans-serif;
+        letter-spacing: normal;
+        margin: 0 0 16px;
+        font-weight:600;
+        color: #012762;
+        }
+
+        h3 {
+        font: 400 16px / 28px Roboto, "Helvetica Neue", sans-serif;
+        letter-spacing: normal;
+        margin: 0 0 16px;
+        }
+
+
+    </style>
+</head>
+<body>
+<div class="container px-0">
+
+    <div class="container px-0">
+        <div class="row gx-0 mx-2">
+            <div class="col-12 px-0">
+                <!-- <div class="card px-0"> -->
+                    <!-- <div class="card-body"> -->
+                        <div>
+                            <div>
+                        <div class="row d-flex">
+                            <div class="col-6 ">
+                                <h1>Tax Invoice</h1>
+                                <br>
+                                <h2>From</h2>
+                            </div>
+                            <!-- <div class="col-12 col-sm-12 col-md-4 col-lg-4 col-xl-4 text-center">
+                                <img src="Qr-code.png" alt="" height="200px" width="auto">
+                            </div> -->
+                            <div class="col-6 d-flex justify-content-end">
+                                <img src="https://amx-crm-dev.thestorywallcafe.com/{{ invoice_data.owner_company_logo }}"   class="comp_logo" alt="">
+                            </div>
+                        </div>
+                        <br>
+                        <div class="row d-flex">
+                            <div class="col-6">
+                                <h2>EKFRAZO TECHNOLOGIES PRIVATE LIMITED</h2>
+                                <h3><b>Name: </b>{{ invoice_data.owner_first_name }}</h3>
+                                <h3><b>Email: </b>{{ invoice_data.owner_email }}</h3>
+                                <h3><b>GSTIN: </b> {{ invoice_data.owner_company_gst_num }}</h3>
+                                <h3><b>Mob No: </b> {{ invoice_data.owner_mobile_number }}</h3>
+                            </div>
+                           
+                            <div class="col-6 text-right">
+                                <h2>INVOICE DETAILS</h2>
+                                <h3>Invoice Number: {{ invoice_data.invoice_number }}</h3>
+                                <h3>Invoice Date: {{ invoice_data.updated_date_time|date:"d/m/Y H:i A" }}</h3>
+                                <!-- <p><b>Invoice Date:</b> {{ invoice_data.updated_date_time }}</p> -->
+                                <h3>Place Of Supply: Karnataka (29)</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+    <hr style="background-color: #f7f5f5;">
+    <div class="container px-0">
+        <div class="row gx-0 mx-2">
+            <div class="col-12 px-0">
+                <div>
+                    <div>
+                <!-- <div class="card px-0"> -->
+                    <!-- <div class="card-body"> -->
+                        <div class="row d-flex">
+                            <div class="col">
+                                <h2>Customer Details</h2>
+                                <h3><b>Name: </b> {{ invoice_data.customer_first_name }}</h3>
+                                <h3><b>Email: </b>{{ invoice_data.customer_email }}</h3>
+                                <h3><b>GSTIN: </b>{{ invoice_data.customer_gst_number }}</h3>
+                                <h3><b>Mob No: </b>{{ invoice_data.customer_mobile_number }}</h3>
+                            </div>
+                            <div class="col">
+                                <h2>Billing Details</h2>
+                                <h3>{{ invoice_data.customer_billing_address }}</h3>
+                                <h3>{{ invoice_data.customer_billing_state_city }}</h3>
+                                <h3>{{ invoice_data.customer_billing_pincode }}</h3>
+                                <h3>{{ invoice_data.customer_billing_state }}</h3>
+                                <h3>{{ invoice_data.customer_billing_state_country }}</h3>
+                            </div>
+                            <div class="col">
+                                <h2>Shipping Details</h2>
+                                <h3>{{ invoice_data.customer_shipping_address }}</h3>
+                                <h3>{{ invoice_data.customer_shipping_state_city }}</h3>
+                                <h3>{{ invoice_data.customer_shipping_pincode }}</h3>
+                                <h3>{{ invoice_data.customer_shipping_state }}</h3>
+                                <h3>{{ invoice_data.customer_shipping_state_country }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <hr>
+    <div class="container px-0">
+        <div>
+            <div>
+        <!-- <div class="card px-0"> -->
+            <!-- <div class="card-body"> -->
+                <div class="row mx-2 gx-0">
+                    <div class="col-12 px-0">
+                        <h3><b>Goods Deatils</b></h3>
+                    </div>
+                    <br>
+                    <br>
+                    <div class="col-12 px-0">
+                        <table class="table">
+                            <thead class="text-white">
+                            <tr>
+                               <!-- <th scope="col">#</th> -->
+                                <th scope="col">Product & Description</th>
+                                <th scope="col">HSN Number</th>
+                                <th scope="col">Qty</th>
+                                <th scope="col">Unit Price</th>
+                                <th scope="col">Discount</th>
+                                <th scope="col">Gst Rates<br>(CGST, SGST, IGST)</th>
+                                <th scope="col">Amount</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                                {% if invoice_data.invoice_number %}
+                                    <tr>
+                                        <td>{{ invoice_data.drone_name }} </td>
+                                        <td>{{ invoice_data.hsn_number }} </td>
+                                        <td>{{ invoice_data.quantity }} </td>
+                                        <td>&#x20B9;{{ invoice_data.price }} </td>
+                                        <td>{{ invoice_data.discount }} </td>
+                                        <td>{{ invoice_data.sgst }}%, {{ invoice_data.cgst }}%, {{ invoice_data.igst }}%</td>
+                                        <td>&#x20B9;{{ invoice_data.item_total_price }}</td>
+                                    </tr>
+                                {% else %}
+                                    <!-- Render data from AddItem model -->
+                                    {% for invoice_data in invoice_number %}
+                                        <tr>
+                                            <td>{{ invoice_data.item_name }}</td>
+                                            <td>{{ invoice_data.hsn_number }}</td>
+                                            <td>{{ item.qty }}</td>
+                                            <td>{{ item.unit_price }}</td>
+                                            <td>{{ item.discount }}</td>
+                                            <td>{{ item.gst_rates }}</td>
+                                            <td>&#x20B9;{{ item.amount }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                {% endif %}
+                            </tbody>
+                        </table>
+                        
+                        
+
+                    </div>
+                </div>
+                <div class="row"> 
+                    <div class="col-sm-12">
+                        <div class="">
+                            <!-- <div class="row mx-0 gx-0">
+                              
+                                <div class="col-sm-12 col-md-12 col-lg-12 p-4">
+                                    
+                                </div>
+                            </div> -->
+                            <div class="row">
+                                <div class="col-6" >
+                                    <div class="row">
+                                        <div >
+                                            <img src="https://amx-crm-dev.thestorywallcafe.com/{{invoice_data.signature}}" alt="" style="height: 100px; width: 150px;">
+                                            
+                                        </div>
+                                    </div>
+                                   <div class="row">
+                                    <h5><b>Authorized signature</b></h5>
+                                   </div>
+                                    <hr>
+                                </div>
+                                    <div class="col-6">
+                                     <div class="card px-0">
+                                        <div class="card-body">
+                                            <div class="row d-flex justify-content-end">
+                                                <div class="col-6 text-right">
+                                                    <p>Sub Total</p>
+                                                    <p>Discount</p>
+                                                    <p>CGST</p>
+                                                    <p>SGST</p>
+                                                    <p>IGST</p>
+                                                </div>
+                                                <div class="col-6 text-right"  >
+                                                    <p> &#x20B9;{{invoice_data.sum_of_item_total_price}}</p>
+                                                    <p> &#x20B9;{{invoice_data.sum_of_discount_amount}}</p>
+                                                    <p> &#x20B9;{{invoice_data.sum_of_cgst_percentage}}</p>
+                                                    <p> &#x20B9;{{invoice_data.sum_of_sgst_percentage}}</p>
+                                                    <p> &#x20B9;{{invoice_data.sum_of_igst_percentage}}</p>
+                                                </div>
+                                               </div>
+                                               <hr>
+                                               <div class="row d-flex justify-content-end">
+                                                <div class="col-6 text-right">
+                                                    <p><b>Total Bill</b></p>
+                                                    </div>
+                                                    <div class="col-6 text-right">
+                                                        <p><b> &#x20B9;{{invoice_data.amount_to_pay}}</b></p>
+                                                    </div>
+                                               </div>
+                                        </div>
+                                     </div>
+                                     </div>
+                                </div>
+                              </div>
+                            </div>
+                            <hr>
+                    </div>
+                </div>
+               
+           <div class="row">
+            <div class="col-3"> 
+              <div class="row">
+                <img src="https://amx-crm-dev.thestorywallcafe.com/{{invoice_data.qr_code_path}} " class="qrcode" style="height: 150px; width: 150px;">
+              </div>
+            </div>
+            <div class="col-9">
+               <div>
+                 <p><b><h6 style="display: inline;">IRN: </h6></b> {{ invoice_data.Irn }}</p>
+                <p><b><h6 style="display: inline;">Ack No: </h6></b>  {{ invoice_data.AckNo }}</p>
+                <p><b><h6 style="display: inline;">Ack Date: </h6></b>{{ invoice_data.AckDt }}</p>
+                <p><b><h6 style="display: inline;">E-way Bill Number: </h6></b>  {{ invoice_data.EwbNo }}</p>
+                <p><b><h6 style="display: inline;">E-way Bill Date: </h6></b>{{ invoice_data.EwbDt }}</p>
+                <p><b><h6 style="display: inline;">E-way Valid Till: </h6></b> {{ invoice_data.EwbValidTill }}</p>
+               </div>
+            </div>
+           </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- jQuery library -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<!-- Latest compiled JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+</body>
+</html>
+
