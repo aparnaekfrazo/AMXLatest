@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Partner Update Request</title>
+    <style>
+        body {
+            background-color: lightblue;
+            padding: 20px;
+        }
+
+        h2 {
+            color: #333;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 6px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        p {
+            margin-top: 20px;
+        }
+
+        a {
+            display: inline-block;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            margin: 10px;
+            cursor: pointer;
+        }
+
+        #approve {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        #reject {
+            background-color: #f44336;
+            color: white;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <h2>Partner Update Request</h2>
+
+    <p>A partner has requested an update. Please review the changes below:</p>
+
+    <h3>Requested Changes:</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Field Name</th>
+                <th>Old Value</th>
+                <th>New Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for field, changes in requested_changes.items %}
+
+                {% if field != 'reason' %}
+                    {% if field == 'user_signature' %}
+                    <tr>
+                        <td>{{ field }}</td>
+                        <td><a href="{{ changes.old }}">Click Here to view old image</a></td>
+                        {% if changes.new %}
+                        <td><a href="{{ user_signature }}">Click Here to view new image</a></td>
+                        {% else %}
+                        <td>No new signature uploaded</td>
+                        {% endif %}
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td>{{ field }}</td>
+                        <td>{{ changes.old }}</td>
+                        <td>{{ changes.new }}</td>
+                    </tr>
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if requested_changes.reason %}
+        <p><strong>Reason:</strong> {{ requested_changes.reason.new }}</p>
+    {% endif %}
+
+    <p>Click the buttons below to approve or reject the request:</p>
+
+    <a id="approve" href="https://amx-crm.thestorywallcafe.com/api/approved/{{user_id}}">Approve</a>
+    <a id="reject" href="https://amx-crm.thestorywallcafe.com/api/rejected/{{user_id}}">Reject</a>
+</body>
+</html>
+
+
+
+
+

@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Invoice</title>
+    <!-- Latest compiled and minified CSS -->
+    <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css"> -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        table tr th,
+        table tr td {
+            width: max-content;
+            text-align: center;
+            border:1px solid #d8d2d2;
+        }
+
+        .table>thead>tr>th {
+            background: #012762 !important;
+            vertical-align: middle;
+            /* border-bottom: 2px solid #100f0f; */
+            color: white !important;
+            border: 1px solid #d8d2d2;
+        }
+
+        table {
+            border:1px solid #d8d2d2;
+        }
+        .invoice_detail{
+            float: inline-end;
+        }
+
+        .table>tfoot>tr>th {
+            color: white;
+            border: none;
+            text-align: right;
+            border: 1px solid #d8d2d2;
+        }
+
+        .table>tfoot>tr>td {
+            border: none;
+            border: 1px solid #d8d2d2;
+        }
+
+        hr {
+            display: block;
+            height: 1px;
+            border: 0;
+            border-top: 1px solid #d8d2d2;
+            margin: 1em 0;
+            padding: 0;
+        }
+        /* .bill{
+            border: 1px solid #d8d2d2;
+            width: 50%;
+        } */
+
+        .border-secondary {
+            border: 1px solid #e0dcdc;
+            padding: 10px;
+        }
+
+        .no-padding {
+            padding: 0!important;
+        }
+
+        .no-margin {
+            margin: 0!important;
+        }
+    </style>
+</head>
+<body>
+<div class="container px-0">
+
+    <div class="container px-0">
+        <div class="row gx-0 mx-2">
+            <div class="col-12 px-0">
+                <!-- <div class="card px-0"> -->
+                    <!-- <div class="card-body"> -->
+                        <div>
+                            <div>
+                        <div class="row d-flex">
+                            <div class="col-12 ">
+                                <h2 style="color: #012762;"><b>Tax Invoice</b></h2>
+                                <br>
+                                <h4><b>From</b></h4>
+                            </div>
+                            <!-- <div class="col-12 col-sm-12 col-md-4 col-lg-4 col-xl-4 text-center">
+                                <img src="Qr-code.png" alt="" height="200px" width="auto">
+                            </div> -->
+                            <div class="col-12">
+                                <img src="AMX_Logo_Black.png" class="img-fluid" alt="" width="120xp" height="70px">
+                            </div>
+                        </div>
+                        <br>
+                        <div class="row d-flex">
+                            <div class="col-6">
+                                <h6><b>EKFRAZO TECHNOLOGIES PRIVATE LIMITED</b></h6>
+                                <p><b>Name:</b>{{ invoice_data.owner_first_name }} {{ invoice_data.owner_last_name }}</p>
+                                <p><b>Email :</b>{{ invoice_data.owner_email }}</p>
+                                <p><b>GSTIN: </b>{{ invoice_data.owner_company_gst_num }}</p>
+                                <p><b>Mob No.: </b>{{ invoice_data.owner_mobile_number }}</p>
+                            </div>
+                           
+                            <div class="col-6 text-right">
+                                <h6><b>INVOICE DETAILS</b></h6>
+                                <p><b>Invoice Number:</b> {{ invoice_data.invoice_number }}</p>
+                                <p><b>Invoice Date:</b> {{ invoice_data.updated_date_time }}</p>
+                                <p><b>Place Of Supply:</b> Karnataka (29)</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+    <hr style="background-color: #f7f5f5;">
+    <div class="container px-0">
+        <div class="row gx-0 mx-2">
+            <div class="col-12 px-0">
+                <div>
+                    <div>
+                <!-- <div class="card px-0"> -->
+                    <!-- <div class="card-body"> -->
+                        <div class="row d-flex">
+                            <div class="col">
+                                <h4><b>Customer Details</b></h4>
+                                <p><b>Name:</b> {{ invoice_data.customer_first_name }} {{ invoice_data.customer_last_name }}</p>
+                                <p><b>Email :</b>{{ invoice_data.customer_email }}</p>
+                                <p><b>GSTIN: </b>{{ invoice_data.customer_gst_number }}</p>
+                                <p><b>Mob No.: </b>{{ invoice_data.customer_mobile_number }}</p>
+                            </div>
+                            <div class="col">
+                                <h4><b>Billing Details</b></h4>
+                                <p>{{ invoice_data.customer_billing_address }}</p>
+                                <p>{{ invoice_data.customer_billing_state_city }}</p>
+                                <p>{{ invoice_data.customer_billing_pincode }}</p>
+                                <p>{{ invoice_data.customer_billing_state }}</p>
+                                <p>{{ invoice_data.customer_billing_state_country }}</p>
+                            </div>
+                            <div class="col">
+                                <h4><b>Shipping Details</b></h4>
+                                <p>{{ invoice_data.customer_shipping_address }}</p>
+                                <p>{{ invoice_data.customer_shipping_state_city }}</p>
+                                <p>{{ invoice_data.customer_shipping_pincode }}</p>
+                                <p>{{ invoice_data.customer_shipping_state }}</p>
+                                <p>{{ invoice_data.customer_shipping_state_country }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <hr>
+    <div class="container px-0">
+        <div>
+            <div>
+        <!-- <div class="card px-0"> -->
+            <!-- <div class="card-body"> -->
+                <div class="row mx-2 gx-0">
+                    <div class="col-12 px-0">
+                        <h4><b>Goods Deatils</b></h4>
+                    </div>
+                    <br>
+                    <br>
+                    <div class="col-12 px-0">
+                        <table class="table">
+                            <thead class="text-white">
+                            <tr>
+                               <!-- <th scope="col">#</th> -->
+                                <th scope="col">Product & Description</th>
+                                <th scope="col">HSN Number</th>
+                                <th scope="col">Qty</th>
+                                <th scope="col">Unit Price</th>
+                                <th scope="col">Discount</th>
+                                <th scope="col">Gst Rates<br>(CGST, SGST, IGST)</th>
+                                <th scope="col">Amount</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <!-- <th scope="row">1</th> -->
+                                    <td>
+                                        {{ invoice_data.item_name }}
+                                    </td>
+                                    <td>{{ invoice_data.hsn_number }}</td>
+                                    <td>{{ invoice_data.qty }}</td>
+                                    <td>{{ invoice_data.unit_price }}</td>
+                                    <td>{{ invoice_data.discount }}</td>
+                                    <td>{{ invoice_data.gst_rates }}</td>
+                                    <td>{{ invoice_data.amount }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="row mx-0 gx-0"> 
+                    <div class="col-sm-12">
+                        <div class="">
+                            <div class="row">
+                                <div class="col-6" >
+                                    <h5 style="margin-top: 50%;"><b>Authorized signature</b></h5>
+                                    <hr>
+                                </div>
+                                    <div class="col-6">
+                                     <div class="card px-0">
+                                        <div class="card-body">
+                                            <div class="row d-flex justify-content-end">
+                                                <div class="col-6 text-right">
+                                                    <p>Sub Total</p>
+                                                    <p>Discount</p>
+                                                    <p>CGST</p>
+                                                    <p>SGST</p>
+                                                    <p>IGST</p>
+                                                    <p><b>Total Bill</b></p>
+                                                </div>
+                                                <div class="col-6 text-right"  >
+                                                    <p> &#x20B9;1000</p>
+                                                    <p> &#x20B9;1000</p>
+                                                    <p> &#x20B9;1000</p>
+                                                    <p> &#x20B9;1000</p>
+                                                    <p> &#x20B9;1000</p>
+                                                    <p><b> &#x20B9;10000</b></p>
+                                                </div>
+                                               </div>
+                                        </div>
+                                     </div>
+                                     </div>
+                                </div>
+                              </div>
+                            </div>
+                            <br>
+                            <br>
+                            <hr>
+                            <!-- <div class="row gx-0 mx-0 my-1 no-margin"> -->
+                                <!-- <div class="col-sm-12 col-md-6 col-lg-6 no-padding text-right">
+                                    <p class="mb-0">Sub Total</p>
+                                </div>
+                                <div class="col-sm-12 col-md-6 col-lg-6 no-padding text-right">
+                                    <p> &#x20B9;1000</p>
+                                </div>
+                            </div>
+                            <div class="row gx-0 mx-0 my-1 no-margin">
+                                <div class="col-sm-12 col-md-6 col-lg-6 no-padding d-flex text-right justify-content-end align-items-center">
+                                    <p class="mb-0 px-2">Discount</p>
+                                </div>
+                                <div class="col-sm-12 col-md-6 col-lg-6 no-padding text-right">
+                                    <p class="mb-0">- &#x20B9;1000</p>
+                                </div>
+                            </div>
+                            <div class="row gx-0 mx-0 my-1 no-margin">
+                                <div class="col-sm-12 col-md-6 col-lg-6 no-padding d-flex text-right justify-content-end align-items-center">
+                                    <p class="mb-0 px-2">CGST</p>
+                                </div>
+                                <div class="col-sm-12 col-md-6 col-lg-6 no-padding text-right">
+                                    <p class="mb-0"> &#x20B9;1000</p>
+                                </div>
+                            </div>
+                            <div class="row gx-0 mx-0 my-1 no-margin">
+                                <div class="col-sm-12 col-md-6 col-lg-6 no-padding d-flex text-right justify-content-end align-items-center">
+                                    <p class="mb-0 px-2">SGST</p>
+                                </div>
+                                <div class="col-sm-12 col-md-6 col-lg-6 no-padding text-right">
+                                    <p class="mb-0"> &#x20B9;1000</p>
+                                </div>
+                            </div>
+                            <div class="row gx-0 mx-0 my-1 no-margin">
+                                <div class="col-sm-12 col-md-6 col-lg-6 no-padding d-flex text-right justify-content-end align-items-center">
+                                    <p class="mb-0 px-2">IGST</p>
+                                </div>
+                                <div class="col-sm-12 col-md-6 col-lg-6 no-padding text-right">
+                                    <p class="mb-0"> &#x20B9;1000</p>
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="row gx-0 mx-0 my-1 no-margin">
+                                <div class="col-sm-12 col-md-6 col-lg-6 no-padding  text-right">
+                                    <p class="mb-0"><b>Total Bill</b></p>
+                                </div>
+                                <div class="col-sm-12 col-md-6 col-lg-6 no-padding  text-right">
+                                    <p><b> &#x20B9;10000</b></p>
+                                </div>
+                            </div> -->
+                        <!-- </div> -->
+                    </div>
+                </div>
+                <hr>
+             <div class="row">
+                <div class="col-3">
+                    
+                    <img src="Qr-code.png" alt="" height="200px" width="auto">
+
+                </div>
+                <div class="col-9">
+                    <!-- <h4><b>IRN:</b></h4> spa  <p> {{ invoice_data.Irn }}</p> -->
+                    <p><b><h6 style="display: inline;">IRN:</h6></b> {{ invoice_data.Irn }}</p>
+                    <p><b><h6 style="display: inline;">Ack No::</h6></b>  {{ invoice_data.AckNo }}</p>
+                    <p><b><h6 style="display: inline;">Ack Date:</h6></b>{{ invoice_data.AckDt }}</p>
+                    <p><b><h6 style="display: inline;">E-way Bill Number:</h6></b>  {{ invoice_data.EwbNo }}</p>
+                    <p><b><h6 style="display: inline;">E-way Bill Date:</h6></b>{{ invoice_data.EwbDt }}</p>
+                    <p><b><h6 style="display: inline;">E-way Valid Till:</h6></b> {{ invoice_data.EwbValidTill }}</p>
+                </div>
+
+             </div>
+                <div class="row mx-0 gx-0">
+                    <div class="col-sm-12 col-md-12 col-lg-12 p-4 signature-image">
+                        <img src="amx_signature.jpg" alt="" height="100px">
+                        <h6 class="mt-2">Authorized Signature</h6>
+                    </div>
+                    <div class="col-sm-12 col-md-12 col-lg-12 p-4">
+                        <p>Note: </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- jQuery library -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<!-- Latest compiled JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+</body>
+</html>
