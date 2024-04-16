@@ -76,10 +76,10 @@ class ModelAdmin(admin.ModelAdmin):
 
 @admin.register(AddItem)
 class ModelAdmin(admin.ModelAdmin):
-    list_display = ['id','customer_type_id','customer_id','owner_id','invoice_type_id','sum_of_discount_amount',
+    list_display = ['id','customer_type_id','customer_id','owner_id','invoice_status','invoice_type_id','sum_of_discount_amount',
                     'amount_to_pay','sum_of_sgst_percentage','sum_of_igst_percentage','sum_of_cgst_percentage','ewaybill_status','transportation_details',
                     'sum_of_item_total_price','e_invoice_status','dronedetails','invoice_number','signature',
-                    'created_date_time','updated_date_time','invoice_status','ewaybill_payload']
+                    'created_date_time','updated_date_time','ewaybill_payload']
                     
 @admin.register(EInvoice)
 class ModelAdmin(admin.ModelAdmin):
@@ -103,11 +103,40 @@ class ModelAdmin(admin.ModelAdmin):
     
 @admin.register(CustomInvoice)
 class ModelAdmin(admin.ModelAdmin):
-    list_display = ['id','customer_type_id','customer_id','owner_id','invoice_type_id','sum_of_discount_amount',
+    list_display = ['id','customer_type_id','customer_id','owner_id','invoice_status','invoice_type_id','sum_of_discount_amount',
                     'amount_to_pay','sum_of_price_after_discount','sum_of_sgst_percentage','sum_of_igst_percentage','sum_of_cgst_percentage',
                     'sum_of_item_total_price','e_invoice_status','custom_item_details','invoice_number','signature',
-                    'created_date_time','updated_date_time','invoice_status','ewaybill_payload']
+                    'created_date_time','updated_date_time','ewaybill_payload']
 
 @admin.register(TransportationDetails)
 class ModelAdmin(admin.ModelAdmin):
-    list_display = ['id','user','invoice_number','distance','transmode','transid','transname','transDocDt','transDocNo','vehNo','vehType','created_date_time','updated_date_time']
+    list_display = ['id','user','invoice_number','distance','transmode','transid','transname',
+    'transDocDt','transDocNo','vehNo',
+    'vehType','created_date_time','updated_date_time']
+    
+@admin.register(Batchsize)
+class ModelAdmin(admin.ModelAdmin):
+    list_display = ['id','minimum','maximum','description','created_date_time','updated_date_time']
+
+@admin.register(Batchtype)
+class ModelAdmin(admin.ModelAdmin):
+    list_display = ['id','name','created_date_time','updated_date_time']
+
+@admin.register(SlotStatus)
+class ModelAdmin(admin.ModelAdmin):
+    list_display = ['id','slot_status','days_in_advance','created_date_time','updated_date_time']
+    
+@admin.register(SlotBookingPrice)
+class ModelAdmin(admin.ModelAdmin):
+    list_display = ['id','slot_booking_price','description','created_date_time','updated_date_time']
+    
+@admin.register(Slot)
+class ModelAdmin(admin.ModelAdmin):
+    list_display = ['id','batch_name','slot_date','batch_size','batch_type',
+                    'created_date_time','updated_date_time']
+
+@admin.register(Student)
+class ModelAdmin(admin.ModelAdmin):
+    list_display = ['id','student_name','student_age','student_mobile',
+                    'student_email','student_adhar','batch_type',
+                    'created_date_time','updated_date_time']
