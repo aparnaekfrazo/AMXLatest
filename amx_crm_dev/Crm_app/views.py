@@ -12554,3 +12554,31 @@ class SlotBookingPriceAPI(APIView):
         except SlotBookingPrice.DoesNotExist:
             return Response({'message': 'Slot booking price does not exist'}, status=status.HTTP_404_NOT_FOUND)
 
+class GetAllTraningMaster(APIView):
+    def get(self, request):
+        batch_sizes = Batchsize.objects.all()
+        batch_types = Batchtype.objects.all()
+        slot_statuses = SlotStatus.objects.all()
+        slot_booking_prices = SlotBookingPrice.objects.all()
+
+        batch_size_data = [{'id': obj.id, 'minimum': obj.minimum, 'maximum': obj.maximum, 'description': obj.description,
+                            'created_date_time': obj.created_date_time, 'updated_date_time': obj.updated_date_time}
+                           for obj in batch_sizes]
+
+        batch_type_data = [{'id': obj.id, 'name': obj.name, 'created_date_time': obj.created_date_time,
+                            'updated_date_time': obj.updated_date_time} for obj in batch_types]
+
+        slot_status_data = [{'id': obj.id, 'slot_status': obj.slot_status, 'days_in_advance': obj.days_in_advance,
+                             'created_date_time': obj.created_date_time, 'updated_date_time': obj.updated_date_time}
+                            for obj in slot_statuses]
+
+        slot_booking_price_data = [{'id': obj.id, 'slot_booking_price': obj.slot_booking_price, 'description': obj.description,
+                                    'created_date_time': obj.created_date_time, 'updated_date_time': obj.updated_date_time}
+                                   for obj in slot_booking_prices]
+
+        return Response([{
+            'batch_sizes': batch_size_data,
+            'batch_types': batch_type_data,
+            'slot_statuses': slot_status_data,
+            'slot_booking_prices': slot_booking_price_data
+        }])

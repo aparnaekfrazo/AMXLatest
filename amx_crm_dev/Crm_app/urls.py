@@ -123,7 +123,7 @@ urlpatterns = [
     path('slotstatuses/<int:pk>/', SlotStatusAPI.as_view(), name='slotstatus_detail'),
     path('slotbookingprice/', SlotBookingPriceAPI.as_view(), name='slotbookingprice_list'),
     path('slotbookingprice/<int:pk>/', SlotBookingPriceAPI.as_view(), name='slotbookingprice_detail'),
-
+    path('all-tranning-master/', GetAllTraningMaster.as_view(), name='GetAllTraningMaster'),
 
 ]
 

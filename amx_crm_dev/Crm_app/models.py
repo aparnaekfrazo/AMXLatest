@@ -385,14 +385,14 @@ class Batchsize(models.Model):
     created_date_time = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     updated_date_time = models.DateTimeField(null=True, blank=True)
     def __str__(self):
-        return self.minimum
+        return str(self.minimum)
 
 class Batchtype(models.Model):
     name = models.CharField(max_length=50,null=True, blank=True)
     created_date_time = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     updated_date_time = models.DateTimeField(null=True, blank=True)
     def __str__(self):
-        return self.name
+        return str(self.name)
 
 class SlotStatus(models.Model):
     slot_status = models.CharField(max_length=50,null=True, blank=True)
@@ -400,7 +400,7 @@ class SlotStatus(models.Model):
     created_date_time = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     updated_date_time = models.DateTimeField(null=True, blank=True)
     def __str__(self):
-        return self.slot_status
+        return str(self.slot_status)
         
 class SlotBookingPrice(models.Model):
     slot_booking_price= models.IntegerField(null=True, blank=True)
@@ -408,7 +408,7 @@ class SlotBookingPrice(models.Model):
     created_date_time = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     updated_date_time = models.DateTimeField(null=True, blank=True)
     def __str__(self):
-        return self.slot_booking_price
+        return str(self.slot_booking_price)
 
 class Slot(models.Model):
     batch_name = models.CharField(max_length=50, null=True, blank=True)
