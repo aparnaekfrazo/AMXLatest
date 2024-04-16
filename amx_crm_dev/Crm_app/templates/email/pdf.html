@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
+{% load static %}
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Invoice</title>
-    <!-- Latest compiled and minified CSS -->
-    <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css"> -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <style>
         table tr th,
@@ -17,7 +16,6 @@
         .table>thead>tr>th {
             background: #012762 !important;
             vertical-align: middle;
-            /* border-bottom: 2px solid #100f0f; */
             color: white !important;
             border: 1px solid #d8d2d2;
         }
@@ -58,8 +56,8 @@
         margin-bottom: 20px !important;
       }
       .qrcode{
-        /* width:180px;
-        height:180px; */
+        width:180px;
+        height:180px;
       }
         .border-secondary {
             border: 1px solid #e0dcdc;
@@ -105,8 +103,7 @@
     <div class="container px-0">
         <div class="row gx-0 mx-2">
             <div class="col-12 px-0">
-                <!-- <div class="card px-0"> -->
-                    <!-- <div class="card-body"> -->
+
                         <div>
                             <div>
                         <div class="row d-flex">
@@ -115,11 +112,12 @@
                                 <br>
                                 <h2>From</h2>
                             </div>
-                            <!-- <div class="col-12 col-sm-12 col-md-4 col-lg-4 col-xl-4 text-center">
-                                <img src="Qr-code.png" alt="" height="200px" width="auto">
-                            </div> -->
+
+
                             <div class="col-6 d-flex justify-content-end">
-                                <img src="https://amx-crm-dev.thestorywallcafe.com/{{ invoice_data.owner_company_logo }}"   class="comp_logo" alt="">
+
+                                <img src="https://amx-crm-dev.thestorywallcafe.com/{{invoice_data.owner_company_logo}}" alt="" style="height: 100px; width: 150px;">
+                                
                             </div>
                         </div>
                         <br>
@@ -136,7 +134,6 @@
                                 <h2>INVOICE DETAILS</h2>
                                 <h3>Invoice Number: {{ invoice_data.invoice_number }}</h3>
                                 <h3>Invoice Date: {{ invoice_data.updated_date_time|date:"d/m/Y H:i A" }}</h3>
-                                <!-- <p><b>Invoice Date:</b> {{ invoice_data.updated_date_time }}</p> -->
                                 <h3>Place Of Supply: Karnataka (29)</h3>
                             </div>
                         </div>
@@ -153,8 +150,6 @@
             <div class="col-12 px-0">
                 <div>
                     <div>
-                <!-- <div class="card px-0"> -->
-                    <!-- <div class="card-body"> -->
                         <div class="row d-flex">
                             <div class="col">
                                 <h2>Customer Details</h2>
@@ -189,8 +184,7 @@
     <div class="container px-0">
         <div>
             <div>
-        <!-- <div class="card px-0"> -->
-            <!-- <div class="card-body"> -->
+
                 <div class="row mx-2 gx-0">
                     <div class="col-12 px-0">
                         <h3><b>Goods Deatils</b></h3>
@@ -201,7 +195,7 @@
                         <table class="table">
                             <thead class="text-white">
                             <tr>
-                               <!-- <th scope="col">#</th> -->
+                               
                                 <th scope="col">Product & Description</th>
                                 <th scope="col">HSN Number</th>
                                 <th scope="col">Qty</th>
@@ -212,50 +206,44 @@
                             </tr>
                             </thead>
                             <tbody>
-                                {% if invoice_data.invoice_number %}
-                                    <tr>
-                                        <td>{{ invoice_data.drone_name }} </td>
-                                        <td>{{ invoice_data.hsn_number }} </td>
-                                        <td>{{ invoice_data.quantity }} </td>
-                                        <td>&#x20B9;{{ invoice_data.price }} </td>
-                                        <td>{{ invoice_data.discount }} </td>
-                                        <td>{{ invoice_data.sgst }}%, {{ invoice_data.cgst }}%, {{ invoice_data.igst }}%</td>
-                                        <td>&#x20B9;{{ invoice_data.item_total_price }}</td>
-                                    </tr>
-                                {% else %}
-                                    <!-- Render data from AddItem model -->
+                                <!-- {% if invoice_data.invoice_number %} -->
+                                <tr>
+                                    <td>
+                                        {% if invoice_data.item_name %}
+                                            {{ invoice_data.item_name }}
+                                        {% elif invoice_data.drone_name %}
+                                            {{ invoice_data.drone_name }}
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ invoice_data.hsn_number }}</td>
+                                    <td>{{ invoice_data.quantity }}</td>
+                                    <td>&#x20B9;{{ invoice_data.price }}</td>
+                                    <td>{{ invoice_data.discount }}</td>
+                                    <td>{{ invoice_data.sgst }}%, {{ invoice_data.cgst }}%, {{ invoice_data.igst }}%</td>
+                                    <td>&#x20B9;{{ invoice_data.item_total_price }}</td>
+                                </tr>
+                                <!-- {% else %}
+                                    
                                     {% for invoice_data in invoice_number %}
                                         <tr>
-                                            <td>{{ invoice_data.item_name }}</td>
-                                            <td>{{ invoice_data.hsn_number }}</td>
-                                            <td>{{ item.qty }}</td>
-                                            <td>{{ item.unit_price }}</td>
-                                            <td>{{ item.discount }}</td>
-                                            <td>{{ item.gst_rates }}</td>
-                                            <td>&#x20B9;{{ item.amount }}</td>
+                                            <td>{{ invoice_data.item_name }}hjchdjcn</td>
                                         </tr>
                                     {% endfor %}
-                                {% endif %}
+                                {% endif %} -->
                             </tbody>
                         </table>
                         
-                        
-
                     </div>
                 </div>
                 <div class="row"> 
                     <div class="col-sm-12">
                         <div class="">
-                            <!-- <div class="row mx-0 gx-0">
-                              
-                                <div class="col-sm-12 col-md-12 col-lg-12 p-4">
-                                    
-                                </div>
-                            </div> -->
+
                             <div class="row">
                                 <div class="col-6" >
                                     <div class="row">
                                         <div >
+                                            
                                             <img src="https://amx-crm-dev.thestorywallcafe.com/{{invoice_data.signature}}" alt="" style="height: 100px; width: 150px;">
                                             
                                         </div>
@@ -324,9 +312,9 @@
         </div>
     </div>
 </div>
-<!-- jQuery library -->
+
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-<!-- Latest compiled JavaScript -->
+
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
 </body>
 </html>

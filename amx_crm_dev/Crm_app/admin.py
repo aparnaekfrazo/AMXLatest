@@ -140,3 +140,7 @@ class ModelAdmin(admin.ModelAdmin):
     list_display = ['id','student_name','student_age','student_mobile',
                     'student_email','student_adhar','batch_type',
                     'created_date_time','updated_date_time']
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
