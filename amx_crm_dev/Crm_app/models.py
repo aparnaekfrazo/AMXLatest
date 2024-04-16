@@ -1,7 +1,5 @@
-
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-
 
 # Create your models here.
 
@@ -12,7 +10,6 @@ class Role(models.Model):
 
     def __str__(self):
         return self.role_name
-
 
 class InvoiceType(models.Model):
     invoice_type_name=models.CharField(max_length=50, null=True, blank=True)
@@ -350,6 +347,7 @@ class CustomInvoice(models.Model):
     sum_of_discount_amount = models.FloatField(default=0, null=True, blank=True)
     sum_of_price_after_discount = models.FloatField(default=0, null=True, blank=True)
     ewaybill_status = models.BooleanField(null=True, blank=True, default=False)
+    transportation_details = models.BooleanField(null=True, blank=True, default=False)
 
     def __str__(self):
         return self.invoice_number
@@ -377,3 +375,59 @@ class TransportationDetails(models.Model):
     vehType = models.CharField(max_length=50, null=True, blank=True)
     created_date_time = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     updated_date_time = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    
+
+
+class Batchsize(models.Model):
+    minimum = models.IntegerField(null=True, blank=True)
+    maximum = models.IntegerField(null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
+    created_date_time = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    updated_date_time = models.DateTimeField(null=True, blank=True)
+    def __str__(self):
+        return self.minimum
+
+class Batchtype(models.Model):
+    name = models.CharField(max_length=50,null=True, blank=True)
+    created_date_time = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    updated_date_time = models.DateTimeField(null=True, blank=True)
+    def __str__(self):
+        return self.name
+
+class SlotStatus(models.Model):
+    slot_status = models.CharField(max_length=50,null=True, blank=True)
+    days_in_advance = models.IntegerField(null=True, blank=True)
+    created_date_time = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    updated_date_time = models.DateTimeField(null=True, blank=True)
+    def __str__(self):
+        return self.slot_status
+        
+class SlotBookingPrice(models.Model):
+    slot_booking_price= models.IntegerField(null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
+    created_date_time = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    updated_date_time = models.DateTimeField(null=True, blank=True)
+    def __str__(self):
+        return self.slot_booking_price
+
+class Slot(models.Model):
+    batch_name = models.CharField(max_length=50, null=True, blank=True)
+    slot_date = models.DateField(null=True, blank=True)
+    batch_size = models.IntegerField(null=True, blank=True)
+    batch_type = models.ForeignKey(Batchtype,on_delete=models.PROTECT, null=True, blank=True)
+    created_date_time = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    updated_date_time = models.DateTimeField(null=True, blank=True)
+    def __str__(self):
+        return self.batch_name
+
+class Student(models.Model):
+    student_name = models.CharField(max_length=50, null=True, blank=True)
+    student_age = models.IntegerField(null=True, blank=True)
+    student_mobile = models.IntegerField(null=True, blank=True)
+    student_email = models.EmailField(null=True, blank=True)
+    student_adhar = models.EmailField(null=True, blank=True)
+    batch_type = models.ForeignKey(Batchtype,on_delete=models.PROTECT, null=True, blank=True)
+    created_date_time = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    updated_date_time = models.DateTimeField(null=True, blank=True)
+    def __str__(self):
+        return self.student_name

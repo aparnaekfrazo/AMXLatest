@@ -49,11 +49,8 @@ urlpatterns = [
     path('mydrones/', MydronesAPI.as_view(), name='mydrones'),
     path('customize/', CustomizablePriceAPIView.as_view(), name='customizing the price of order'),
     path('pay/', razorpay_payment, name='razorpay_payment'),
-#     path('search/', SearchFilterAPI.as_view(), name='searchfilter'),
     path('customize/', CustomizablePriceAPIView.as_view(), name='customizing the price of order'),
 
-    # path('', homepage, name='index'),
-    # path('paymenthandler/', paymenthandler, name='paymenthandler'),
     path('razorpay/<int:drone_sale_id>/', razorpay_payment, name='razorpay_payment'),
     path('pay/', razorpay_payment, name='razorpay_payment'),
     path('checkout/', checkout, name='checkout'),
@@ -113,11 +110,19 @@ urlpatterns = [
     path('unit_price_lists/', UnitPriceListAPI.as_view(), name='UnitPriceListAPI details'),
     path('com-admin/<int:pk>/', CompanydetailsSuperAdminAPIView.as_view(), name='updating company details of super admin'),
     path('get-pdf/<str:invoice_number>/', MyAPIView.as_view(), name='get-pdf'),
-    # path('generate-pdf/', generate_pdf, name='generate_pdf'),
-
-#     path('patch_invoice_details/', PatchInvoiceDetails.as_view(), name='patch invoice details')
-    # path('get_invoice_response/', GetInvoiceiResponse.as_view(), name='Get invoice response')
-
+    path('filter/', FilterForSuperadmin.as_view(), name='filtering option for superadmin'),
+    path('invoice/<int:user_id>/', InvoiceHistoyFilter.as_view(), name='filtering option for partner'),
+        path('superadminall/<int:super_admin_id>/',SuperAdminGetAllViewwithoutpagination.as_view(),name='get all users created by superadmin'),
+    path('getcustomer/<int:partner_id>/', CustomerGet.as_view(), name='get customer '),
+    path('getcustomer/', CustomerGet.as_view(), name='get all customers '),
+    path('batchsizes/', BatchSizeAPI.as_view(), name='batchsize-list'),
+    path('batchsizes/<int:pk>/', BatchSizeAPI.as_view(), name='batchsize-detail'),
+    path('batchtypes/', BatchTypeAPI.as_view(), name='batchtype_list'),
+    path('batchtypes/<int:pk>/', BatchTypeAPI.as_view(), name='batchtype_detail'),
+    path('slotstatuses/', SlotStatusAPI.as_view(), name='slotstatus_list'),
+    path('slotstatuses/<int:pk>/', SlotStatusAPI.as_view(), name='slotstatus_detail'),
+    path('slotbookingprice/', SlotBookingPriceAPI.as_view(), name='slotbookingprice_list'),
+    path('slotbookingprice/<int:pk>/', SlotBookingPriceAPI.as_view(), name='slotbookingprice_detail'),
 
 
 ]
