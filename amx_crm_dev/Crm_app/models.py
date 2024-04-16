@@ -431,7 +431,4 @@ class Student(models.Model):
     updated_date_time = models.DateTimeField(null=True, blank=True)
     def __str__(self):
         return self.student_name
-<<<<<<< Updated upstream
-=======
 
->>>>>>> Stashed changes

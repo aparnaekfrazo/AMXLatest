@@ -12553,7 +12553,4 @@ class SlotBookingPriceAPI(APIView):
             return Response({'message': 'Slot booking price deleted successfully'})
         except SlotBookingPrice.DoesNotExist:
             return Response({'message': 'Slot booking price does not exist'}, status=status.HTTP_404_NOT_FOUND)
-<<<<<<< Updated upstream
-=======
 
->>>>>>> Stashed changes
