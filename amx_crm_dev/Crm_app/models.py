@@ -428,6 +428,24 @@ class SlotOrder(models.Model):
     def __str__(self):
         return str(self.user_id)
 
+class SlotOrder(models.Model):
+    role = models.ForeignKey(Role, on_delete=models.PROTECT, null=True, blank=True)
+    amount = models.IntegerField(null=True, blank=True)
+    order_status = models.ForeignKey(Status, on_delete=models.PROTECT, null=True, blank=True)
+    order_id = models.CharField(max_length=255, null=True, blank=True)
+    user_id = models.ForeignKey(CustomUser, on_delete=models.PROTECT, null=True, blank=True)
+    created_date_time = models.DateTimeField(auto_now_add=True, null=True)
+    updated_date_time = models.DateTimeField(auto_now_add=True, null=True)
+    payment_id = models.CharField(max_length=255, null=True, blank=True)
+    razorpay_signature = models.CharField(max_length=255, null=True, blank=True)
+    batch_name = models.CharField(max_length=50, null=True, blank=True)
+    slot_date = models.DateField(null=True, blank=True)
+    batch_size = models.IntegerField(null=True, blank=True)
+    batch_type = models.ForeignKey(Batchtype, on_delete=models.PROTECT, null=True, blank=True)
+
+    def __str__(self):
+        return str(self.user_id)
+
 class Slot(models.Model):
     batch_name = models.CharField(max_length=50, null=True, blank=True)
     slot_date = models.DateField(null=True, blank=True)
@@ -437,7 +455,7 @@ class Slot(models.Model):
     created_date_time = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     updated_date_time = models.DateTimeField(null=True, blank=True)
     def __str__(self):
-        return self.batch_name
+        return str(self.batch_name)
 
 class Student(models.Model):
     student_name = models.CharField(max_length=50, null=True, blank=True)
@@ -449,5 +467,5 @@ class Student(models.Model):
     created_date_time = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     updated_date_time = models.DateTimeField(null=True, blank=True)
     def __str__(self):
-        return self.student_name
+        return str(self.student_name)
 

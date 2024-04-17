@@ -12582,7 +12582,7 @@ class GetAllTraningMaster(APIView):
             'slot_statuses': slot_status_data,
             'slot_booking_prices': slot_booking_price_data
         }])
-       
+
 @csrf_exempt
 def initiate_payment(request):
     if request.method == 'POST':
@@ -12682,7 +12682,7 @@ def handle_payment_success(request):
             # Save payment-related details to the SlotOrder instance
             slot_order_instance.payment_id = payment_id
             slot_order_instance.razorpay_signature = razorpay_signature
-            #slot_order_instance.order_status = 'Success'  # Assuming this is your success status
+            slot_order_instance.order_status = 'Success'  # Assuming this is your success status
             slot_order_instance.save()
 
             # If payment is successful, save slot booking details to the Slot table

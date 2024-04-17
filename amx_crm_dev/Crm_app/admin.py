@@ -129,7 +129,7 @@ class ModelAdmin(admin.ModelAdmin):
 @admin.register(SlotBookingPrice)
 class ModelAdmin(admin.ModelAdmin):
     list_display = ['id','slot_booking_price','description','created_date_time','updated_date_time']
-    
+
 @admin.register(SlotOrder)
 class SlotOrderAdmin(admin.ModelAdmin):
     list_display = ['id', 'role', 'amount', 'order_status', 'order_id', 'user_id',
@@ -145,4 +145,5 @@ class ModelAdmin(admin.ModelAdmin):
     list_display = ['id','student_name','student_age','student_mobile',
                     'student_email','student_adhar','batch_type',
                     'created_date_time','updated_date_time']
+
 
