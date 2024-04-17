@@ -12582,3 +12582,121 @@ class GetAllTraningMaster(APIView):
             'slot_statuses': slot_status_data,
             'slot_booking_prices': slot_booking_price_data
         }])
+
+@csrf_exempt
+def initiate_payment(request):
+    if request.method == 'POST':
+        # Parse JSON data from the request body
+        json_data = json.loads(request.body.decode('utf-8'))
+
+        # Extract necessary details from the request
+        batch_name = json_data.get('batch_name')
+        slot_date = json_data.get('slot_date')
+        batch_size = json_data.get('batch_size')
+        batch_type_id = json_data.get('batch_type_id')
+        user_id = json_data.get('user_id')
+
+        # Assuming the foreign key field name is batch_type_id
+        try:
+            batch_type = Batchtype.objects.get(id=batch_type_id)
+        except Batchtype.DoesNotExist:
+            return JsonResponse({'error': 'Batch type not found'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get the CustomUser instance based on the provided user ID
+        try:
+            user_instance = CustomUser.objects.get(id=user_id)
+        except CustomUser.DoesNotExist:
+            return JsonResponse({'error': 'User not found'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Calculate the slot booking price based on the batch type
+        try:
+            slot_booking_price = SlotBookingPrice.objects.first().slot_booking_price
+        except SlotBookingPrice.DoesNotExist:
+            return JsonResponse({'error': 'Slot booking price not found'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Initialize Razorpay client
+        client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+
+        # Create Razorpay order
+        try:
+            order_amount = int(slot_booking_price * 100)  # Convert amount to paisa (Razorpay expects amount in paisa)
+            order_currency = 'INR'
+            order_receipt = 'order_rcptid_11'
+            order = client.order.create({'amount': order_amount, 'currency': order_currency, 'receipt': order_receipt})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # Get the Razorpay order ID
+        order_id = order.get('id')
+
+        # Create SlotOrder instance to save the order details
+        slot_order_instance = SlotOrder.objects.create(
+            batch_name=batch_name,
+            slot_date=slot_date,
+            batch_size=batch_size,
+            batch_type=batch_type,
+            order_id=order_id,
+            user_id=user_instance  # Assign the CustomUser instance
+        )
+
+        # Return necessary details for initiating the payment
+        response_data = {
+            'order_id': order_id,
+            'amount': slot_booking_price,
+            'currency': order_currency,
+        }
+
+        return JsonResponse(response_data, status=status.HTTP_200_OK)
+
+    return JsonResponse({'error': 'Invalid request method'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+@csrf_exempt
+def handle_payment_success(request):
+    if request.method == 'POST':
+        # Parse JSON data from the request body
+        json_data = json.loads(request.body.decode('utf-8'))
+
+        # Extract payment-related details
+        payment_id = json_data.get('razorpay_payment_id')
+        razorpay_order_id = json_data.get('razorpay_order_id')
+        razorpay_signature = json_data.get('razorpay_signature')
+
+        # Retrieve SlotOrder instance based on the Razorpay order ID
+        try:
+            slot_order_instance = SlotOrder.objects.get(order_id=razorpay_order_id)
+        except SlotOrder.DoesNotExist:
+            return JsonResponse({'error': 'Slot order not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Verify the payment status with Razorpay
+        client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+        try:
+            payment_response = client.payment.fetch(payment_id)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # Check if payment is successful
+        payment_verified = payment_response.get('status') == 'captured'
+
+        if payment_verified:
+            # Save payment-related details to the SlotOrder instance
+            slot_order_instance.payment_id = payment_id
+            slot_order_instance.razorpay_signature = razorpay_signature
+            slot_order_instance.order_status = 'Success'  # Assuming this is your success status
+            slot_order_instance.save()
+
+            # If payment is successful, save slot booking details to the Slot table
+            slot_instance = Slot.objects.create(
+                batch_name=slot_order_instance.batch_name,
+                slot_date=slot_order_instance.slot_date,
+                batch_size=slot_order_instance.batch_size,
+                batch_type=slot_order_instance.batch_type,
+                user_id=slot_order_instance.user_id
+            )
+
+            return JsonResponse({'message': 'Slot booked successfully.'}, status=status.HTTP_200_OK)
+        else:
+            # Handle payment verification failure
+            return JsonResponse({'error': 'Payment verification failed'}, status=status.HTTP_400_BAD_REQUEST)
+
+    return JsonResponse({'error': 'Invalid request method'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

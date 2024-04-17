@@ -124,6 +124,8 @@ urlpatterns = [
     path('slotbookingprice/', SlotBookingPriceAPI.as_view(), name='slotbookingprice_list'),
     path('slotbookingprice/<int:pk>/', SlotBookingPriceAPI.as_view(), name='slotbookingprice_detail'),
     path('all-tranning-master/', GetAllTraningMaster.as_view(), name='GetAllTraningMaster'),
+    path('initiate_payment/', initiate_payment, name='initiate_payment'),
+    path('handle_payment_success/', handle_payment_success, name='handle_payment_success'),
 
 ]
 
