@@ -130,6 +130,11 @@ class ModelAdmin(admin.ModelAdmin):
 class ModelAdmin(admin.ModelAdmin):
     list_display = ['id','slot_booking_price','description','created_date_time','updated_date_time']
     
+@admin.register(SlotOrder)
+class SlotOrderAdmin(admin.ModelAdmin):
+    list_display = ['id', 'role', 'amount', 'order_status', 'order_id', 'user_id',
+                    'created_date_time', 'updated_date_time', 'payment_id', 'razorpay_signature',
+                    'batch_name', 'slot_date', 'batch_size', 'batch_type']
 @admin.register(Slot)
 class ModelAdmin(admin.ModelAdmin):
     list_display = ['id','batch_name','slot_date','batch_size','batch_type',
