@@ -12689,8 +12689,8 @@ def handle_payment_success(request):
                 # Check conditions before creating the slot
                 with transaction.atomic():
                     if Batchtype.objects.filter(name__in=['Individual', 'Group']).filter(
-                            slots__slot_date=slot_order_instance.slot_date,
-                            batch_name=slot_order_instance.batch_name).exists():
+                            slot__slot_date=slot_order_instance.slot_date,
+                            name=slot_order_instance.batch_name).exists():
                         raise ValidationError('Slots already exist for this date and batch name')
 
                     # Create the slot instance
