@@ -12596,10 +12596,6 @@ def initiate_payment(request):
         batch_type_id = json_data.get('batch_type_id')
         user_id = json_data.get('user_id')
 
-        if SlotOrder.objects.filter(batch_name=batch_name, slot_date=slot_date).exists():
-            return JsonResponse({'message': 'Batch name already exists for this slot date'},
-                                status=status.HTTP_400_BAD_REQUEST)
-
         # Assuming the foreign key field name is batch_type_id
         try:
             batch_type = Batchtype.objects.get(id=batch_type_id)
@@ -12689,15 +12685,24 @@ def handle_payment_success(request):
             #slot_order_instance.order_status = 'Success'  # Assuming this is your success status
             slot_order_instance.save()
 
-            # If payment is successful, save slot booking details to the Slot table
-            slot_instance = Slot.objects.create(
-                batch_name=slot_order_instance.batch_name,
-                slot_date=slot_order_instance.slot_date,
-                batch_size=slot_order_instance.batch_size,
-                batch_type=slot_order_instance.batch_type,
-                user_id=slot_order_instance.user_id
-            )
+            try:
+                # Check conditions before creating the slot
+                with transaction.atomic():
+                    if Batchtype.objects.filter(name__in=['Individual', 'Group']).filter(
+                            slots__slot_date=slot_order_instance.slot_date,
+                            batch_name=slot_order_instance.batch_name).exists():
+                        raise ValidationError('Slots already exist for this date and batch name')
 
+                    # Create the slot instance
+                    slot_instance = Slot.objects.create(
+                        batch_name=slot_order_instance.batch_name,
+                        slot_date=slot_order_instance.slot_date,
+                        batch_size=slot_order_instance.batch_size,
+                        batch_type=slot_order_instance.batch_type,
+                        user_id=slot_order_instance.user_id
+                    )
+            except ValidationError as e:
+                return JsonResponse({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
             return JsonResponse({'message': 'Slot booked successfully.'}, status=status.HTTP_200_OK)
         else:
             # Handle payment verification failure
