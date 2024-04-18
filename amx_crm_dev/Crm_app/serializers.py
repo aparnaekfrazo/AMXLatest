@@ -133,6 +133,25 @@ class CustomerCategorySerializer(serializers.ModelSerializer):
 #         return {'drone_sales_quantity': drone_sales_quantity, 'order_quantity': obj.quantity}
 
 class SlotSerializer(serializers.ModelSerializer):
+    batch_type_name = serializers.SerializerMethodField()
+    partner_name = serializers.SerializerMethodField()
+    partner_mobile = serializers.SerializerMethodField()
+    partner_email = serializers.SerializerMethodField()
+
     class Meta:
         model = Slot
-        fields = '__all__'
+        fields = ['batch_name', 'slot_date', 'batch_size', 'batch_type', 'batch_type_name',
+                  'user_id', 'partner_name', 'partner_mobile', 'partner_email',
+                  'created_date_time', 'updated_date_time']
+
+    def get_batch_type_name(self, obj):
+        return obj.batch_type.name if obj.batch_type else None
+
+    def get_partner_name(self, obj):
+        return obj.user_id.first_name if obj.user_id else None
+
+    def get_partner_mobile(self, obj):
+        return obj.user_id.mobile_number if obj.user_id else None
+
+    def get_partner_email(self, obj):
+        return obj.user_id.email if obj.user_id else None
