@@ -12597,26 +12597,26 @@ def initiate_payment(request):
         user_id = json_data.get('user_id')
 
         if SlotOrder.objects.filter(batch_name=batch_name, slot_date=slot_date).exists():
-            return JsonResponse({'error': 'Batch name already exists for this slot date'},
+            return JsonResponse({'message': 'Batch name already exists for this slot date'},
                                 status=status.HTTP_400_BAD_REQUEST)
 
         # Assuming the foreign key field name is batch_type_id
         try:
             batch_type = Batchtype.objects.get(id=batch_type_id)
         except Batchtype.DoesNotExist:
-            return JsonResponse({'error': 'Batch type not found'}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse({'message': 'Batch type not found'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Get the CustomUser instance based on the provided user ID
         try:
             user_instance = CustomUser.objects.get(id=user_id)
         except CustomUser.DoesNotExist:
-            return JsonResponse({'error': 'User not found'}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse({'message': 'User not found'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Calculate the slot booking price based on the batch type
         try:
             slot_booking_price = SlotBookingPrice.objects.first().slot_booking_price
         except SlotBookingPrice.DoesNotExist:
-            return JsonResponse({'error': 'Slot booking price not found'}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse({'message': 'Slot booking price not found'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Initialize Razorpay client
         client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
@@ -12628,7 +12628,7 @@ def initiate_payment(request):
             order_receipt = 'order_rcptid_11'
             order = client.order.create({'amount': order_amount, 'currency': order_currency, 'receipt': order_receipt})
         except Exception as e:
-            return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return JsonResponse({'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # Get the Razorpay order ID
         order_id = order.get('id')
@@ -12652,7 +12652,7 @@ def initiate_payment(request):
 
         return JsonResponse(response_data, status=status.HTTP_200_OK)
 
-    return JsonResponse({'error': 'Invalid request method'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    return JsonResponse({'message': 'Invalid request method'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 @csrf_exempt
@@ -12670,14 +12670,14 @@ def handle_payment_success(request):
         try:
             slot_order_instance = SlotOrder.objects.get(order_id=razorpay_order_id)
         except SlotOrder.DoesNotExist:
-            return JsonResponse({'error': 'Slot order not found'}, status=status.HTTP_404_NOT_FOUND)
+            return JsonResponse({'message': 'Slot order not found'}, status=status.HTTP_404_NOT_FOUND)
 
         # Verify the payment status with Razorpay
         client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
         try:
             payment_response = client.payment.fetch(payment_id)
         except Exception as e:
-            return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return JsonResponse({'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # Check if payment is successful
         payment_verified = payment_response.get('status') == 'captured'
@@ -12701,6 +12701,6 @@ def handle_payment_success(request):
             return JsonResponse({'message': 'Slot booked successfully.'}, status=status.HTTP_200_OK)
         else:
             # Handle payment verification failure
-            return JsonResponse({'error': 'Payment verification failed'}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse({'message': 'Payment verification failed'}, status=status.HTTP_400_BAD_REQUEST)
 
-    return JsonResponse({'error': 'Invalid request method'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    return JsonResponse({'message': 'Invalid request method'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
