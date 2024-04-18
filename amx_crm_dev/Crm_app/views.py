@@ -12596,6 +12596,10 @@ def initiate_payment(request):
         batch_type_id = json_data.get('batch_type_id')
         user_id = json_data.get('user_id')
 
+        if SlotOrder.objects.filter(batch_name=batch_name, slot_date=slot_date).exists():
+            return JsonResponse({'error': 'Batch name already exists for this slot date'},
+                                status=status.HTTP_400_BAD_REQUEST)
+
         # Assuming the foreign key field name is batch_type_id
         try:
             batch_type = Batchtype.objects.get(id=batch_type_id)
