@@ -12700,6 +12700,7 @@ def handle_payment_success(request):
 
             return JsonResponse({'message': 'Slot booked successfully.'}, status=status.HTTP_200_OK)
         else:
+            slot_order_instance.delete()
             # Handle payment verification failure
             return JsonResponse({'message': 'Payment verification failed'}, status=status.HTTP_400_BAD_REQUEST)
 
