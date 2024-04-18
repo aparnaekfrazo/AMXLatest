@@ -12686,7 +12686,7 @@ def handle_payment_success(request):
             # Save payment-related details to the SlotOrder instance
             slot_order_instance.payment_id = payment_id
             slot_order_instance.razorpay_signature = razorpay_signature
-            slot_order_instance.order_status = 'Success'  # Assuming this is your success status
+            #slot_order_instance.order_status = 'Success'  # Assuming this is your success status
             slot_order_instance.save()
 
             # If payment is successful, save slot booking details to the Slot table
@@ -12704,3 +12704,22 @@ def handle_payment_success(request):
             return JsonResponse({'message': 'Payment verification failed'}, status=status.HTTP_400_BAD_REQUEST)
 
     return JsonResponse({'message': 'Invalid request method'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+class SlotListView(APIView):
+    def get(self, request, *args, **kwargs):
+        user_id = self.request.query_params.get('user_id')
+        slot_date = self.request.query_params.get('slot_date')
+        batch_type_id = self.request.query_params.get('batch_type_id')
+
+        slots = Slot.objects.all().order_by('-id')
+
+        if user_id:
+            slots = slots.filter(user_id=user_id)
+        if slot_date:
+            slots = slots.filter(slot_date=slot_date)
+        if batch_type_id:
+            slots = slots.filter(batch_type_id=batch_type_id)
+
+        serializer = SlotSerializer(slots, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

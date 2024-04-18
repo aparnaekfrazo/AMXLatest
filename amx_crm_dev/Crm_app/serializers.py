@@ -131,3 +131,8 @@ class CustomerCategorySerializer(serializers.ModelSerializer):
 
 #         # Return a dictionary with both quantities
 #         return {'drone_sales_quantity': drone_sales_quantity, 'order_quantity': obj.quantity}
+
+class SlotSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Slot
+        fields = '__all__'

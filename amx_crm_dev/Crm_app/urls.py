@@ -126,6 +126,7 @@ urlpatterns = [
     path('all-tranning-master/', GetAllTraningMaster.as_view(), name='GetAllTraningMaster'),
     path('initiate_payment/', initiate_payment, name='initiate_payment'),
     path('handle_payment_success/', handle_payment_success, name='handle_payment_success'),
+    path('slots/', SlotListView.as_view(), name='slot-list'),
 
 ]
 
