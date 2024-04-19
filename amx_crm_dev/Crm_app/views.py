@@ -12719,3 +12719,9 @@ class SlotListView(APIView):
 
         serializer = SlotSerializer(slots, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+class UserSlotList(APIView):
+    def get(self, request, user_id):
+        slots = Slot.objects.filter(user_id=user_id).order_by('id')
+        slot_data = [{'id':slot.id,'slot_date': slot.slot_date, 'created_date_time': slot.created_date_time} for slot in slots]
+        return Response(slot_data)

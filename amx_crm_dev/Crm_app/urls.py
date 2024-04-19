@@ -127,6 +127,7 @@ urlpatterns = [
     path('initiate_payment/', initiate_payment, name='initiate_payment'),
     path('handle_payment_success/', handle_payment_success, name='handle_payment_success'),
     path('slots/', SlotListView.as_view(), name='slot-list'),
+    path('slots-by-date/<int:user_id>/', UserSlotList.as_view(), name='user-slot-list'),
 
 ]
 
