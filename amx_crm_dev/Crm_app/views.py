@@ -12720,8 +12720,17 @@ class SlotListView(APIView):
         serializer = SlotSerializer(slots, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+from django.db.models import Min
+
 class UserSlotList(APIView):
     def get(self, request, user_id):
-        slots = Slot.objects.filter(user_id=user_id).order_by('id')
-        slot_data = [{'id':slot.id,'slot_date': slot.slot_date, 'created_date_time': slot.created_date_time} for slot in slots]
+        # Query the minimum created_date_time for each unique slot_date
+        slots = Slot.objects.filter(user_id=user_id).values('slot_date').annotate(min_created_date=Min('created_date_time'))
+
+        # Get the corresponding slot IDs for the minimum created_date_time for each slot_date
+        slot_ids = Slot.objects.filter(user_id=user_id, created_date_time__in=[slot['min_created_date'] for slot in slots]).values_list('id', flat=True)
+
+        # Retrieve the full slot objects using the filtered slot IDs
+        slot_data = Slot.objects.filter(id__in=slot_ids).values('id', 'slot_date', 'created_date_time')
+
         return Response(slot_data)
