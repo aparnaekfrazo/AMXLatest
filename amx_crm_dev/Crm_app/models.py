@@ -89,6 +89,7 @@ class CustomUser(AbstractUser):
 
 class CustomizablePrice(models.Model):
     custom_amount = models.DecimalField(null=True,blank=True,max_digits=10, decimal_places=2)
+    description = models.CharField(max_length=50, null=True, blank=True)
     created_date_time = models.DateTimeField(auto_now_add=True,null=True)
     updated_date_time = models.DateTimeField(auto_now_add=True, null=True)
     
