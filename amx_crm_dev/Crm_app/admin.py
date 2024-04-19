@@ -64,7 +64,7 @@ class ModelAdmin(admin.ModelAdmin):
 
 @admin.register(CustomizablePrice)
 class ModelAdmin(admin.ModelAdmin):
-    list_display = ['id','custom_amount','description','created_date_time', 'updated_date_time']
+    list_display = ['id','custom_amount','created_date_time', 'updated_date_time']
 
 @admin.register(InvoiceType)
 class ModelAdmin(admin.ModelAdmin):
