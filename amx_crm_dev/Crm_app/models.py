@@ -449,7 +449,6 @@ class Student(models.Model):
     batch_type = models.ForeignKey(Batchtype,on_delete=models.PROTECT, null=True, blank=True)
     created_date_time = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     updated_date_time = models.DateTimeField(null=True, blank=True)
-    student_id = models.CharField(max_length=50, null=True, blank=True)
     def __str__(self):
         return str(self.student_name)
 
