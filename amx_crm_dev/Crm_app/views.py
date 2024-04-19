@@ -1518,67 +1518,63 @@ def RejectRequest(request, id):
 
 
 from datetime import datetime
-
 class DroneSalesPaymentAPI(APIView):
     def post(self, request):
         data = request.data
-        payment_gateway_price = data.get('payment_gateway_price')
+        custom_amount = data.get('custom_amount')
         description = data.get('description')
 
-        existing_payment_gateway = Payment_gateways.objects.first()
+        existing_payment_gateway = CustomizablePrice.objects.first()
 
         if existing_payment_gateway:
             return Response({'message': 'Data is already present.'}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            Payment_gateways.objects.create(
-                payment_gateway_price=payment_gateway_price,
+            CustomizablePrice.objects.create(
+                custom_amount=custom_amount,
                 description=description
             )
             return Response({'message': 'Item added to cart successfully!'}, status=status.HTTP_201_CREATED)
+
 
     def get(self, request, *args, **kwargs):
         id = request.query_params.get('id')
         pk = kwargs.get('pk')  # Retrieve pk from URL parameters
 
         if id is not None:
-            status = Payment_gateways.objects.filter(id=id).first()
+            status = CustomizablePrice.objects.filter(id=id).first()
             if status:
-                data = {'id': status.id, 'payment_gateway_price': status.payment_gateway_price,
-                        'description': status.description, 'created_date_time': status.created_date_time,
-                        'updated_date_time': status.updated_date_time}
+                data = {'id': status.id, 'custom_amount': status.custom_amount,'description':status.description,'created_date_time':status.created_date_time,'updated_date_time':status.updated_date_time}
                 return Response(data)
             else:
                 return Response({'message': 'Status not found for the specified id'}, status=404)
         elif pk is not None:
-            status = Payment_gateways.objects.filter(id=pk).first()  # Use pk instead of id
+            status = CustomizablePrice.objects.filter(id=pk).first()  # Use pk instead of id
             if status:
-                data = {'id': status.id, 'payment_gateway_price': status.payment_gateway_price,
-                        'description': status.description, 'created_date_time': status.created_date_time,
-                        'updated_date_time': status.updated_date_time}
+                data = {'id': status.id, 'custom_amount': status.custom_amount,'description':status.description,'created_date_time':status.created_date_time,'updated_date_time':status.updated_date_time}
                 return Response(data)
             else:
                 return Response({'message': 'Status not found for the specified id'}, status=404)
         else:
-            data = Payment_gateways.objects.all().values()
+            data = CustomizablePrice.objects.all().values()
             return Response(data)
 
     def put(self, request, pk):
         data = request.data
-        payment_gateway_price = data.get('payment_gateway_price')
+        custom_amount = data.get('custom_amount')
         description = data.get('description')
         created_date_time_str = data.get('created_date_time')
         updated_date_time_str = data.get('updated_date_time')
 
         try:
-            payment_gateway_instance = Payment_gateways.objects.get(id=pk)
+            payment_gateway_instance = CustomizablePrice.objects.get(id=pk)
 
-            payment_gateway_instance.payment_gateway_price = payment_gateway_price
+            payment_gateway_instance.custom_amount = custom_amount
             payment_gateway_instance.description = description
             payment_gateway_instance.updated_date_time = datetime.now()
             payment_gateway_instance.save()
 
             return Response({'message': 'Payment gateway updated successfully'})
-        except Payment_gateways.DoesNotExist:
+        except CustomizablePrice.DoesNotExist:
             return Response({'message': 'Payment gateway ID not found'}, status=status.HTTP_404_NOT_FOUND)
 
 
