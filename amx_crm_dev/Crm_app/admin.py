@@ -142,8 +142,8 @@ class ModelAdmin(admin.ModelAdmin):
 
 @admin.register(Student)
 class ModelAdmin(admin.ModelAdmin):
-    list_display = ['id','student_name','student_age','student_mobile',
-                    'student_email','student_adhar','batch_type',
+    list_display = ['id','slot_id','student_name','student_age','student_mobile',
+                    'student_email','student_adhar',
                     'created_date_time','updated_date_time']
 
 
