@@ -12707,6 +12707,7 @@ class SlotListView(APIView):
         user_id = self.request.query_params.get('user_id')
         slot_date = self.request.query_params.get('slot_date')
         batch_type_id = self.request.query_params.get('batch_type_id')
+        batch_name = self.request.query_params.get('batch_name')
 
         slots = Slot.objects.all().order_by('-id')
 
@@ -12716,6 +12717,8 @@ class SlotListView(APIView):
             slots = slots.filter(slot_date=slot_date)
         if batch_type_id:
             slots = slots.filter(batch_type_id=batch_type_id)
+        if batch_name:
+            slots = slots.filter(batch_name=batch_name)
 
         serializer = SlotSerializer(slots, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
