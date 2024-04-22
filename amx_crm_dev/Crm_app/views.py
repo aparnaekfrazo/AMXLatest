@@ -3818,11 +3818,13 @@ class CustomerCreateAPIView(APIView):
 
         customers = customers.order_by('-id')
 
-        paginator = self.pagination_class()
-        result_page = paginator.paginate_queryset(customers, request)
-        serializer = CustomUserSerializer(result_page, many=True, context={'request': request})
-
-        return paginator.get_paginated_response(serializer.data)
+        # paginator = self.pagination_class()
+        # result_page = paginator.paginate_queryset(customers, request)
+        # serializer = CustomUserSerializer(result_page, many=True, context={'request': request})
+        #
+        # return paginator.get_paginated_response(serializer.data)
+        serializer = CustomUserSerializer(customers, many=True, context={'request': request})
+        return Response(serializer.data)
 
 
 class CustomerCategoryAPI(APIView):
