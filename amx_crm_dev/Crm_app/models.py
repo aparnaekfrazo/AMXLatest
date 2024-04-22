@@ -446,7 +446,7 @@ class Student(models.Model):
     student_age = models.IntegerField(null=True, blank=True)
     student_mobile = models.IntegerField(null=True, blank=True)
     student_email = models.EmailField(null=True, blank=True)
-    student_adhar = models.EmailField(null=True, blank=True)
+    student_adhar = models.IntegerField(null=True, blank=True)
     created_date_time = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     updated_date_time = models.DateTimeField(null=True, blank=True)
     def __str__(self):
