@@ -128,6 +128,7 @@ urlpatterns = [
     path('handle_payment_success/', handle_payment_success, name='handle_payment_success'),
     path('slots/', SlotListView.as_view(), name='slot-list'),
     path('slots-by-date/<int:user_id>/', UserSlotList.as_view(), name='user-slot-list'),
+    path('add-students/', StudentCreateAPIView.as_view(), name='Adding students to slot'),
 
 ]
 

@@ -12737,3 +12737,77 @@ class UserSlotList(APIView):
         slot_data = Slot.objects.filter(id__in=slot_ids).values('id', 'slot_date', 'created_date_time')
 
         return Response(slot_data)
+
+class StudentCreateAPIView(APIView):
+    def post(self, request, *args, **kwargs):
+        slot_id = request.data.get('slot_id')
+        students_data = request.data.get('students_lists', [])
+
+        # Retrieve the Slot instance
+        try:
+            slot_instance = Slot.objects.get(id=slot_id)
+        except Slot.DoesNotExist:
+            return Response({'message': 'Slot not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Validate unique mobile numbers, Aadhar numbers, and emails
+        mobile_numbers = set()
+        adhar_numbers = set()
+        emails = set()
+        duplicate_mobiles = []
+        duplicate_adhars = []
+        duplicate_emails = []
+
+        for student_data in students_data:
+            student_mobile = student_data.get('student_mobile')
+            student_adhar = student_data.get('student_adhar')
+            student_email = student_data.get('student_email')
+
+            if student_mobile in mobile_numbers:
+                duplicate_mobiles.append(student_mobile)
+            else:
+                mobile_numbers.add(student_mobile)
+
+            if student_adhar in adhar_numbers:
+                duplicate_adhars.append(student_adhar)
+            else:
+                adhar_numbers.add(student_adhar)
+
+            if student_email in emails:
+                duplicate_emails.append(student_email)
+            else:
+                emails.add(student_email)
+
+        if duplicate_mobiles or duplicate_adhars or duplicate_emails:
+            error_msg = ''
+            if duplicate_mobiles:
+                error_msg += f'Duplicate mobile numbers: {", ".join(duplicate_mobiles)}. '
+            if duplicate_adhars:
+                error_msg += f'Duplicate Aadhar numbers: {", ".join(duplicate_adhars)}. '
+            if duplicate_emails:
+                error_msg += f'Duplicate emails: {", ".join(duplicate_emails)}'
+            return Response({'message': error_msg}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Save students with the Slot instance
+        created_students = []
+        for student_data in students_data:
+            student_data['slot_id'] = slot_instance  # Pass the Slot instance instead of ID
+            student = Student.objects.create(**student_data)
+            created_students.append(student)
+
+        # Return created students data
+        response_data = []
+        for student in created_students:
+            student_info = {
+                'id': student.id,
+                'slot_id': student.slot_id.id,
+                'student_name': student.student_name,
+                'student_age': student.student_age,
+                'student_mobile': student.student_mobile,
+                'student_email': student.student_email,
+                'student_adhar': student.student_adhar,
+                'created_date_time': student.created_date_time,
+                'updated_date_time': student.updated_date_time
+            }
+            response_data.append(student_info)
+
+        return Response({'message': 'students added succesfully'}, status=status.HTTP_201_CREATED)

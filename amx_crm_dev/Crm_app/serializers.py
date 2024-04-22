@@ -155,3 +155,9 @@ class SlotSerializer(serializers.ModelSerializer):
 
     def get_partner_email(self, obj):
         return obj.user_id.email if obj.user_id else None
+
+class StudentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Student
+        fields = ['id', 'slot_id', 'student_name', 'student_age', 'student_mobile', 'student_email', 'student_adhar',
+                  'created_date_time', 'updated_date_time']
