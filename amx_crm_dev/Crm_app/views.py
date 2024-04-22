@@ -12738,6 +12738,44 @@ class UserSlotList(APIView):
 
         return Response(slot_data)
 
+from django.db.models import Min, Exists, OuterRef
+
+class SlotsWithStudents(APIView):
+    def get(self, request, user_id):
+        # Query slot dates with associated students for the given user ID
+        slots_with_students = Slot.objects.filter(user_id=user_id).annotate(has_students=Exists(Student.objects.filter(slot_id=OuterRef('id')))).filter(has_students=True).distinct()
+
+        # Restructure the data in the desired format
+        response_data = []
+        for slot in slots_with_students:
+            slot_info = {
+                'id': slot.id,
+                'slot_date': slot.slot_date,
+                'created_date_time': slot.created_date_time,
+                # Add any other slot details you want to include here
+            }
+            response_data.append(slot_info)
+
+        return Response(response_data)
+
+class SlotsWithoutStudents(APIView):
+    def get(self, request, user_id):
+        # Query slot dates without associated students for the given user ID
+        slots_without_students = Slot.objects.filter(user_id=user_id).annotate(has_students=Exists(Student.objects.filter(slot_id=OuterRef('id')))).filter(has_students=False).distinct()
+
+        # Restructure the data in the desired format
+        response_data = []
+        for slot in slots_without_students:
+            slot_info = {
+                'id': slot.id,
+                'slot_date': slot.slot_date,
+                'created_date_time': slot.created_date_time,
+                # Add any other slot details you want to include here
+            }
+            response_data.append(slot_info)
+
+        return Response(response_data)
+
 class StudentCreateAPIView(APIView):
     def post(self, request, *args, **kwargs):
         slot_id = request.data.get('slot_id')

@@ -137,7 +137,7 @@ class SlotOrderAdmin(admin.ModelAdmin):
                     'batch_name', 'slot_date', 'batch_size', 'batch_type']
 @admin.register(Slot)
 class ModelAdmin(admin.ModelAdmin):
-    list_display = ['id','batch_name','slot_date','batch_size','batch_type',
+    list_display = ['id','user_id','batch_name','slot_date','batch_size','batch_type',
                     'created_date_time','updated_date_time']
 
 @admin.register(Student)

@@ -128,6 +128,8 @@ urlpatterns = [
     path('handle_payment_success/', handle_payment_success, name='handle_payment_success'),
     path('slots/', SlotListView.as_view(), name='slot-list'),
     path('slots-by-date/<int:user_id>/', UserSlotList.as_view(), name='user-slot-list'),
+    path('slots-with-students/<int:user_id>/', SlotsWithStudents.as_view(), name='slots_with_students'),
+    path('slots-without-students/<int:user_id>/', SlotsWithoutStudents.as_view(), name='slots_without_students'),
     path('add-students/', StudentCreateAPIView.as_view(), name='Adding students to slot'),
 
 ]
