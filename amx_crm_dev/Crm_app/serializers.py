@@ -161,3 +161,36 @@ class StudentSerializer(serializers.ModelSerializer):
         model = Student
         fields = ['id', 'slot_id', 'student_name', 'student_age', 'student_mobile', 'student_email', 'student_adhar',
                   'created_date_time', 'updated_date_time']
+
+
+class SlotStudentSerializer(serializers.ModelSerializer):
+    partner_name = serializers.SerializerMethodField()
+    partner_mobile = serializers.SerializerMethodField()
+    partner_email = serializers.SerializerMethodField()
+    batch_type_name = serializers.SerializerMethodField()
+    student_lists = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Slot
+        fields = ['id', 'batch_name', 'slot_date', 'batch_size', 'batch_type',
+                  'user_id', 'partner_name', 'partner_mobile', 'partner_email',
+                  'created_date_time', 'updated_date_time', 'batch_type_name', 'student_lists']
+
+    def get_partner_name(self, obj):
+        return obj.user_id.first_name if obj.user_id else None
+
+    def get_partner_mobile(self, obj):
+        return obj.user_id.mobile_number if obj.user_id else None
+
+    def get_partner_email(self, obj):
+        return obj.user_id.email if obj.user_id else None
+
+    def get_batch_type_name(self, obj):
+        return obj.batch_type.name if obj.batch_type else None
+
+    def get_student_lists(self, obj):
+        # Get the students associated with the slot
+        students = Student.objects.filter(slot_id=obj.id)
+        # Serialize the students
+        serializer = StudentSerializer(students, many=True)
+        return serializer.data

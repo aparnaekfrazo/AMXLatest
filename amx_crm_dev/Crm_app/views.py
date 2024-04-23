@@ -12805,7 +12805,7 @@ class SlotsWithoutStudents(APIView):
 class StudentCreateAPIView(APIView):
     def post(self, request, *args, **kwargs):
         slot_id = request.data.get('slot_id')
-        students_data = request.data.get('students_lists', [])
+        students_data = request.data.get('student_lists', [])
 
         # Retrieve the Slot instance
         try:
@@ -12875,3 +12875,32 @@ class StudentCreateAPIView(APIView):
             response_data.append(student_info)
 
         return Response({'message': 'students added succesfully'}, status=status.HTTP_201_CREATED)
+
+class SlotListStudents(APIView):
+    def get(self, request, user_id):
+        # Check if the user is a Super_admin
+        is_super_admin = CustomUser.objects.filter(id=user_id, role_id__role_name="Super_admin").exists()
+
+        # If the user is a Super_admin, return all slots
+        if is_super_admin:
+            slots = Slot.objects.all()
+        else:
+            # Otherwise, return slots created by the user
+            slots = Slot.objects.filter(user_id=user_id)
+
+        # Filter slots by slot_date and batch_name if provided in query parameters
+        slot_date = request.query_params.get('slot_date')
+        batch_name = request.query_params.get('batch_name')
+
+        if slot_date:
+            slots = slots.filter(slot_date=slot_date)
+        if batch_name:
+            slots = slots.filter(batch_name=batch_name)
+
+        # Filter slots that have associated students
+        slots_with_students = slots.filter(student__isnull=False).distinct()
+
+        # Serialize the queryset
+        serializer = SlotStudentSerializer(slots_with_students, many=True)
+
+        return Response(serializer.data)
