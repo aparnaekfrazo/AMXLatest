@@ -12725,7 +12725,7 @@ class SlotListView(APIView):
         serializer = SlotSerializer(slots, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-from django.db.models import Min
+from django.db.models import Min, Exists, OuterRef
 
 class UserSlotList(APIView):
     def get(self, request, user_id):
@@ -12740,20 +12740,31 @@ class UserSlotList(APIView):
 
         return Response(slot_data)
 
-from django.db.models import Min, Exists, OuterRef
-
 class SlotsWithStudents(APIView):
     def get(self, request, user_id):
         # Query slot dates with associated students for the given user ID
-        slots_with_students = Slot.objects.filter(user_id=user_id).annotate(has_students=Exists(Student.objects.filter(slot_id=OuterRef('id')))).filter(has_students=True).distinct()
+        slots_with_students = Slot.objects.filter(user_id=user_id).annotate(has_students=Exists(Student.objects.filter(slot_id=OuterRef('id')))).filter(has_students=True)
+
+        # Get the first created_date_time for each slot_date
+        slots_with_students = slots_with_students.values('slot_date').annotate(first_created_date=Min('created_date_time'), id=Min('id')).order_by('first_created_date')
+
+        # Extract unique slot dates with the first created slot date and id
+        unique_slot_dates = {}
+        for slot in slots_with_students:
+            slot_date = slot['slot_date']
+            if slot_date not in unique_slot_dates:
+                unique_slot_dates[slot_date] = {
+                    'id': slot['id'],
+                    'created_date_time': slot['first_created_date']
+                }
 
         # Restructure the data in the desired format
         response_data = []
-        for slot in slots_with_students:
+        for slot_date, info in unique_slot_dates.items():
             slot_info = {
-                'id': slot.id,
-                'slot_date': slot.slot_date,
-                'created_date_time': slot.created_date_time,
+                'id': info['id'],
+                'slot_date': slot_date,
+                'created_date_time': info['created_date_time'],
                 # Add any other slot details you want to include here
             }
             response_data.append(slot_info)
@@ -12763,15 +12774,28 @@ class SlotsWithStudents(APIView):
 class SlotsWithoutStudents(APIView):
     def get(self, request, user_id):
         # Query slot dates without associated students for the given user ID
-        slots_without_students = Slot.objects.filter(user_id=user_id).annotate(has_students=Exists(Student.objects.filter(slot_id=OuterRef('id')))).filter(has_students=False).distinct()
+        slots_without_students = Slot.objects.filter(user_id=user_id).annotate(has_students=Exists(Student.objects.filter(slot_id=OuterRef('id')))).filter(has_students=False)
+
+        # Get the minimum created_date_time and id for each slot_date
+        slots_without_students = slots_without_students.values('slot_date').annotate(min_created_date=Min('created_date_time'), id=Min('id')).order_by('min_created_date')
+
+        # Extract unique slot dates with the first created slot date and id
+        unique_slot_dates = {}
+        for slot in slots_without_students:
+            slot_date = slot['slot_date']
+            if slot_date not in unique_slot_dates:
+                unique_slot_dates[slot_date] = {
+                    'id': slot['id'],
+                    'created_date_time': slot['min_created_date']
+                }
 
         # Restructure the data in the desired format
         response_data = []
-        for slot in slots_without_students:
+        for slot_date, info in unique_slot_dates.items():
             slot_info = {
-                'id': slot.id,
-                'slot_date': slot.slot_date,
-                'created_date_time': slot.created_date_time,
+                'id': info['id'],
+                'slot_date': slot_date,
+                'created_date_time': info['created_date_time'],
                 # Add any other slot details you want to include here
             }
             response_data.append(slot_info)
