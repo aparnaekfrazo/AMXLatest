@@ -12850,6 +12850,26 @@ class StudentCreateAPIView(APIView):
             if duplicate_emails:
                 error_msg += f'Duplicate emails: {", ".join(duplicate_emails)}'
             return Response({'message': error_msg}, status=status.HTTP_400_BAD_REQUEST)
+        #check the data in table for the same slotdate and batch name
+        for student_data in students_data:
+            student_adhar = student_data.get('student_adhar')
+            student_email = student_data.get('student_email')
+            student_mobile = student_data.get('student_mobile')
+
+            if Student.objects.filter(student_adhar=student_adhar, slot_id__slot_date=slot_instance.slot_date,
+                                      slot_id__batch_name=slot_instance.batch_name).exists():
+                error_msg = f'Duplicate Aadhar number found for the same batch name and slot date.'
+                return Response({'message': error_msg}, status=status.HTTP_400_BAD_REQUEST)
+
+            if Student.objects.filter(student_email=student_email, slot_id__slot_date=slot_instance.slot_date,
+                                      slot_id__batch_name=slot_instance.batch_name).exists():
+                error_msg = f'Duplicate email found for the same batch name and slot date.'
+                return Response({'message': error_msg}, status=status.HTTP_400_BAD_REQUEST)
+
+            if Student.objects.filter(student_mobile=student_mobile, slot_id__slot_date=slot_instance.slot_date,
+                                      slot_id__batch_name=slot_instance.batch_name).exists():
+                error_msg = f'Duplicate phone number found for the same batch name and slot date.'
+                return Response({'message': error_msg}, status=status.HTTP_400_BAD_REQUEST)
 
         # Save students with the Slot instance
         created_students = []
