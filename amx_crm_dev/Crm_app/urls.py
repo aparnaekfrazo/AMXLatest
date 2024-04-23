@@ -132,6 +132,7 @@ urlpatterns = [
     path('slots-without-students/<int:user_id>/', SlotsWithoutStudents.as_view(), name='slots_without_students'),
     path('add-students/', StudentCreateAPIView.as_view(), name='Adding students to slot'),
     path('slots-students/<int:user_id>/', SlotListStudents.as_view(), name='filter and get of slots with students'),
+    path('slot-by-id/<int:slot_id>/', SlotDetailsAPIView.as_view(), name='slot_details'),
 
 ]
 

@@ -12924,3 +12924,25 @@ class SlotListStudents(APIView):
         serializer = SlotStudentSerializer(slots_with_students, many=True)
 
         return Response(serializer.data)
+
+
+class SlotDetailsAPIView(APIView):
+    def get(self, request, slot_id):
+        try:
+            slot = Slot.objects.prefetch_related('student_set').get(id=slot_id)
+        except Slot.DoesNotExist:
+            return Response({'message': 'Slot not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        slot_serializer = SlotSerializer(slot)
+
+        students_data = []
+        for student in slot.student_set.all():
+            student_serializer = StudentSerializer(student)
+            students_data.append(student_serializer.data)
+
+        response_data = {
+            'slot_details': slot_serializer.data,
+            'students_details': students_data
+        }
+
+        return Response(response_data)
