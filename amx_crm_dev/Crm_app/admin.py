@@ -146,4 +146,14 @@ class ModelAdmin(admin.ModelAdmin):
                     'student_email','student_adhar',
                     'created_date_time','updated_date_time']
 
+@admin.register(SlotStudentRelation)
+class ModelAdmin(admin.ModelAdmin):
+    list_display = ['id','slot','slot_id','student','student_id','created_date_time']
+
+    def slot_id(self, obj):
+        return obj.slot.id if obj.slot else None
+
+    def student_id(self, obj):
+        return obj.student.id if obj.student else None
+
 

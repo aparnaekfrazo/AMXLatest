@@ -454,3 +454,11 @@ class Student(models.Model):
     def __str__(self):
         return str(self.student_name)
 
+class SlotStudentRelation(models.Model):
+    slot = models.ForeignKey(Slot, on_delete=models.CASCADE, null=True, blank=True)
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, null=True, blank=True)
+    created_date_time = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.slot.batch_name} - {self.student.student_name}"
+

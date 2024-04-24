@@ -12822,6 +12822,10 @@ class StudentCreateAPIView(APIView):
         duplicate_emails = []
 
         for student_data in students_data:
+            student_id = student_data.get('id', None)
+            if student_id == "":
+                student_id = None  # Treat empty string as None for validation purposes
+
             student_mobile = student_data.get('student_mobile')
             student_adhar = student_data.get('student_adhar')
             student_email = student_data.get('student_email')
@@ -12841,6 +12845,10 @@ class StudentCreateAPIView(APIView):
             else:
                 emails.add(student_email)
 
+            # Validate ID
+            if student_id is not None and Student.objects.filter(id=student_id).exists():
+                return Response({'message': f'Duplicate student ID found: {student_id}'}, status=status.HTTP_400_BAD_REQUEST)
+
         if duplicate_mobiles or duplicate_adhars or duplicate_emails:
             error_msg = ''
             if duplicate_mobiles:
@@ -12850,7 +12858,8 @@ class StudentCreateAPIView(APIView):
             if duplicate_emails:
                 error_msg += f'Duplicate emails: {", ".join(duplicate_emails)}'
             return Response({'message': error_msg}, status=status.HTTP_400_BAD_REQUEST)
-        #check the data in table for the same slotdate and batch name
+
+        # Check the data in the table for the same slot date and batch name
         for student_data in students_data:
             student_adhar = student_data.get('student_adhar')
             student_email = student_data.get('student_email')
@@ -12875,8 +12884,14 @@ class StudentCreateAPIView(APIView):
         created_students = []
         for student_data in students_data:
             student_data['slot_id'] = slot_instance  # Pass the Slot instance instead of ID
+
+            # Exclude the 'id' field if it's an empty string
+            if student_data.get('id') == "":
+                student_data.pop('id')
+
             student = Student.objects.create(**student_data)
             created_students.append(student)
+            SlotStudentRelation.objects.create(slot=slot_instance, student=student)
 
         # Return created students data
         response_data = []
@@ -12894,7 +12909,123 @@ class StudentCreateAPIView(APIView):
             }
             response_data.append(student_info)
 
-        return Response({'message': 'students added succesfully'}, status=status.HTTP_201_CREATED)
+        return Response({'message': 'Students added successfully', 'students': response_data}, status=status.HTTP_201_CREATED)
+
+    def put(self, request, *args, **kwargs):
+        slot_id = request.data.get('slot_id')
+        students_data = request.data.get('student_lists', [])
+
+        # Retrieve the Slot instance
+        try:
+            slot_instance = Slot.objects.get(id=slot_id)
+        except Slot.DoesNotExist:
+            return Response({'message': 'Slot not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Validate unique mobile numbers, Aadhar numbers, and emails within payload
+        mobile_numbers = set()
+        adhar_numbers = set()
+        emails = set()
+        for student_data in students_data:
+            student_mobile = student_data.get('student_mobile')
+            student_adhar = student_data.get('student_adhar')
+            student_email = student_data.get('student_email')
+
+            if student_mobile in mobile_numbers or student_mobile == "":
+                return Response({'message': 'Duplicate or empty mobile numbers found in payload'},
+                                status=status.HTTP_400_BAD_REQUEST)
+            mobile_numbers.add(student_mobile)
+
+            if student_adhar in adhar_numbers or student_adhar == "":
+                return Response({'message': 'Duplicate or empty Aadhar numbers found in payload'},
+                                status=status.HTTP_400_BAD_REQUEST)
+            adhar_numbers.add(student_adhar)
+
+            if student_email in emails or student_email == "":
+                return Response({'message': 'Duplicate or empty emails found in payload'},
+                                status=status.HTTP_400_BAD_REQUEST)
+            emails.add(student_email)
+
+        # Check uniqueness within the database for the slot date
+        for student_data in students_data:
+            student_adhar = student_data.get('student_adhar')
+            student_email = student_data.get('student_email')
+            student_mobile = student_data.get('student_mobile')
+
+            student_id = student_data.get('id')
+
+            # Check if id is empty
+            if student_id == "":
+                # Check if the student details already exist for the same slot date
+                if Student.objects.filter(
+                        Q(student_adhar=student_adhar) | Q(student_email=student_email) | Q(
+                            student_mobile=student_mobile),
+                        slot_id__slot_date=slot_instance.slot_date
+                ).exists():
+                    return Response({'message': 'Duplicate student details found for the same slot date'},
+                                    status=status.HTTP_400_BAD_REQUEST)
+            else:
+                if Student.objects.filter(student_adhar=student_adhar, slot_id__slot_date=slot_instance.slot_date).exclude(
+                        id=student_id).exists():
+                    return Response({'message': 'Duplicate Aadhar number found for the same slot date'},
+                                    status=status.HTTP_400_BAD_REQUEST)
+
+                if Student.objects.filter(student_email=student_email, slot_id__slot_date=slot_instance.slot_date).exclude(
+                        id=student_id).exists():
+                    return Response({'message': 'Duplicate email found for the same slot date'},
+                                    status=status.HTTP_400_BAD_REQUEST)
+
+                if Student.objects.filter(student_mobile=student_mobile,
+                                          slot_id__slot_date=slot_instance.slot_date).exclude(
+                        id=student_id).exists():
+                    return Response({'message': 'Duplicate phone number found for the same slot date'},
+                                    status=status.HTTP_400_BAD_REQUEST)
+
+        # Update existing students and add new students
+        created_students = []
+        for student_data in students_data:
+            student_id = student_data.get('id')
+            if student_id == "":  # If id is an empty string, create a new student record
+                student_data['slot_id'] = slot_instance
+                student_data['updated_date_time'] = timezone.now()  # Set updated_date_time for new student
+                student_data.pop('id')  # Remove the 'id' field from the data
+                student = Student.objects.create(**student_data)
+                created_students.append(student)
+                # Create SlotStudentRelation for new student
+                SlotStudentRelation.objects.create(slot=slot_instance, student=student)
+            else:
+                try:
+                    student = Student.objects.get(id=student_id, slot_id=slot_instance)
+                    student.student_name = student_data.get('student_name', student.student_name)
+                    student.student_age = student_data.get('student_age', student.student_age)
+                    student.student_mobile = student_data.get('student_mobile', student.student_mobile)
+                    student.student_email = student_data.get('student_email', student.student_email)
+                    student.student_adhar = student_data.get('student_adhar', student.student_adhar)
+                    student.updated_date_time = timezone.now()  # Update updated_date_time automatically
+                    student.save()
+                    created_students.append(student)
+                except Student.DoesNotExist:
+                    return Response({'message': f'Student with id {student_id} not found in this slot'},
+                                    status=status.HTTP_404_NOT_FOUND)
+
+        # Return response
+        response_data = []
+        for student in created_students:
+            student_info = {
+                'id': student.id,
+                'slot_id': student.slot_id.id,
+                'student_name': student.student_name,
+                'student_age': student.student_age,
+                'student_mobile': student.student_mobile,
+                'student_email': student.student_email,
+                'student_adhar': student.student_adhar,
+                'created_date_time': student.created_date_time,
+                'updated_date_time': student.updated_date_time
+            }
+            response_data.append(student_info)
+
+        return Response({'message': 'Students updated and added successfully', 'students': response_data},
+                        status=status.HTTP_200_OK)
+
 
 class SlotListStudents(APIView):
     def get(self, request, user_id):
