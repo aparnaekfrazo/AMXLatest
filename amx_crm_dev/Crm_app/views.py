@@ -13023,7 +13023,7 @@ class StudentCreateAPIView(APIView):
             }
             response_data.append(student_info)
 
-        return Response({'message': 'Students updated and added successfully', 'students': response_data},
+        return Response({'message': 'Students updated successfully', 'students': response_data},
                         status=status.HTTP_200_OK)
 
 
