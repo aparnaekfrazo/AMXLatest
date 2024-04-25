@@ -134,7 +134,7 @@ urlpatterns = [
     path('update-students/', StudentCreateAPIView.as_view(), name='update_students'),
     path('slots-students/<int:user_id>/', SlotListStudents.as_view(), name='filter and get of slots with students'),
     path('slot-by-id/<int:slot_id>/', SlotDetailsAPIView.as_view(), name='slot_details'),
-    path('get-swapping-datas/<int:slot_id>/', SlotsWithSameBatchSizeAPIView.as_view(),
+    path('get-datas-to-swap/<int:slot_id>/', SlotsWithSameBatchSizeAPIView.as_view(),
          name='slots_with_same_batch_size'),
 
 ]
