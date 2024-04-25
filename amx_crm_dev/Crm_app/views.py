@@ -12767,6 +12767,14 @@ class SlotsWithStudents(APIView):
                 'created_date_time': info['created_date_time'],
                 # Add any other slot details you want to include here
             }
+
+            # Get the slot instance
+            slot_instance = Slot.objects.get(id=info['id'])
+            # Create a serializer instance with the slot instance
+            serializer = SlotStudentSerializer(slot_instance)
+            # Validate and add slot_status to the response
+            slot_info['slot_status'] = serializer.get_slot_status(slot_instance)
+
             response_data.append(slot_info)
 
         return Response(response_data)
@@ -12798,6 +12806,14 @@ class SlotsWithoutStudents(APIView):
                 'created_date_time': info['created_date_time'],
                 # Add any other slot details you want to include here
             }
+
+            # Get the slot instance
+            slot_instance = Slot.objects.get(id=info['id'])
+            # Create a serializer instance with the slot instance
+            serializer = SlotStudentSerializer(slot_instance)
+            # Validate and add slot_status to the response
+            slot_info['slot_status'] = serializer.get_slot_status(slot_instance)
+
             response_data.append(slot_info)
 
         return Response(response_data)
