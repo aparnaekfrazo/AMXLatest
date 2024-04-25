@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import *
-
+from datetime import datetime, timedelta
 
 class RoleSerializer(serializers.ModelSerializer):
     class Meta:
@@ -137,12 +137,14 @@ class SlotSerializer(serializers.ModelSerializer):
     partner_name = serializers.SerializerMethodField()
     partner_mobile = serializers.SerializerMethodField()
     partner_email = serializers.SerializerMethodField()
+    slot_status = serializers.SerializerMethodField()
+
 
     class Meta:
         model = Slot
         fields = ['id','batch_name', 'slot_date', 'batch_size', 'batch_type', 'batch_type_name',
                   'user_id', 'partner_name', 'partner_mobile', 'partner_email',
-                  'created_date_time', 'updated_date_time']
+                  'created_date_time', 'updated_date_time','slot_status']
 
     def get_batch_type_name(self, obj):
         return obj.batch_type.name if obj.batch_type else None
@@ -155,6 +157,17 @@ class SlotSerializer(serializers.ModelSerializer):
 
     def get_partner_email(self, obj):
         return obj.user_id.email if obj.user_id else None
+
+    def get_slot_status(self, obj):
+        # Get the current date
+        current_date = datetime.now().date()
+        # Calculate the threshold date (10 days before slot_date)
+        threshold_date = obj.slot_date - timedelta(days=10)
+        # Check if the current date is before the threshold date
+        if current_date <= threshold_date:
+            return True
+        else:
+            return False
 
 class StudentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -169,12 +182,14 @@ class SlotStudentSerializer(serializers.ModelSerializer):
     partner_email = serializers.SerializerMethodField()
     batch_type_name = serializers.SerializerMethodField()
     student_lists = serializers.SerializerMethodField()
+    slot_status = serializers.SerializerMethodField()
 
     class Meta:
         model = Slot
         fields = ['id', 'batch_name', 'slot_date', 'batch_size', 'batch_type',
                   'user_id', 'partner_name', 'partner_mobile', 'partner_email',
-                  'created_date_time', 'updated_date_time', 'batch_type_name', 'student_lists']
+                  'created_date_time', 'updated_date_time', 'batch_type_name',
+                  'student_lists', 'slot_status']
 
     def get_partner_name(self, obj):
         return obj.user_id.first_name if obj.user_id else None
@@ -194,3 +209,14 @@ class SlotStudentSerializer(serializers.ModelSerializer):
         # Serialize the students
         serializer = StudentSerializer(students, many=True)
         return serializer.data
+
+    def get_slot_status(self, obj):
+        # Get the current date
+        current_date = datetime.now().date()
+        # Calculate the threshold date (10 days before slot_date)
+        threshold_date = obj.slot_date - timedelta(days=10)
+        # Check if the current date is before the threshold date
+        if current_date <= threshold_date:
+            return True
+        else:
+            return False

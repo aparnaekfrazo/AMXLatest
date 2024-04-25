@@ -13077,3 +13077,26 @@ class SlotDetailsAPIView(APIView):
         }
 
         return Response(response_data)
+
+class SlotsWithSameBatchSizeAPIView(APIView):
+    def get(self, request, slot_id):
+        try:
+            # Retrieve the slot instance
+            slot_instance = Slot.objects.get(id=slot_id)
+
+            # Get other slots with the same batch size and created by the same user
+            other_slots = Slot.objects.filter(batch_size=slot_instance.batch_size, user_id=slot_instance.user_id).exclude(id=slot_id)
+            print(other_slots,"oooooooooooooo")
+
+            fully_filled_slots = []
+            for other_slot in other_slots:
+                # Check if the other slot has the same number of students as its batch size
+                if other_slot.student_set.count() == other_slot.batch_size:
+                    fully_filled_slots.append(other_slot)
+
+            # Serialize the slot instances
+            serializer = SlotStudentSerializer(fully_filled_slots, many=True)
+
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Slot.DoesNotExist:
+            return Response({'message': 'Slot not found'}, status=status.HTTP_404_NOT_FOUND)
