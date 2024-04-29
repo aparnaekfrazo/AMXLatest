@@ -136,6 +136,7 @@ urlpatterns = [
     path('slot-by-id/<int:slot_id>/', SlotDetailsAPIView.as_view(), name='slot_details'),
     path('get-datas-to-swap/<int:slot_id>/', SlotsWithSameBatchSizeAPIView.as_view(),
          name='slots_with_same_batch_size'),
+    path('swap/', SlotSwapAPIView.as_view(), name='slot-swap'),
 
 ]
 

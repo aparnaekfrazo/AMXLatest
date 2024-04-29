@@ -13102,7 +13102,12 @@ class SlotsWithSameBatchSizeAPIView(APIView):
 
             # Get other slots with the same batch size and created by the same user
             other_slots = Slot.objects.filter(batch_size=slot_instance.batch_size, user_id=slot_instance.user_id).exclude(id=slot_id)
-            print(other_slots,"oooooooooooooo")
+
+            # Filter slots based on Batchtype
+            if slot_instance.batch_type.name == 'Individual':
+                other_slots = other_slots.filter(batch_type__name='Individual')
+            elif slot_instance.batch_type.name == 'Group':
+                other_slots = other_slots.filter(batch_type__name='Group')
 
             fully_filled_slots = []
             for other_slot in other_slots:
@@ -13116,3 +13121,57 @@ class SlotsWithSameBatchSizeAPIView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Slot.DoesNotExist:
             return Response({'message': 'Slot not found'}, status=status.HTTP_404_NOT_FOUND)
+
+class SlotSwapAPIView(APIView):
+    def post(self, request):
+        slot1_id = request.data.get('slot1_id')
+        slot2_id = request.data.get('slot2_id')
+
+        try:
+            # Retrieve the slots to be swapped
+            slot1 = Slot.objects.get(id=slot1_id)
+            slot2 = Slot.objects.get(id=slot2_id)
+
+            # Get the students associated with each slot
+            students_slot1 = Student.objects.filter(slot_id=slot1)
+            students_slot2 = Student.objects.filter(slot_id=slot2)
+
+            print("Students in slot 1 before swap:", students_slot1)
+            print("Students in slot 2 before swap:", students_slot2)
+
+            # Create a dictionary to store old and new slot mappings for each student
+            students_mapping = {}
+
+
+            # Map students from slot 1 to slot 2 and vice versa
+            for student in students_slot1:
+                students_mapping[student.id] = slot2
+
+            for student in students_slot2:
+                students_mapping[student.id] = slot1
+
+            # Update the slot_id for each student
+            for student_id, new_slot in students_mapping.items():
+                student = Student.objects.get(id=student_id)
+                print(f"Moving student {student} to slot {new_slot}")
+                old_slot = student.slot_id
+                student.slot_id = new_slot
+                student.save()
+
+                if old_slot != new_slot:
+                    try:
+                        relation = SlotStudentRelation.objects.get(slot=old_slot, student=student)
+                        relation.slot = new_slot
+                        relation.save()
+                    except ObjectDoesNotExist:
+                        print(f"SlotStudentRelation does not exist for student {student} and slot {old_slot}")
+            # Check if the students have been swapped successfully
+            students_slot1 = Student.objects.filter(slot_id=slot1)
+            students_slot2 = Student.objects.filter(slot_id=slot2)
+            print("Students in slot 1 after swap:", students_slot1)
+            print("Students in slot 2 after swap:", students_slot2)
+
+            return Response({'message': 'Students swapped successfully'}, status=status.HTTP_200_OK)
+
+        except Slot.DoesNotExist:
+            return Response({'message': 'One or both slots not found'}, status=status.HTTP_404_NOT_FOUND)
