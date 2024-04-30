@@ -377,7 +377,12 @@ class TransportationDetails(models.Model):
     created_date_time = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     updated_date_time = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     
-
+class Batchtype(models.Model):
+    name = models.CharField(max_length=50,null=True, blank=True)
+    created_date_time = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    updated_date_time = models.DateTimeField(null=True, blank=True)
+    def __str__(self):
+        return str(self.name)
 
 class Batchsize(models.Model):
     minimum = models.IntegerField(null=True, blank=True)
@@ -385,15 +390,9 @@ class Batchsize(models.Model):
     description = models.TextField(null=True, blank=True)
     created_date_time = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     updated_date_time = models.DateTimeField(null=True, blank=True)
+    batch_type = models.ForeignKey(Batchtype, on_delete=models.CASCADE, null=True, blank=True)
     def __str__(self):
         return str(self.minimum)
-
-class Batchtype(models.Model):
-    name = models.CharField(max_length=50,null=True, blank=True)
-    created_date_time = models.DateTimeField(auto_now_add=True, null=True, blank=True)
-    updated_date_time = models.DateTimeField(null=True, blank=True)
-    def __str__(self):
-        return str(self.name)
 
 class SlotStatus(models.Model):
     slot_status = models.CharField(max_length=50,null=True, blank=True)
@@ -462,4 +461,14 @@ class SlotStudentRelation(models.Model):
 
     def __str__(self):
         return f"{self.slot.batch_name} - {self.student.student_name}"
+
+class PayUrl(models.Model):
+    payment_link_price = models.FloatField(null=True, blank=True)
+    batch_type = models.ForeignKey(Batchtype, on_delete=models.PROTECT, null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
+    created_date_time = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    updated_date_time = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return str(self.payment_link_price)
 

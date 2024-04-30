@@ -116,7 +116,7 @@ class ModelAdmin(admin.ModelAdmin):
     
 @admin.register(Batchsize)
 class ModelAdmin(admin.ModelAdmin):
-    list_display = ['id','minimum','maximum','description','created_date_time','updated_date_time']
+    list_display = ['id','minimum','maximum','description','batch_type','created_date_time','updated_date_time']
 
 @admin.register(Batchtype)
 class ModelAdmin(admin.ModelAdmin):
@@ -155,5 +155,10 @@ class ModelAdmin(admin.ModelAdmin):
 
     def student_id(self, obj):
         return obj.student.id if obj.student else None
+
+@admin.register(PayUrl)
+class ModelAdmin(admin.ModelAdmin):
+    list_display = ['id','payment_link_price','batch_type','description',
+                    'created_date_time','updated_date_time']
 
 

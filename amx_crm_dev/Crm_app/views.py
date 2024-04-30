@@ -12322,6 +12322,7 @@ class BatchSizeAPI(APIView):
                     'minimum': batch_size.minimum,
                     'maximum': batch_size.maximum,
                     'description': batch_size.description,
+                    'batch_type': batch_size.batch_type.id if batch_size.batch_type else None,
                     'created_date_time': batch_size.created_date_time,
                     'updated_date_time': batch_size.updated_date_time
                 }
@@ -12337,6 +12338,7 @@ class BatchSizeAPI(APIView):
                     'minimum': batch_size.minimum,
                     'maximum': batch_size.maximum,
                     'description': batch_size.description,
+                    'batch_type': batch_size.batch_type.id if batch_size.batch_type else None,
                     'created_date_time': batch_size.created_date_time,
                     'updated_date_time': batch_size.updated_date_time
                 })
@@ -12346,7 +12348,19 @@ class BatchSizeAPI(APIView):
         minimum = request.data.get('minimum', None)
         maximum = request.data.get('maximum', None)
         description = request.data.get('description', None)
-        batch_size = Batchsize(minimum=minimum, maximum=maximum, description=description)
+        batch_type_id = request.data.get('batch_type', None)  # Add this line to get batch_type_id
+
+        try:
+            batch_type = Batchtype.objects.get(pk=batch_type_id)
+        except Batchtype.DoesNotExist:
+            return Response({'message': 'BatchType not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        if Batchsize.objects.filter(batch_type=batch_type).exists():
+            return Response({'message': 'BatchSize with this BatchType already exists'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        batch_type = Batchtype.objects.get(pk=batch_type_id) if batch_type_id else None
+        batch_size = Batchsize(minimum=minimum, maximum=maximum, description=description,batch_type=batch_type)
         batch_size.save()
         return Response({'message': 'BatchSize created successfully'}, status=status.HTTP_201_CREATED)
 
@@ -12359,9 +12373,23 @@ class BatchSizeAPI(APIView):
         minimum = request.data.get('minimum', batch_size.minimum)
         maximum = request.data.get('maximum', batch_size.maximum)
         description = request.data.get('description', batch_size.description)
+        batch_type_id = request.data.get('batch_type', None)  # Add this line to get batch_type_id
+
+        try:
+            batch_type = Batchtype.objects.get(pk=batch_type_id)
+        except Batchtype.DoesNotExist:
+            return Response({'message': 'BatchType not found'}, status=status.HTTP_404_NOT_FOUND)
+
+            # Check if a Batchsize with the same batch_type already exists (excluding the current Batchsize)
+        if Batchsize.objects.filter(batch_type=batch_type).exclude(id=pk).exists():
+            return Response({'message': 'BatchSize with this BatchType already exists'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        batch_type = Batchtype.objects.get(pk=batch_type_id) if batch_type_id else None
         batch_size.minimum = minimum
         batch_size.maximum = maximum
         batch_size.description = description
+        batch_size.batch_type = batch_type
         batch_size.updated_date_time = datetime.now()
 
         batch_size.save()
@@ -13175,3 +13203,90 @@ class SlotSwapAPIView(APIView):
 
         except Slot.DoesNotExist:
             return Response({'message': 'One or both slots not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class PayUrlAPI(APIView):
+    def get(self, request, pk=None):
+        if pk:
+            try:
+                pay_url = PayUrl.objects.get(pk=pk)
+                data = {
+                    'id': pay_url.id,
+                    'payment_link_price': pay_url.payment_link_price,
+                    'batch_type': pay_url.batch_type.id if pay_url.batch_type else None,
+                    'description': pay_url.description,
+                    'created_date_time': pay_url.created_date_time,
+                    'updated_date_time': pay_url.updated_date_time
+                }
+                return JsonResponse(data)
+            except PayUrl.DoesNotExist:
+                return JsonResponse({'message': 'PayUrl not found'}, status=404)
+        else:
+            pay_urls = PayUrl.objects.all()
+            data = []
+            for pay_url in pay_urls:
+                data.append({
+                    'id': pay_url.id,
+                    'payment_link_price': pay_url.payment_link_price,
+                    'batch_type': pay_url.batch_type.id if pay_url.batch_type else None,
+                    'description': pay_url.description,
+                    'created_date_time': pay_url.created_date_time,
+                    'updated_date_time': pay_url.updated_date_time
+                })
+            return JsonResponse(data, safe=False)
+
+    def post(self, request):
+        payment_link_price = request.data.get('payment_link_price')
+        batch_type_id = request.data.get('batch_type')
+        description = request.data.get('description')
+
+        # Check if the batch type exists
+        try:
+            batch_type = Batchtype.objects.get(pk=batch_type_id)
+        except Batchtype.DoesNotExist:
+            return JsonResponse({'message': 'BatchType not found'}, status=400)
+
+        # Check if the batch type is already associated with a PayUrl
+        if PayUrl.objects.filter(batch_type=batch_type).exists():
+            return JsonResponse({'message': 'BatchType already associated with a PayUrl'}, status=400)
+
+        pay_url = PayUrl(payment_link_price=payment_link_price,
+                         batch_type=batch_type,
+                         description=description)
+        pay_url.save()
+        return JsonResponse({'message': 'PayUrl created successfully'}, status=201)
+
+    def put(self, request, pk):
+        try:
+            pay_url = PayUrl.objects.get(pk=pk)
+        except PayUrl.DoesNotExist:
+            return JsonResponse({'message': 'PayUrl not found'}, status=404)
+
+        payment_link_price = request.data.get('payment_link_price', pay_url.payment_link_price)
+        batch_type_id = request.data.get('batch_type', pay_url.batch_type_id)
+        description = request.data.get('description', pay_url.description)
+
+        # Check if the batch type exists
+        try:
+            batch_type = Batchtype.objects.get(pk=batch_type_id)
+        except Batchtype.DoesNotExist:
+            return JsonResponse({'message': 'BatchType not found'}, status=400)
+
+        # Check if the batch type is already associated with another PayUrl
+        if PayUrl.objects.exclude(id=pk).filter(batch_type=batch_type).exists():
+            return JsonResponse({'message': 'BatchType already associated with another PayUrl'}, status=400)
+
+        pay_url.payment_link_price = payment_link_price
+        pay_url.batch_type = batch_type
+        pay_url.description = description
+        pay_url.updated_date_time = datetime.now()
+        pay_url.save()
+        return JsonResponse({'message': 'PayUrl updated successfully'})
+
+    def delete(self, request, pk):
+        try:
+            pay_url = PayUrl.objects.get(pk=pk)
+            pay_url.delete()
+            return JsonResponse({'message': 'PayUrl deleted successfully'})
+        except PayUrl.DoesNotExist:
+            return JsonResponse({'message': 'PayUrl not found'}, status=404)

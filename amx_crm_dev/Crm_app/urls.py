@@ -137,6 +137,8 @@ urlpatterns = [
     path('get-datas-to-swap/<int:slot_id>/', SlotsWithSameBatchSizeAPIView.as_view(),
          name='slots_with_same_batch_size'),
     path('swap/', SlotSwapAPIView.as_view(), name='slot-swap'),
+    path('payurl/', PayUrlAPI.as_view(), name='payurl_list'),
+    path('payurl/<int:pk>/', PayUrlAPI.as_view(), name='payurl_detail'),
 
 ]
 
