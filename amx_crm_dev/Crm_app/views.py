@@ -13253,6 +13253,7 @@ class PayUrlAPI(APIView):
         pay_url = PayUrl(payment_link_price=payment_link_price,
                          batch_type=batch_type,
                          description=description)
+        pay_url.updated_date_time = datetime.now()
         pay_url.save()
         return JsonResponse({'message': 'PayUrl created successfully'}, status=201)
 
