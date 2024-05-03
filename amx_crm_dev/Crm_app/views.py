@@ -13070,6 +13070,41 @@ class StudentCreateAPIView(APIView):
         return Response({'message': 'Students updated successfully', 'students': response_data},
                         status=status.HTTP_200_OK)
 
+    def delete(self, request):
+        slot_id = request.data.get('slot_id')
+        user_id = request.data.get('user_id')
+        student_ids = request.data.get('student_ids', [])
+
+        try:
+            # Retrieve the Slot instance
+            slot_instance = Slot.objects.get(id=slot_id)
+        except Slot.DoesNotExist:
+            return Response({'message': 'Slot not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Check if the user is associated with the slot
+        if slot_instance.user_id_id != user_id:
+            return Response({'message': 'User is not authorized to delete students in this slot'},
+                            status=status.HTTP_403_FORBIDDEN)
+
+        # Filter students based on slot and user
+        students_to_delete = Student.objects.filter(slot_id=slot_instance, id__in=student_ids)
+
+        # Check if any of the student IDs do not belong to the specified slot
+        invalid_student_ids = [id for id in student_ids if id not in students_to_delete.values_list('id', flat=True)]
+        if invalid_student_ids:
+            return Response({
+                                'message': f'The following student IDs do not belong to the specified slot: {", ".join(str(id) for id in invalid_student_ids)}'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        # Get the SlotStudentRelation objects associated with the students to be deleted
+        relations_to_delete = SlotStudentRelation.objects.filter(student__in=students_to_delete)
+
+        # Delete the students and related relations
+        students_to_delete.delete()
+        relations_to_delete.delete()
+
+        return Response({'message': 'Students deleted successfully'}, status=status.HTTP_200_OK)
+
 
 class SlotListStudents(APIView):
     def get(self, request, user_id):
