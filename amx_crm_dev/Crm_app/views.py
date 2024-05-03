@@ -13071,9 +13071,11 @@ class StudentCreateAPIView(APIView):
                         status=status.HTTP_200_OK)
 
     def delete(self, request):
-        slot_id = request.data.get('slot_id')
-        user_id = request.data.get('user_id')
-        student_ids = request.data.get('student_ids', [])
+        slot_id = request.query_params.get('slot_id')
+        user_id = request.query_params.get('user_id')
+        print(user_id, "uuuuuuuuuuuuuu")
+        student_ids_str = request.query_params.get('student_ids', "")
+        print(student_ids_str, "ssssssssssssss")
 
         try:
             # Retrieve the Slot instance
@@ -13082,9 +13084,12 @@ class StudentCreateAPIView(APIView):
             return Response({'message': 'Slot not found'}, status=status.HTTP_404_NOT_FOUND)
 
         # Check if the user is associated with the slot
-        if slot_instance.user_id_id != user_id:
+        if slot_instance.user_id_id != int(user_id):
             return Response({'message': 'User is not authorized to delete students in this slot'},
                             status=status.HTTP_403_FORBIDDEN)
+
+        # Convert the string representation of student_ids to a list of integers
+        student_ids = [int(id.strip()) for id in student_ids_str.strip('[]').split(',') if id.strip()]
 
         # Filter students based on slot and user
         students_to_delete = Student.objects.filter(slot_id=slot_instance, id__in=student_ids)
@@ -13093,8 +13098,8 @@ class StudentCreateAPIView(APIView):
         invalid_student_ids = [id for id in student_ids if id not in students_to_delete.values_list('id', flat=True)]
         if invalid_student_ids:
             return Response({
-                                'message': f'The following student IDs do not belong to the specified slot: {", ".join(str(id) for id in invalid_student_ids)}'},
-                            status=status.HTTP_400_BAD_REQUEST)
+                'message': f'The following student IDs do not belong to the specified slot: {", ".join(str(id) for id in invalid_student_ids)}'},
+                status=status.HTTP_400_BAD_REQUEST)
 
         # Get the SlotStudentRelation objects associated with the students to be deleted
         relations_to_delete = SlotStudentRelation.objects.filter(student__in=students_to_delete)
@@ -13326,3 +13331,85 @@ class PayUrlAPI(APIView):
             return JsonResponse({'message': 'PayUrl deleted successfully'})
         except PayUrl.DoesNotExist:
             return JsonResponse({'message': 'PayUrl not found'}, status=404)
+
+
+class MatchingSlotsAPIView(APIView):
+    def get(self, request, slot_id):
+        try:
+            # Retrieve the slot based on the provided slot_id
+            slot = Slot.objects.get(id=slot_id)
+
+            # Serialize the slot details
+            slot_data = {
+                "id": slot.id,
+                "batch_name": slot.batch_name,
+                "slot_date": slot.slot_date,
+                "batch_size": slot.batch_size,
+                "batch_type": slot.batch_type.id if slot.batch_type else None,
+                "user_id": slot.user_id.id if slot.user_id else None,
+                "partner_name": slot.user_id.first_name if slot.user_id else None,
+                "partner_mobile": slot.user_id.mobile_number if slot.user_id else None,
+                "partner_email": slot.user_id.email if slot.user_id else None,
+                "created_date_time": slot.created_date_time,
+                "updated_date_time": slot.updated_date_time,
+                "batch_type_name": slot.batch_type.name if slot.batch_type else None,
+                "slot_status": slot.slot_status
+            }
+
+            # Retrieve matching slots with the same batch type
+            matching_slots = Slot.objects.filter(batch_type=slot.batch_type, slot_status=True).exclude(id=slot_id)
+
+            # Serialize the matching slots along with remaining students
+            response_data = []
+            for matching_slot in matching_slots:
+                # Check if batch_size is not None
+                if matching_slot.batch_size is not None:
+                    remaining_students_count = matching_slot.batch_size - Student.objects.filter(
+                        slot_id=matching_slot).count()
+                else:
+                    # Set remaining_students_count to None if batch_size is None
+                    remaining_students_count = None
+
+                matching_slot_serialized_students = []
+                # Retrieve all students for the matching slot and serialize them
+                matching_slot_students = Student.objects.filter(slot_id=matching_slot)
+                for student in matching_slot_students:
+                    student_data = {
+                        "id": student.id,
+                        "slot_id": student.slot_id.id,
+                        "student_name": student.student_name,
+                        "student_age": student.student_age,
+                        "student_mobile": student.student_mobile,
+                        "student_email": student.student_email,
+                        "student_adhar": student.student_adhar,
+                        "created_date_time": student.created_date_time,
+                        "updated_date_time": student.updated_date_time
+                    }
+                    matching_slot_serialized_students.append(student_data)
+
+                matching_slot_data = {
+                    "id": matching_slot.id,
+                    "batch_name": matching_slot.batch_name,
+                    "slot_date": matching_slot.slot_date,
+                    "batch_size": matching_slot.batch_size,
+                    "remaining_students": remaining_students_count,
+                    "batch_type": matching_slot.batch_type.id if matching_slot.batch_type else None,
+                    "user_id": matching_slot.user_id.id if matching_slot.user_id else None,
+                    "partner_name": matching_slot.user_id.first_name if matching_slot.user_id else None,
+                    "partner_mobile": matching_slot.user_id.mobile_number if matching_slot.user_id else None,
+                    "partner_email": matching_slot.user_id.email if matching_slot.user_id else None,
+                    "created_date_time": matching_slot.created_date_time,
+                    "updated_date_time": matching_slot.updated_date_time,
+                    "batch_type_name": matching_slot.batch_type.name if matching_slot.batch_type else None,
+                    "slot_status": matching_slot.slot_status,
+                    "student_lists": matching_slot_serialized_students
+                }
+                response_data.append(matching_slot_data)
+
+            # Add slot details to response data
+            response_data.insert(0, slot_data)
+
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        except Slot.DoesNotExist:
+            return Response({'message': 'Slot not found'}, status=status.HTTP_404_NOT_FOUND)

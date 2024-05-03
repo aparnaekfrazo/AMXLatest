@@ -139,6 +139,7 @@ urlpatterns = [
     path('swap/', SlotSwapAPIView.as_view(), name='slot-swap'),
     path('payurl/', PayUrlAPI.as_view(), name='payurl_list'),
     path('payurl/<int:pk>/', PayUrlAPI.as_view(), name='payurl_detail'),
+    path('matching-slots/<int:slot_id>/', MatchingSlotsAPIView.as_view(), name='matching_slots'),
 
 ]
 
