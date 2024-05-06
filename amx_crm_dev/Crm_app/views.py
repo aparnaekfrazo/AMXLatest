@@ -13339,77 +13339,77 @@ class MatchingSlotsAPIView(APIView):
             # Retrieve the slot based on the provided slot_id
             slot = Slot.objects.get(id=slot_id)
 
-            # Serialize the slot details
-            slot_data = {
-                "id": slot.id,
-                "batch_name": slot.batch_name,
-                "slot_date": slot.slot_date,
-                "batch_size": slot.batch_size,
-                "batch_type": slot.batch_type.id if slot.batch_type else None,
-                "user_id": slot.user_id.id if slot.user_id else None,
-                "partner_name": slot.user_id.first_name if slot.user_id else None,
-                "partner_mobile": slot.user_id.mobile_number if slot.user_id else None,
-                "partner_email": slot.user_id.email if slot.user_id else None,
-                "created_date_time": slot.created_date_time,
-                "updated_date_time": slot.updated_date_time,
-                "batch_type_name": slot.batch_type.name if slot.batch_type else None,
-                "slot_status": slot.slot_status
-            }
+            # Serialize the slot details using SlotStudentSerializer
+            serializer = SlotStudentSerializer(slot)
+            slot_data = serializer.data
+
+            # Calculate remaining students count for the slot
+            remaining_students_count = slot.batch_size - Student.objects.filter(slot_id=slot).count()
+            slot_data["remaining_students"] = remaining_students_count
 
             # Retrieve matching slots with the same batch type
             matching_slots = Slot.objects.filter(batch_type=slot.batch_type, slot_status=True).exclude(id=slot_id)
 
             # Serialize the matching slots along with remaining students
-            response_data = []
+            response_data = [slot_data]
             for matching_slot in matching_slots:
-                # Check if batch_size is not None
-                if matching_slot.batch_size is not None:
-                    remaining_students_count = matching_slot.batch_size - Student.objects.filter(
-                        slot_id=matching_slot).count()
-                else:
-                    # Set remaining_students_count to None if batch_size is None
-                    remaining_students_count = None
+                # Serialize the matching slot using SlotStudentSerializer
+                matching_serializer = SlotStudentSerializer(matching_slot)
+                matching_slot_data = matching_serializer.data
 
-                matching_slot_serialized_students = []
-                # Retrieve all students for the matching slot and serialize them
-                matching_slot_students = Student.objects.filter(slot_id=matching_slot)
-                for student in matching_slot_students:
-                    student_data = {
-                        "id": student.id,
-                        "slot_id": student.slot_id.id,
-                        "student_name": student.student_name,
-                        "student_age": student.student_age,
-                        "student_mobile": student.student_mobile,
-                        "student_email": student.student_email,
-                        "student_adhar": student.student_adhar,
-                        "created_date_time": student.created_date_time,
-                        "updated_date_time": student.updated_date_time
-                    }
-                    matching_slot_serialized_students.append(student_data)
+                # Calculate remaining students count for the matching slot
+                remaining_students_count = matching_slot.batch_size - Student.objects.filter(slot_id=matching_slot).count()
+                matching_slot_data["remaining_students"] = remaining_students_count
 
-                matching_slot_data = {
-                    "id": matching_slot.id,
-                    "batch_name": matching_slot.batch_name,
-                    "slot_date": matching_slot.slot_date,
-                    "batch_size": matching_slot.batch_size,
-                    "remaining_students": remaining_students_count,
-                    "batch_type": matching_slot.batch_type.id if matching_slot.batch_type else None,
-                    "user_id": matching_slot.user_id.id if matching_slot.user_id else None,
-                    "partner_name": matching_slot.user_id.first_name if matching_slot.user_id else None,
-                    "partner_mobile": matching_slot.user_id.mobile_number if matching_slot.user_id else None,
-                    "partner_email": matching_slot.user_id.email if matching_slot.user_id else None,
-                    "created_date_time": matching_slot.created_date_time,
-                    "updated_date_time": matching_slot.updated_date_time,
-                    "batch_type_name": matching_slot.batch_type.name if matching_slot.batch_type else None,
-                    "slot_status": matching_slot.slot_status,
-                    "student_lists": matching_slot_serialized_students
-                }
                 response_data.append(matching_slot_data)
-
-            # Add slot details to response data
-            response_data.insert(0, slot_data)
 
             return Response(response_data, status=status.HTTP_200_OK)
 
         except Slot.DoesNotExist:
             return Response({'message': 'Slot not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class MoveStudentsAPIView(APIView):
+    def post(self, request):
+        # Extract slot_from, slot_to, and student_ids_to_move from the request body
+        slot_from_id = request.data.get('slot_from')
+        slot_to_id = request.data.get('slot_to')
+        student_ids_to_move = request.data.get('student_ids_to_move', [])
+
+        try:
+            # Retrieve the slots and students
+            slot_from = Slot.objects.get(id=slot_from_id)
+            slot_to = Slot.objects.get(id=slot_to_id)
+            students_to_move = Student.objects.filter(id__in=student_ids_to_move)
+
+            if slot_to.batch_size is not None:
+                total_students_in_slot_to = Student.objects.filter(slot_id=slot_to).count()
+                vacant_students_count = slot_to.batch_size - total_students_in_slot_to
+                if total_students_in_slot_to + students_to_move.count() > slot_to.batch_size:
+                    return Response({
+                        'message': f'Moving students would exceed the batch size of the slot. '
+                                   f'Batch size: {slot_to.batch_size}, Vacant students: {vacant_students_count}'},
+                        status=status.HTTP_400_BAD_REQUEST)
+
+            # Check if both slots have the same number of students
+            if students_to_move.count() == Student.objects.filter(slot_id=slot_to).count():
+                return Response({'message': 'Both slots have the same number of students'},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+            # Move the students from slot_from to slot_to
+            for student in students_to_move:
+                # Update the SlotStudentRelation
+                SlotStudentRelation.objects.filter(slot=slot_from, student=student).update(slot=slot_to)
+
+            for student_id in student_ids_to_move:
+                student = Student.objects.get(id=student_id)
+                student.slot_id = slot_to
+                student.save()
+
+            return Response({'message': 'Students moved successfully'}, status=status.HTTP_200_OK)
+
+        except Slot.DoesNotExist:
+            return Response({'message': 'One of the slots does not exist'}, status=status.HTTP_404_NOT_FOUND)
+
+        except Student.DoesNotExist:
+            return Response({'message': 'One of the students does not exist'}, status=status.HTTP_404_NOT_FOUND)

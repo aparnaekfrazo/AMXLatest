@@ -140,6 +140,7 @@ urlpatterns = [
     path('payurl/', PayUrlAPI.as_view(), name='payurl_list'),
     path('payurl/<int:pk>/', PayUrlAPI.as_view(), name='payurl_detail'),
     path('matching-slots/<int:slot_id>/', MatchingSlotsAPIView.as_view(), name='matching_slots'),
+    path('move-students/', MoveStudentsAPIView.as_view(), name='move_students'),
 
 ]
 
