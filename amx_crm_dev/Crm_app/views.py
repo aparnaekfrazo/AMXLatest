@@ -13206,6 +13206,12 @@ class SlotSwapAPIView(APIView):
     def post(self, request):
         slot1_id = request.data.get('slot1_id')
         slot2_id = request.data.get('slot2_id')
+        students_slot1_ids = request.data.get('studentslot1')
+        students_slot2_ids = request.data.get('studentslot2')
+
+        if len(students_slot1_ids) != len(students_slot2_ids):
+            return Response({'message': 'Number of students in each slot must be equal'},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         try:
             # Retrieve the slots to be swapped
@@ -13213,8 +13219,25 @@ class SlotSwapAPIView(APIView):
             slot2 = Slot.objects.get(id=slot2_id)
 
             # Get the students associated with each slot
-            students_slot1 = Student.objects.filter(slot_id=slot1)
-            students_slot2 = Student.objects.filter(slot_id=slot2)
+            students_slot1 = Student.objects.filter(id__in=students_slot1_ids)
+            students_slot2 = Student.objects.filter(id__in=students_slot2_ids)
+
+            # Check for uniqueness of Aadhar number, email, and phone number in each slot
+            slot1_student_details = students_slot1.values_list('student_name', 'student_email')
+            slot2_student_details = students_slot2.values_list('student_name', 'student_email')
+
+            # Check for repeating emails in slot 1
+            for student_name, student_email in slot1_student_details:
+                if student_email in [email for _, email in slot2_student_details]:
+                    return Response({
+                        'message': f'{student_email} of {student_name} is already exists in {slot2.batch_name}'},
+                        status=status.HTTP_400_BAD_REQUEST)
+
+            for student_name, student_email in slot2_student_details:
+                if student_email in [email for _, email in slot1_student_details]:
+                    return Response({
+                                        'message': f'{student_email} of {student_name} is already exists in {slot1.batch_name}'},
+                                    status=status.HTTP_400_BAD_REQUEST)
 
             print("Students in slot 1 before swap:", students_slot1)
             print("Students in slot 2 before swap:", students_slot2)
