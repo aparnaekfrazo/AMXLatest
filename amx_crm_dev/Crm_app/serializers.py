@@ -12,6 +12,8 @@ class CustomUserSerializer(serializers.ModelSerializer):
     company_logo_url = serializers.SerializerMethodField()
     category_name = serializers.SerializerMethodField()
     invoice_name = serializers.SerializerMethodField()
+    del_status = serializers.SerializerMethodField()
+
     class Meta:
         model = CustomUser
         fields = "__all__"
@@ -41,6 +43,14 @@ class CustomUserSerializer(serializers.ModelSerializer):
         if obj.company_logo:
             return self.context['request'].build_absolute_uri(obj.company_logo.url)
         return None
+
+    def get_del_status(self, obj):
+        if obj.role_id.role_name == "Partner":
+            if (CustomUser.objects.filter(created_by=obj, role_id__role_name="Customer").exists()
+                    or Order.objects.filter(user_id=obj, order_status__status_name__in=["Pending", "Shipped"]).exists()
+                    or Slot.objects.filter(user_id=obj).exists()):
+                return True
+        return False
 
 class DroneSerializer(serializers.ModelSerializer):
     drone_category__category_name = serializers.SerializerMethodField()

@@ -143,7 +143,7 @@ class ModelAdmin(admin.ModelAdmin):
 @admin.register(Student)
 class ModelAdmin(admin.ModelAdmin):
     list_display = ['id','slot_id','student_name','student_age','student_mobile',
-                    'student_email','student_adhar',
+                    'student_email','student_adhar','payment_url','payment_status',
                     'created_date_time','updated_date_time']
 
 @admin.register(SlotStudentRelation)
@@ -160,5 +160,9 @@ class ModelAdmin(admin.ModelAdmin):
 class ModelAdmin(admin.ModelAdmin):
     list_display = ['id','payment_link_price','batch_type','description',
                     'created_date_time','updated_date_time']
+
+@admin.register(PaymentLinkStatus)
+class ModelAdmin(admin.ModelAdmin):
+    list_display = ['id','payment_status_name','created_date_time','updated_date_time']
 
 

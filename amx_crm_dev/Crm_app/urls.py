@@ -141,6 +141,8 @@ urlpatterns = [
     path('payurl/<int:pk>/', PayUrlAPI.as_view(), name='payurl_detail'),
     path('matching-slots/<int:slot_id>/', MatchingSlotsAPIView.as_view(), name='matching_slots'),
     path('move-students/', MoveStudentsAPIView.as_view(), name='move_students'),
+    path('payment-link-status/', PaymentLinkStatusAPI.as_view()),
+    path('payment-link-status/<int:pk>/', PaymentLinkStatusAPI.as_view()),
 
 ]
 

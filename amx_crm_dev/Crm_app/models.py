@@ -195,7 +195,7 @@ class ChangeRequestCompanyDetails(models.Model):
     user_signature = models.ImageField(blank=True, null=True)
 
     def __str__(self):
-        return self.company_name
+        return str(self.company_name)
 
 class PaymentStatus(models.Model):
     name=models.CharField(max_length=50,null=True,blank=True)
@@ -376,6 +376,14 @@ class TransportationDetails(models.Model):
     vehType = models.CharField(max_length=50, null=True, blank=True)
     created_date_time = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     updated_date_time = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+
+class PaymentLinkStatus(models.Model):
+    payment_status_name = models.CharField(max_length=100, null=True,blank=True)
+    created_date_time = models.DateTimeField(auto_now_add=True,null=True)
+    updated_date_time = models.DateTimeField(auto_now_add=True, null=True)
+
+    def __str__(self):
+        return str(self.payment_status_name)
     
 class Batchtype(models.Model):
     name = models.CharField(max_length=50,null=True, blank=True)
@@ -451,6 +459,9 @@ class Student(models.Model):
     student_adhar = models.BigIntegerField(null=True, blank=True)
     created_date_time = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     updated_date_time = models.DateTimeField(null=True, blank=True)
+    payment_url = models.URLField(max_length=500,null=True, blank=True)
+    payment_status = models.ForeignKey(PaymentLinkStatus, on_delete=models.PROTECT, null=True, blank=True)
+
     def __str__(self):
         return str(self.student_name)
 

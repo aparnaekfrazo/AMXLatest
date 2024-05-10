@@ -13144,23 +13144,35 @@ class SlotListStudents(APIView):
 class SlotDetailsAPIView(APIView):
     def get(self, request, slot_id):
         try:
-            slot = Slot.objects.prefetch_related('student_set').get(id=slot_id)
+            # Retrieve the slot based on the provided slot_id
+            slot = Slot.objects.get(id=slot_id)
+
+            # Serialize the slot details using SlotSerializer
+            slot_serializer = SlotSerializer(slot)
+
+            # Serialize the students details
+            students_data = []
+            for student in slot.student_set.all():
+                student_serializer = StudentSerializer(student)
+                students_data.append(student_serializer.data)
+
+            # Calculate remaining students count for the slot
+            remaining_students_count = slot.batch_size - slot.student_set.count()
+
+            # Add remaining students count to slot details
+            slot_data = slot_serializer.data
+            slot_data["remaining_students"] = remaining_students_count
+
+            # Construct the response data
+            response_data = {
+                'slot_details': slot_data,
+                'students_details': students_data
+            }
+
+            return Response(response_data, status=status.HTTP_200_OK)
+
         except Slot.DoesNotExist:
             return Response({'message': 'Slot not found'}, status=status.HTTP_404_NOT_FOUND)
-
-        slot_serializer = SlotSerializer(slot)
-
-        students_data = []
-        for student in slot.student_set.all():
-            student_serializer = StudentSerializer(student)
-            students_data.append(student_serializer.data)
-
-        response_data = {
-            'slot_details': slot_serializer.data,
-            'students_details': students_data
-        }
-
-        return Response(response_data)
 
 class SlotsWithSameBatchSizeAPIView(APIView):
     def get(self, request, slot_id):
@@ -13413,3 +13425,56 @@ class MoveStudentsAPIView(APIView):
 
         except Student.DoesNotExist:
             return Response({'message': 'One of the students does not exist'}, status=status.HTTP_404_NOT_FOUND)
+
+class PaymentLinkStatusAPI(APIView):
+    def get(self, request, pk=None):
+        if pk is not None:
+            return self.get_by_id(request, pk)
+        else:
+            payment_statuses = PaymentLinkStatus.objects.all()
+            data = [{'id': status.id, 'payment_status_name': status.payment_status_name,
+                     'created_date_time': status.created_date_time, 'updated_date_time': status.updated_date_time}
+                    for status in payment_statuses]
+            return Response(data)
+
+    def post(self, request):
+        payment_status_name = request.data.get('payment_status_name')
+        if PaymentLinkStatus.objects.filter(payment_status_name=payment_status_name).exists():
+            return Response({'message': 'Payment status with this name already exists'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        payment_status = PaymentLinkStatus.objects.create(payment_status_name=payment_status_name)
+        return Response({'message': 'Payment status created successfully'}, status=status.HTTP_201_CREATED)
+
+    def get_by_id(self, request, pk):
+        try:
+            payment_status = PaymentLinkStatus.objects.get(id=pk)
+            data = {'id': payment_status.id, 'payment_status_name': payment_status.payment_status_name,
+                    'created_date_time': payment_status.created_date_time,
+                    'updated_date_time': payment_status.updated_date_time}
+            return Response(data)
+        except PaymentLinkStatus.DoesNotExist:
+            return Response({'message': 'Payment status does not exist'}, status=status.HTTP_404_NOT_FOUND)
+
+    def put(self, request, pk):
+        try:
+            payment_status = PaymentLinkStatus.objects.get(id=pk)
+            payment_status_name = request.data.get('payment_status_name')
+            if PaymentLinkStatus.objects.filter(payment_status_name=payment_status_name).exclude(id=pk).exists():
+                return Response({'message': 'payment status with this name already exists'},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+            payment_status.payment_status_name = payment_status_name
+            payment_status.updated_date_time = timezone.now()
+            payment_status.save()
+            return Response({'message': 'Payment status updated successfully'}, status=status.HTTP_200_OK)
+        except PaymentLinkStatus.DoesNotExist:
+            return Response({'message': 'Payment status does not exist'}, status=status.HTTP_404_NOT_FOUND)
+
+    def delete(self, request, pk):
+        try:
+            payment_status = PaymentLinkStatus.objects.get(id=pk)
+            payment_status.delete()
+            return Response({'message': 'Payment status deleted successfully'})
+        except PaymentLinkStatus.DoesNotExist:
+            return Response({'message': 'Payment status does not exist'}, status=status.HTTP_404_NOT_FOUND)
