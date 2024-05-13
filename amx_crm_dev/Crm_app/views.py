@@ -13383,17 +13383,23 @@ class MatchingSlotsAPIView(APIView):
             # Retrieve matching slots with the same batch type
             matching_slots = Slot.objects.filter(batch_type=slot.batch_type, slot_status=True).exclude(id=slot_id)
 
+            # Get the number of additional students from the query parameters
+            student_len = int(request.query_params.get('student_len', 0))
+
             # Serialize the matching slots along with remaining students
             response_data = []
             for matching_slot in matching_slots:
-                # Check if batch size and students count are different
-                if matching_slot.batch_size != matching_slot.student_set.count():
+                # Calculate the number of students this slot can accommodate
+                available_students = matching_slot.batch_size - matching_slot.student_set.count()
+
+                # Check if the slot can accommodate the specified number of additional students
+                if available_students >= student_len:
                     # Serialize the matching slot using SlotStudentSerializer
                     matching_serializer = SlotStudentSerializer(matching_slot)
                     matching_slot_data = matching_serializer.data
 
                     # Calculate remaining students count for the matching slot
-                    remaining_students_count = matching_slot.batch_size - Student.objects.filter(slot_id=matching_slot).count()
+                    remaining_students_count = matching_slot.batch_size - matching_slot.student_set.count()
                     matching_slot_data["remaining_students"] = remaining_students_count
 
                     response_data.append(matching_slot_data)
