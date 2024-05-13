@@ -13180,8 +13180,8 @@ class SlotsWithSameBatchSizeAPIView(APIView):
             # Retrieve the slot instance
             slot_instance = Slot.objects.get(id=slot_id)
 
-            # Get other slots with the same batch size and created by the same user
-            other_slots = Slot.objects.filter(batch_size=slot_instance.batch_size, user_id=slot_instance.user_id).exclude(id=slot_id)
+            # Get other slots created by the same user and exclude the current slot
+            other_slots = Slot.objects.filter(user_id=slot_instance.user_id).exclude(id=slot_id)
 
             # Filter slots based on Batchtype
             if slot_instance.batch_type.name == 'Individual':
@@ -13189,18 +13189,16 @@ class SlotsWithSameBatchSizeAPIView(APIView):
             elif slot_instance.batch_type.name == 'Group':
                 other_slots = other_slots.filter(batch_type__name='Group')
 
-            fully_filled_slots = []
-            for other_slot in other_slots:
-                # Check if the other slot has the same number of students as its batch size
-                if other_slot.student_set.count() == other_slot.batch_size:
-                    fully_filled_slots.append(other_slot)
+            # Exclude slots with no students
+            other_slots = other_slots.exclude(student=None)
 
             # Serialize the slot instances
-            serializer = SlotStudentSerializer(fully_filled_slots, many=True)
+            serializer = SlotStudentSerializer(other_slots, many=True)
 
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Slot.DoesNotExist:
             return Response({'message': 'Slot not found'}, status=status.HTTP_404_NOT_FOUND)
+
 
 class SlotSwapAPIView(APIView):
     def post(self, request):
@@ -13386,17 +13384,19 @@ class MatchingSlotsAPIView(APIView):
             matching_slots = Slot.objects.filter(batch_type=slot.batch_type, slot_status=True).exclude(id=slot_id)
 
             # Serialize the matching slots along with remaining students
-            response_data = [slot_data]
+            response_data = []
             for matching_slot in matching_slots:
-                # Serialize the matching slot using SlotStudentSerializer
-                matching_serializer = SlotStudentSerializer(matching_slot)
-                matching_slot_data = matching_serializer.data
+                # Check if batch size and students count are different
+                if matching_slot.batch_size != matching_slot.student_set.count():
+                    # Serialize the matching slot using SlotStudentSerializer
+                    matching_serializer = SlotStudentSerializer(matching_slot)
+                    matching_slot_data = matching_serializer.data
 
-                # Calculate remaining students count for the matching slot
-                remaining_students_count = matching_slot.batch_size - Student.objects.filter(slot_id=matching_slot).count()
-                matching_slot_data["remaining_students"] = remaining_students_count
+                    # Calculate remaining students count for the matching slot
+                    remaining_students_count = matching_slot.batch_size - Student.objects.filter(slot_id=matching_slot).count()
+                    matching_slot_data["remaining_students"] = remaining_students_count
 
-                response_data.append(matching_slot_data)
+                    response_data.append(matching_slot_data)
 
             return Response(response_data, status=status.HTTP_200_OK)
 
