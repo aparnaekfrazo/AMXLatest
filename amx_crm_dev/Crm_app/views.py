@@ -13381,7 +13381,7 @@ class MatchingSlotsAPIView(APIView):
             slot_data["remaining_students"] = remaining_students_count
 
             # Retrieve matching slots with the same batch type
-            matching_slots = Slot.objects.filter(user_id=slot.user_id,batch_type=slot.batch_type, slot_status=True).exclude(id=slot_id)
+            matching_slots = Slot.objects.filter(user_id=slot.user_id,batch_type=slot.batch_type).exclude(id=slot_id)
 
             # Get the number of additional students from the query parameters
             student_len = int(request.query_params.get('student_len', 0))
