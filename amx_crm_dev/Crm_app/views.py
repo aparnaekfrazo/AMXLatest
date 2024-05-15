@@ -13548,7 +13548,7 @@ def generate_payment_links_view(request):
                 student.save()
 
                 # Send email to student with payment link
-                payment_link = f'http://127.0.0.1:8000/api/payment-details/{order["id"]}/'
+                payment_link = f'https://amx-crm-dev.thestorywallcafe.com/api/payment-details/{order["id"]}/'
                 subject = 'Payment Link for Course'
                 message = f"Dear {student.student_name},\n\nHere is your payment link for the course: {payment_link}\n\nRegards,\nYour Institution"
                 send_mail(subject, message, settings.EMAIL_HOST_USER, [student.student_email])
