@@ -143,6 +143,8 @@ urlpatterns = [
     path('move-students/', MoveStudentsAPIView.as_view(), name='move_students'),
     path('payment-link-status/', PaymentLinkStatusAPI.as_view()),
     path('payment-link-status/<int:pk>/', PaymentLinkStatusAPI.as_view()),
+    path('generate-payment-links/', generate_payment_links_view, name='generate_payment_links'),
+    path('payment-details/<str:order_id>/', payment_details_view, name='payment_details'),
 
 ]
 

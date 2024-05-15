@@ -461,6 +461,7 @@ class Student(models.Model):
     updated_date_time = models.DateTimeField(null=True, blank=True)
     payment_url = models.URLField(max_length=500,null=True, blank=True)
     payment_status = models.ForeignKey(PaymentLinkStatus, on_delete=models.PROTECT, null=True, blank=True)
+    order_id = models.CharField(max_length=250, null=True, blank=True)
 
     def __str__(self):
         return str(self.student_name)

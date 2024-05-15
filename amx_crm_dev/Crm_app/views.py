@@ -13507,3 +13507,88 @@ class PaymentLinkStatusAPI(APIView):
             return Response({'message': 'Payment status deleted successfully'})
         except PaymentLinkStatus.DoesNotExist:
             return Response({'message': 'Payment status does not exist'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['POST'])
+def generate_payment_links_view(request):
+    try:
+        # Get student IDs from request data
+        student_ids = request.data.get('student_ids', [])
+
+        # Retrieve the price for payment link based on batch type
+        individual_price = PayUrl.objects.get(batch_type__name='Individual').payment_link_price
+        group_price = PayUrl.objects.get(batch_type__name='Group').payment_link_price
+
+        # Initialize Razorpay client
+        client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+
+        # List to store payment link details
+        payment_links = []
+
+        # Iterate over each student ID
+        for student_id in student_ids:
+            try:
+                # Retrieve student details
+                student = Student.objects.get(id=student_id)
+
+                # Determine the payment link price based on batch type
+                price = individual_price if student.slot_id.batch_type.name == 'Individual' else group_price
+
+                # Create order ID using Razorpay
+                order_data = {
+                    'amount': price * 100,  # Razorpay accepts amount in paise
+                    'currency': 'INR',
+                    'receipt': f'order_{student_id}',
+                    'payment_capture': 1  # Auto capture payment
+                }
+                order = client.order.create(data=order_data)
+
+                # Save order ID in student object
+                student.order_id = order['id']
+                student.save()
+
+                # Send email to student with payment link
+                payment_link = f'http://127.0.0.1:8000/api/payment-details/{order["id"]}/'
+                subject = 'Payment Link for Course'
+                message = f"Dear {student.student_name},\n\nHere is your payment link for the course: {payment_link}\n\nRegards,\nYour Institution"
+                send_mail(subject, message, settings.EMAIL_HOST_USER, [student.student_email])
+
+                # Save payment link details
+                payment_links.append({
+                    'student_id': student_id,
+                    'order_id': order['id'],
+                    'amount': price
+                })
+
+            except Student.DoesNotExist:
+                pass  # Handle the case where the student with given ID doesn't exist
+
+        return Response({'message': 'Payment links generated and emails sent successfully', 'payment_links': payment_links}, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@csrf_exempt
+@api_view(['GET'])
+def payment_details_view(request, order_id):
+    try:
+        # Retrieve student details based on the order ID
+        student = Student.objects.filter(order_id=order_id).first()
+        payment_status = "Pending"
+        if student:
+            student_name = student.student_name
+
+            # Fetch the associated PayUrl instance
+            pay_url = PayUrl.objects.filter(batch_type=student.slot_id.batch_type).first()
+            if pay_url:
+                amount = pay_url.payment_link_price
+            else:
+                amount = 0  # Set a default value or handle the case when PayUrl is not found
+
+            return JsonResponse({'order_id': order_id, 'student_name': student_name, 'amount': amount,"payment_status":payment_status})
+        else:
+            return JsonResponse({'error': 'Student not found for the given order ID'}, status=status.HTTP_404_NOT_FOUND)
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
