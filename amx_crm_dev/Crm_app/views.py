@@ -13433,9 +13433,9 @@ class MoveStudentsAPIView(APIView):
                         status=status.HTTP_400_BAD_REQUEST)
 
             # Check if both slots have the same number of students
-            if students_to_move.count() == Student.objects.filter(slot_id=slot_to).count():
-                return Response({'message': 'Both slots have the same number of students'},
-                                status=status.HTTP_400_BAD_REQUEST)
+            # if students_to_move.count() == Student.objects.filter(slot_id=slot_to).count():
+            #     return Response({'message': 'Both slots have the same number of students'},
+            #                     status=status.HTTP_400_BAD_REQUEST)
 
             # Move the students from slot_from to slot_to
             for student in students_to_move:
