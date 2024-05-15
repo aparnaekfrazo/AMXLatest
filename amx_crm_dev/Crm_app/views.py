@@ -13579,6 +13579,8 @@ def payment_details_view(request, order_id):
         if student:
             student_name = student.student_name
             student_id = student.id
+            student_mobile = student.student_email
+            student_email = student.student_email
 
             # Fetch the associated PayUrl instance
             pay_url = PayUrl.objects.filter(batch_type=student.slot_id.batch_type).first()
@@ -13587,12 +13589,12 @@ def payment_details_view(request, order_id):
             else:
                 amount = 0  # Set a default value or handle the case when PayUrl is not found
 
-            return JsonResponse({'order_id': order_id, 'student_name': student_name, 'amount': amount,"payment_status":payment_status,"student_id":student_id})
+            return JsonResponse({'order_id': order_id, 'student_name': student_name, 'amount': amount,"payment_status":payment_status,"student_id":student_id,"student_mobile":student_mobile,"student_email":student_email})
         else:
-            return JsonResponse({'error': 'Student not found for the given order ID'}, status=status.HTTP_404_NOT_FOUND)
+            return JsonResponse({'message': 'Student not found for the given order ID'}, status=status.HTTP_404_NOT_FOUND)
 
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return JsonResponse({'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 def check_payment_status(request, student_id):
