@@ -13548,7 +13548,7 @@ def generate_payment_links_view(request):
                 student.save()
 
                 # Send email to student with payment link
-                payment_link = f'https://amx-crm-dev.thestorywallcafe.com/api/payment-details/{order["id"]}/'
+                payment_link = f'https://amx-crm-dev.thestorywallcafe.com/#/payment-link?{order["id"]}'
                 subject = 'Payment Link for Course'
                 message = f"Dear {student.student_name},\n\nHere is your payment link for the course: {payment_link}\n\nRegards,\nYour Institution"
                 send_mail(subject, message, settings.EMAIL_HOST_USER, [student.student_email])
@@ -13563,7 +13563,7 @@ def generate_payment_links_view(request):
             except Student.DoesNotExist:
                 pass  # Handle the case where the student with given ID doesn't exist
 
-        return Response({'message': 'Payment links generated and emails sent successfully', 'payment_links': payment_links}, status=status.HTTP_200_OK)
+        return Response({'message': 'email fot payment sent successfully'}, status=status.HTTP_200_OK)
 
     except Exception as e:
         return Response({'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -13578,6 +13578,7 @@ def payment_details_view(request, order_id):
         payment_status = "Pending"
         if student:
             student_name = student.student_name
+            student_id = student.id
 
             # Fetch the associated PayUrl instance
             pay_url = PayUrl.objects.filter(batch_type=student.slot_id.batch_type).first()
@@ -13586,9 +13587,41 @@ def payment_details_view(request, order_id):
             else:
                 amount = 0  # Set a default value or handle the case when PayUrl is not found
 
-            return JsonResponse({'order_id': order_id, 'student_name': student_name, 'amount': amount,"payment_status":payment_status})
+            return JsonResponse({'order_id': order_id, 'student_name': student_name, 'amount': amount,"payment_status":payment_status,"student_id":student_id})
         else:
             return JsonResponse({'error': 'Student not found for the given order ID'}, status=status.HTTP_404_NOT_FOUND)
 
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+def check_payment_status(request, student_id):
+    try:
+        # Get payment details from the request
+        razorpay_payment_id = request.POST.get('razorpay_payment_id')
+        razorpay_order_id = request.POST.get('razorpay_order_id')
+        razorpay_signature = request.POST.get('razorpay_signature')
+
+        # Initialize Razorpay client
+        client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+
+        # Verify the payment signature
+        params_dict = {
+            'razorpay_order_id': razorpay_order_id,
+            'razorpay_payment_id': razorpay_payment_id,
+            'razorpay_signature': razorpay_signature
+        }
+        client.utility.verify_payment_signature(params_dict)
+
+        # Fetch payment details
+        payment = client.payment.fetch(razorpay_payment_id)
+
+        # Extract payment status
+        payment_status = payment.get('status')
+
+        # You can perform any additional logic here based on the payment status
+
+        return JsonResponse({'payment_status': payment_status, 'student_id': student_id})
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)

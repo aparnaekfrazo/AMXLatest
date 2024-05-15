@@ -145,6 +145,7 @@ urlpatterns = [
     path('payment-link-status/<int:pk>/', PaymentLinkStatusAPI.as_view()),
     path('generate-payment-links/', generate_payment_links_view, name='generate_payment_links'),
     path('payment-details/<str:order_id>/', payment_details_view, name='payment_details'),
+    path('check-payment-status/<int:student_id>/', check_payment_status, name='check_payment_status'),
 
 ]
 
