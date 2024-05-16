@@ -13559,6 +13559,9 @@ def generate_payment_links_view(request):
                     'order_id': order['id'],
                     'amount': price
                 })
+                student.paylinkdate = timezone.now()  # Capture the current datetime
+                student.payment_url = f'https://amx-crm-dev.thestorywallcafe.com/#/payment-link?order_id={order["id"]}'
+                student.save()
 
             except Student.DoesNotExist:
                 pass  # Handle the case where the student with given ID doesn't exist
@@ -13597,33 +13600,300 @@ def payment_details_view(request, order_id):
         return JsonResponse({'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-def check_payment_status(request, student_id):
-    try:
-        # Get payment details from the request
-        razorpay_payment_id = request.POST.get('razorpay_payment_id')
-        razorpay_order_id = request.POST.get('razorpay_order_id')
-        razorpay_signature = request.POST.get('razorpay_signature')
+class CheckPaymentStatusView(APIView):
+    def post(self, request, student_id):
+        try:
+            # Get payment details from the request data
+            razorpay_payment_id = request.data.get('razorpay_payment_id')
+            print(razorpay_payment_id,"oooooooooooooo")
+            razorpay_order_id = request.data.get('razorpay_order_id')
+            razorpay_signature = request.data.get('razorpay_signature')
 
-        # Initialize Razorpay client
-        client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+            # Initialize Razorpay client
+            client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
 
-        # Verify the payment signature
-        params_dict = {
-            'razorpay_order_id': razorpay_order_id,
-            'razorpay_payment_id': razorpay_payment_id,
-            'razorpay_signature': razorpay_signature
-        }
-        client.utility.verify_payment_signature(params_dict)
+            # Verify the payment signature
+            params_dict = {
+                'razorpay_order_id': razorpay_order_id,
+                'razorpay_payment_id': razorpay_payment_id,
+                'razorpay_signature': razorpay_signature
+            }
+            client.utility.verify_payment_signature(params_dict)
 
-        # Fetch payment details
-        payment = client.payment.fetch(razorpay_payment_id)
+            # Fetch payment details
+            payment = client.payment.fetch(razorpay_payment_id)
 
-        # Extract payment status
-        payment_status = payment.get('status')
+            # Extract payment status
+            payment_status = payment.get('status')
 
-        # You can perform any additional logic here based on the payment status
+            # Update the student's payment status in the database
+            student = Student.objects.get(id=student_id)
+            student.razorpay_payment_id = razorpay_payment_id
+            student.razorpay_signature = razorpay_signature
+            student.stupayment_status = 'Success'
+            student.save()
 
-        return JsonResponse({'payment_status': payment_status, 'student_id': student_id})
+            return Response({'payment_status': payment_status, 'student_id': student_id})
 
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=400)
+        except Exception as e:
+            return Response({'message': str(e)}, status=400)
+
+
+class FilterData(APIView):
+    def get(self, request, user_id):
+        try:
+            user = get_object_or_404(CustomUser, id=user_id)
+
+            if user.role_id.role_name == 'Super_admin':
+                partner_id = request.query_params.get('partner_id')
+                slot_date = request.query_params.get('slot_date')
+                batchtype_id = request.query_params.get('batchtype_id')
+                batch_name = request.query_params.get('batch_name')
+
+                slots = Slot.objects.all()
+
+                if partner_id and slot_date and batchtype_id and batch_name:
+                    slots = slots.filter(user_id=partner_id, slot_date=datetime.strptime(slot_date, '%Y-%m-%d'), batch_type_id=batchtype_id,batch_name=batch_name)
+
+                    slots = slots.exclude(slotstudentrelation__isnull=True)
+                    slot_data = []
+                    for slot in slots:
+                        students = Student.objects.filter(slot_id=slot)
+                        student_details = [{
+                            'id':student.id,
+                            'student_name': student.student_name,
+                            'student_age': student.student_age,
+                            'student_mobile': student.student_mobile,
+                            'student_email': student.student_email,
+                            'student_adhar': student.student_adhar,
+                            'created_date_time': student.created_date_time,
+                            'updated_date_time': student.updated_date_time,
+                            'payment_url': student.payment_url,
+                            'order_id': student.order_id,
+                            'razorpay_signature': student.razorpay_signature,
+                            'stupayment_status': student.stupayment_status,
+                            'paylinkdate': student.paylinkdate,
+                        } for student in students]
+                        batch_type_name = slot.batch_type.name
+                        userid = slot.user_id.first_name
+
+                        slot_data.append({
+                            'slot_id': slot.id,
+                            'slot_name': slot.batch_name,
+                            'slot_date':slot.slot_date,
+                            'batch_size':slot.batch_size,
+                            'batch_type':batch_type_name,
+                            'user_id':userid,
+                            'created_date_time':slot.created_date_time,
+                            'updated_date_time':slot.updated_date_time,
+                            'slot_status':slot.slot_status,
+                            'students': student_details
+                        })
+
+                    return Response({'slots': slot_data})
+
+                # If partner_id, slot_date, and batchtype_id are provided
+                elif partner_id and slot_date and batchtype_id:
+                    # Filter slots by partner_id, slot_date, and batchtype_id
+                    slots = slots.filter(user_id=partner_id, slot_date=datetime.strptime(slot_date, '%Y-%m-%d'), batch_type_id=batchtype_id)
+                    slots = slots.exclude(slotstudentrelation__isnull=True)
+
+                    # Get distinct batch names related to the provided parameters
+                    batch_names = slots.values_list('batch_name', flat=True).distinct()
+
+                    batch_names_list = [{'batch_names': name} for name in batch_names]
+
+                    return Response(batch_names_list)
+
+                elif partner_id and slot_date:
+                    # Filter slots by partner_id and slot_date
+                    slots = slots.filter(user_id=partner_id, slot_date=datetime.strptime(slot_date, '%Y-%m-%d'))
+
+                    slots = slots.exclude(slotstudentrelation__isnull=True)
+
+                    # Get distinct batch names related to the provided parameters
+                    batch_names = slots.values_list('batch_name', flat=True).distinct()
+
+                    batch_names_list = [{'batch_names': name} for name in batch_names]
+
+                    return Response(batch_names_list)
+
+                elif partner_id:
+                    slots = slots.filter(user_id=partner_id)
+
+                    # Filter out slots that don't have any associated students
+                    slots = slots.exclude(slotstudentrelation__isnull=True)
+
+                    # Get distinct slot dates created by the partner
+                    slot_dates = slots.values_list('slot_date', flat=True).distinct()
+
+                    # Serialize slot dates
+                    slot_dates_list = [{'slot_date': slot_date.strftime('%Y-%m-%d')} for slot_date in slot_dates]
+
+                    return Response(slot_dates_list)
+
+                else:
+                    raise Http404("Missing parameters")
+
+            elif user.role_id.role_name == 'Partner':
+                slot_date = request.query_params.get('slot_date')
+                batchtype_id = request.query_params.get('batchtype_id')
+                batch_name = request.query_params.get('batch_name')
+                batch_names = []
+
+                if slot_date and batchtype_id and batch_name:
+                    # Filter slots by slot_date, batch_type_id, batch_name, and user_id (partner's ID)
+                    slots = Slot.objects.filter(slot_date=datetime.strptime(slot_date, '%Y-%m-%d'),
+                                                batch_type_id=batchtype_id, batch_name=batch_name, user_id=user_id)
+                    slots = slots.exclude(slotstudentrelation__isnull=True)
+
+                    slot_data = []
+                    for slot in slots:
+                        students = Student.objects.filter(slot_id=slot)
+                        student_details = [{
+                            'id':student.id,
+                            'student_name': student.student_name,
+                            'student_age': student.student_age,
+                            'student_mobile': student.student_mobile,
+                            'student_email': student.student_email,
+                            'student_adhar': student.student_adhar,
+                            'created_date_time': student.created_date_time,
+                            'updated_date_time': student.updated_date_time,
+                            'payment_url': student.payment_url,
+                            'order_id': student.order_id,
+                            'razorpay_signature': student.razorpay_signature,
+                            'stupayment_status': student.stupayment_status,
+                            'paylinkdate': student.paylinkdate,
+                        } for student in students]
+                        batch_type_name = slot.batch_type.name
+                        userid = slot.user_id.first_name
+
+                        slot_data.append({
+                            'slot_id': slot.id,
+                            'slot_name': slot.batch_name,
+                            'slot_date': slot.slot_date,
+                            'batch_size': slot.batch_size,
+                            'batch_type': batch_type_name,
+                            'user_id': userid,
+                            'created_date_time': slot.created_date_time,
+                            'updated_date_time': slot.updated_date_time,
+                            'slot_status': slot.slot_status,
+                            'students': student_details
+                        })
+
+                    return Response({'slots': slot_data})
+
+                elif slot_date and batchtype_id:
+                    # Filter slots by slot_date, batch_type_id, and user_id (partner's ID)
+                    slots = Slot.objects.filter(slot_date=datetime.strptime(slot_date, '%Y-%m-%d'),
+                                                batch_type_id=batchtype_id, user_id=user_id)
+                    slots = slots.exclude(slotstudentrelation__isnull=True)
+
+                    # Get distinct batch names related to the provided slot date and batch type
+                    batch_names = slots.values_list('batch_name', flat=True).distinct()
+
+                    batch_names_list = [{'batch_names': name} for name in batch_names]
+
+                    return Response(batch_names_list)
+
+                elif slot_date:
+                    # Filter slots by slot_date and user_id (partner's ID)
+                    slots = Slot.objects.filter(slot_date=datetime.strptime(slot_date, '%Y-%m-%d'), user_id=user_id)
+                    slots = slots.exclude(slotstudentrelation__isnull=True)
+
+                    # Get distinct batch names related to the provided slot date
+                    batch_names = slots.values_list('batch_name', flat=True).distinct()
+
+                    batch_names_list = [{'batch_names': name} for name in batch_names]
+
+                    return Response(batch_names_list)
+            else:
+                return Response({'message': 'Invalid user role'}, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response({'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+# class FilterData(APIView):
+#     def get(self, request, user_id):
+#         try:
+#             # Fetch user object
+#             user = get_object_or_404(CustomUser, id=user_id)
+#
+#             # Validate user role
+#             if user.role_id.role_name == 'Super_admin':
+#                 # Fetch query parameters for superadmin
+#                 batchtype_id = request.query_params.get('batchtype_id')
+#                 partner_id = request.query_params.get('partner_id')
+#                 slot_date = request.query_params.get('slot_date')
+#                 batch_name = request.query_params.get('batch_name')
+#
+#                 # Initialize slot queryset
+#                 slots = Slot.objects.all()
+#
+#                 # Filter based on batchtype_id
+#                 if batchtype_id:
+#                     batchtype = get_object_or_404(Batchtype, id=batchtype_id)
+#                     slots = slots.filter(batch_type=batchtype)
+#
+#                 # Filter based on partner_id
+#                 if partner_id:
+#                     slots = slots.filter(user_id=partner_id)
+#
+#                 # Filter based on slot_date
+#                 if slot_date:
+#                     slots = slots.filter(slot_date=datetime.strptime(slot_date, '%Y-%m-%d'))
+#
+#                 # Filter based on batch_name
+#                 if batch_name:
+#                     slots = slots.filter(batch_name=batch_name)
+#
+#             elif user.role_id.role_name == 'Partner':
+#                 slot_date = request.query_params.get('slot_date')
+#                 batch_name = request.query_params.get('batch_name')
+#
+#                 if slot_date and batch_name:
+#                     slots = Slot.objects.filter(batch_name=batch_name, slot_date=slot_date, user_id=user_id)
+#                 elif slot_date:
+#                     slots = Slot.objects.filter(slot_date=slot_date, user_id=user_id)
+#                 elif batch_name:
+#                     slots = Slot.objects.filter(batch_name=batch_name, user_id=user_id)
+#                 else:
+#                     raise Http404("Missing query parameters")
+#
+#             else:
+#                 return Response({'message': 'Invalid user role'}, status=status.HTTP_400_BAD_REQUEST)
+#
+#             # Serialize the slot queryset and include student details
+#             slot_data = []
+#             for slot in slots:
+#                 students = Student.objects.filter(slot_id=slot)
+#                 student_details = [{
+#                     'student_name': student.student_name,
+#                     'student_age': student.student_age,
+#                     'student_mobile': student.student_mobile,
+#                     'student_email': student.student_email,
+#                     'student_adhar': student.student_adhar,
+#                     'created_date_time': student.created_date_time,
+#                     'updated_date_time': student.updated_date_time,
+#                     'payment_url': student.payment_url,
+#                     # 'payment_status': student.payment_status,
+#                     'order_id': student.order_id,
+#                     'razorpay_payment_id': student.razorpay_payment_id,
+#                     'razorpay_signature': student.razorpay_signature,
+#                     'stupayment_status': student.stupayment_status,
+#                     'paylinkdate': student.paylinkdate,
+#                 } for student in students]
+#
+#                 slot_data.append({
+#                     'slot_id': slot.id,
+#                     'slot_name': slot.batch_name,
+#                     'students': student_details
+#                 })
+#
+#             return Response({'slots': slot_data})
+#
+#         except Exception as e:
+#             return Response({'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+

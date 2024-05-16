@@ -462,7 +462,10 @@ class Student(models.Model):
     payment_url = models.URLField(max_length=500,null=True, blank=True)
     payment_status = models.ForeignKey(PaymentLinkStatus, on_delete=models.PROTECT, null=True, blank=True)
     order_id = models.CharField(max_length=250, null=True, blank=True)
-
+    razorpay_payment_id = models.TextField(max_length=250, null=True, blank=True)
+    razorpay_signature = models.TextField(max_length=250, null=True, blank=True)
+    stupayment_status = models.CharField(max_length=50, null=True, blank=True)
+    paylinkdate = models.DateTimeField(null=True, blank=True)
     def __str__(self):
         return str(self.student_name)
 
