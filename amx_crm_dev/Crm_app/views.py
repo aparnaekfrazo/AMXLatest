@@ -13370,18 +13370,13 @@ class MatchingSlotsAPIView(APIView):
     def get(self, request, slot_id):
         try:
             # Retrieve the slot based on the provided slot_id
-            slot = Slot.objects.get(id=slot_id)
+            base_slot = Slot.objects.get(id=slot_id)
 
-            # Serialize the slot details using SlotStudentSerializer
-            serializer = SlotStudentSerializer(slot)
-            slot_data = serializer.data
-
-            # Calculate remaining students count for the slot
-            remaining_students_count = slot.batch_size - Student.objects.filter(slot_id=slot).count()
-            slot_data["remaining_students"] = remaining_students_count
+            # Calculate current date
+            current_date = datetime.now().date()
 
             # Retrieve matching slots with the same batch type
-            matching_slots = Slot.objects.filter(user_id=slot.user_id,batch_type=slot.batch_type).exclude(id=slot_id)
+            matching_slots = Slot.objects.filter(user_id=base_slot.user_id, batch_type=base_slot.batch_type).exclude(id=slot_id)
 
             # Get the number of additional students from the query parameters
             student_len = int(request.query_params.get('student_len', 0))
@@ -13389,6 +13384,13 @@ class MatchingSlotsAPIView(APIView):
             # Serialize the matching slots along with remaining students
             response_data = []
             for matching_slot in matching_slots:
+                # Calculate the difference between current date and slot date
+                date_diff = matching_slot.slot_date - current_date
+
+                # If the difference is less than 10 days, exclude the slot from response
+                if date_diff.days < 10:
+                    continue
+
                 # Calculate the number of students this slot can accommodate
                 available_students = matching_slot.batch_size - matching_slot.student_set.count()
 
@@ -13408,6 +13410,7 @@ class MatchingSlotsAPIView(APIView):
 
         except Slot.DoesNotExist:
             return Response({'message': 'Slot not found'}, status=status.HTTP_404_NOT_FOUND)
+
 
 
 class MoveStudentsAPIView(APIView):
