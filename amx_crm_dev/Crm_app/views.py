@@ -13649,10 +13649,59 @@ class FilterData(APIView):
                 slot_date = request.query_params.get('slot_date')
                 batchtype_id = request.query_params.get('batchtype_id')
                 batch_name = request.query_params.get('batch_name')
+                search_query = request.query_params.get('search')
 
                 slots = Slot.objects.all()
 
-                if partner_id and slot_date and batchtype_id and batch_name:
+                if partner_id and slot_date and batchtype_id and batch_name and search_query:
+                    slots = slots.filter(user_id=partner_id, slot_date=datetime.strptime(slot_date, '%Y-%m-%d'),
+                                         batch_type_id=batchtype_id, batch_name=batch_name)
+
+                    slots = slots.exclude(slotstudentrelation__isnull=True)
+
+                    slot_data = []
+                    for slot in slots:
+                        # Filter students based on search query
+                        students = Student.objects.filter(slot_id=slot.id, student_name__istartswith=search_query)
+                        student_details = []
+                        for student in students:
+                            student_details.append({
+                                'id': student.id,
+                                'student_name': student.student_name,
+                                'student_age': student.student_age,
+                                'student_mobile': student.student_mobile,
+                                'student_email': student.student_email,
+                                'student_adhar': student.student_adhar,
+                                'created_date_time': student.created_date_time,
+                                'updated_date_time': student.updated_date_time,
+                                'payment_url': student.payment_url,
+                                'order_id': student.order_id,
+                                'razorpay_signature': student.razorpay_signature,
+                                'stupayment_status': student.stupayment_status,
+                                'paylinkdate': student.paylinkdate,
+                            })
+
+                        if student_details:
+                            batch_type_name = slot.batch_type.name
+                            userid = slot.user_id.first_name
+
+                            slot_data.append({
+                                'slot_id': slot.id,
+                                'slot_name': slot.batch_name,
+                                'slot_date': slot.slot_date,
+                                'batch_size': slot.batch_size,
+                                'batch_type': batch_type_name,
+                                'user_id': userid,
+                                'created_date_time': slot.created_date_time,
+                                'updated_date_time': slot.updated_date_time,
+                                'slot_status': slot.slot_status,
+                                'students': student_details
+                                # Include all students whose names start with the search query
+                            })
+
+                    return Response({'slots': slot_data})
+
+                elif partner_id and slot_date and batchtype_id and batch_name:
                     slots = slots.filter(user_id=partner_id, slot_date=datetime.strptime(slot_date, '%Y-%m-%d'), batch_type_id=batchtype_id,batch_name=batch_name)
 
                     slots = slots.exclude(slotstudentrelation__isnull=True)
@@ -13731,7 +13780,6 @@ class FilterData(APIView):
                     slot_dates_list = [{'slot_date': slot_date.strftime('%Y-%m-%d')} for slot_date in slot_dates]
 
                     return Response(slot_dates_list)
-
                 else:
                     raise Http404("Missing parameters")
 
@@ -13739,9 +13787,52 @@ class FilterData(APIView):
                 slot_date = request.query_params.get('slot_date')
                 batchtype_id = request.query_params.get('batchtype_id')
                 batch_name = request.query_params.get('batch_name')
+                search_query = request.query_params.get('search')
                 batch_names = []
 
-                if slot_date and batchtype_id and batch_name:
+                slots = Slot.objects.filter(user_id=user_id)
+
+                if slot_date and batchtype_id and batch_name and search_query:
+                    slots = slots.filter(slot_date=datetime.strptime(slot_date, '%Y-%m-%d'),
+                                         batch_type_id=batchtype_id, batch_name=batch_name)
+                    slots = slots.exclude(slotstudentrelation__isnull=True)
+
+                    slot_data = []
+                    for slot in slots:
+                        students = Student.objects.filter(slot_id=slot.id, student_name__istartswith=search_query)
+                        student_details = []
+                        for student in students:
+                            student_details.append({
+                                'id': student.id,
+                                'student_name': student.student_name,
+                                'student_age': student.student_age,
+                                'student_mobile': student.student_mobile,
+                                'student_email': student.student_email,
+                                'student_adhar': student.student_adhar,
+                                'created_date_time': student.created_date_time,
+                                'updated_date_time': student.updated_date_time,
+                                'payment_url': student.payment_url,
+                                'order_id': student.order_id,
+                                'razorpay_signature': student.razorpay_signature,
+                                'stupayment_status': student.stupayment_status,
+                                'paylinkdate': student.paylinkdate,
+                            })
+
+                        if student_details:
+                            slot_data.append({
+                                'slot_id': slot.id,
+                                'slot_name': slot.batch_name,
+                                'slot_date': slot.slot_date,
+                                'batch_size': slot.batch_size,
+                                'created_date_time': slot.created_date_time,
+                                'updated_date_time': slot.updated_date_time,
+                                'slot_status': slot.slot_status,
+                                'students': student_details
+                            })
+
+                    return Response({'slots': slot_data})
+
+                elif slot_date and batchtype_id and batch_name:
                     # Filter slots by slot_date, batch_type_id, batch_name, and user_id (partner's ID)
                     slots = Slot.objects.filter(slot_date=datetime.strptime(slot_date, '%Y-%m-%d'),
                                                 batch_type_id=batchtype_id, batch_name=batch_name, user_id=user_id)
