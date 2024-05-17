@@ -13180,6 +13180,9 @@ class SlotsWithSameBatchSizeAPIView(APIView):
             # Retrieve the slot instance
             slot_instance = Slot.objects.get(id=slot_id)
 
+            # Calculate current date
+            current_date = datetime.now().date()
+
             # Get other slots created by the same user and exclude the current slot
             other_slots = Slot.objects.filter(user_id=slot_instance.user_id).exclude(id=slot_id)
 
@@ -13188,6 +13191,9 @@ class SlotsWithSameBatchSizeAPIView(APIView):
                 other_slots = other_slots.filter(batch_type__name='Individual')
             elif slot_instance.batch_type.name == 'Group':
                 other_slots = other_slots.filter(batch_type__name='Group')
+
+            # Filter slots based on the 10-day difference requirement
+            other_slots = other_slots.filter(slot_date__gte=current_date + timedelta(days=10))
 
             # Exclude slots with no students
             other_slots = other_slots.exclude(student=None)
@@ -13198,6 +13204,7 @@ class SlotsWithSameBatchSizeAPIView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Slot.DoesNotExist:
             return Response({'message': 'Slot not found'}, status=status.HTTP_404_NOT_FOUND)
+
 
 
 class SlotSwapAPIView(APIView):
