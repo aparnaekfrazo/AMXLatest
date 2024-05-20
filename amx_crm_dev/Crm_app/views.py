@@ -13548,42 +13548,51 @@ def generate_payment_links_view(request):
                 student = Student.objects.get(id=student_id)
 
                 # Determine the payment link price based on batch type
-                price = individual_price if student.slot_id.batch_type.name == 'Individual' else group_price
+                price = individual_price if student.slot_id.batch_type.name == 'Individual' else group_price  # Moved here
 
-                # Create order ID using Razorpay
-                order_data = {
-                    'amount': price * 100,  # Razorpay accepts amount in paise
-                    'currency': 'INR',
-                    'receipt': f'order_{student_id}',
-                    'payment_capture': 1  # Auto capture payment
-                }
-                order = client.order.create(data=order_data)
+                # Check if payment link already exists
+                if student.payment_url:
+                    payment_link = student.payment_url
+                else:
+                    # Create order ID using Razorpay
+                    order_data = {
+                        'amount': price * 100,  # Razorpay accepts amount in paise
+                        'currency': 'INR',
+                        'receipt': f'order_{student_id}',
+                        'payment_capture': 1  # Auto capture payment
+                    }
+                    order = client.order.create(data=order_data)
 
-                # Save order ID in student object
-                student.order_id = order['id']
-                student.save()
+                    # Save order ID in student object
+                    student.order_id = order['id']
+                    student.save()
+
+                    # Generate payment link
+                    payment_link = f'https://amx-crm-dev.thestorywallcafe.com/#/payment-link?order_id={order["id"]}'
+
+                    # Save the payment link and other details
+                    student.payment_url = payment_link
+                    student.paylinkdate = timezone.now()  # Capture the current datetime
+                    student.stupayment_status = 'Pending'
+                    student.save()
 
                 # Send email to student with payment link
-                payment_link = f'https://amx-crm-dev.thestorywallcafe.com/#/payment-link?order_id={order["id"]}'
                 subject = 'Payment Link for Course'
                 message = f"Dear {student.student_name},\n\nHere is your payment link for the course: {payment_link}\n\nRegards,\nYour Institution"
                 send_mail(subject, message, settings.EMAIL_HOST_USER, [student.student_email])
 
-                # Save payment link details
+                # Save payment link details in the response list
                 payment_links.append({
                     'student_id': student_id,
-                    'order_id': order['id'],
-                    'amount': price
+                    'order_id': student.order_id,
+                    'amount': price  # No error here because price is always defined
                 })
-                student.paylinkdate = timezone.now()  # Capture the current datetime
-                student.payment_url = f'https://amx-crm-dev.thestorywallcafe.com/#/payment-link?order_id={order["id"]}'
-                student.stupayment_status = 'Pending'
-                student.save()
 
             except Student.DoesNotExist:
                 pass  # Handle the case where the student with given ID doesn't exist
 
-        return Response({'message': 'email fot payment sent successfully'}, status=status.HTTP_200_OK)
+        return Response({'message': 'Email for payment sent successfully'},
+                        status=status.HTTP_200_OK)
 
     except Exception as e:
         return Response({'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -13595,12 +13604,13 @@ def payment_details_view(request, order_id):
     try:
         # Retrieve student details based on the order ID
         student = Student.objects.filter(order_id=order_id).first()
-        payment_status = "Pending"
+        # payment_status = "Pending"
         if student:
             student_name = student.student_name
             student_id = student.id
             student_mobile = student.student_mobile
             student_email = student.student_email
+            stupayment_status = student.stupayment_status
 
             # Fetch the associated PayUrl instance
             pay_url = PayUrl.objects.filter(batch_type=student.slot_id.batch_type).first()
@@ -13609,7 +13619,7 @@ def payment_details_view(request, order_id):
             else:
                 amount = 0  # Set a default value or handle the case when PayUrl is not found
 
-            return JsonResponse({'order_id': order_id, 'student_name': student_name, 'amount': amount,"payment_status":payment_status,"student_id":student_id,"student_mobile":student_mobile,"student_email":student_email})
+            return JsonResponse({'order_id': order_id, 'student_name': student_name, 'amount': amount,"payment_status":stupayment_status,"student_id":student_id,"student_mobile":student_mobile,"student_email":student_email})
         else:
             return JsonResponse({'message': 'Student not found for the given order ID'}, status=status.HTTP_404_NOT_FOUND)
 
