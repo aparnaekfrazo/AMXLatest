@@ -13592,7 +13592,7 @@ def payment_details_view(request, order_id):
         if student:
             student_name = student.student_name
             student_id = student.id
-            student_mobile = student.student_email
+            student_mobile = student.student_mobile
             student_email = student.student_email
 
             # Fetch the associated PayUrl instance
