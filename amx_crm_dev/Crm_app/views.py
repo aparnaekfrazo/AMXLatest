@@ -13671,6 +13671,8 @@ class FilterData(APIView):
 
                     slot_data = []
                     for slot in slots:
+                        pay_url = PayUrl.objects.filter(batch_type_id=slot.batch_type_id).first()
+                        payment_link_price = pay_url.payment_link_price if pay_url else None
                         # Filter students based on search query
                         students = Student.objects.filter(slot_id=slot.id, student_name__istartswith=search_query)
                         student_details = []
@@ -13689,6 +13691,7 @@ class FilterData(APIView):
                                 'razorpay_signature': student.razorpay_signature,
                                 'stupayment_status': student.stupayment_status,
                                 'paylinkdate': student.paylinkdate,
+                                'payment_link_price': payment_link_price
                             })
 
                         if student_details:
@@ -13717,6 +13720,8 @@ class FilterData(APIView):
                     slots = slots.exclude(slotstudentrelation__isnull=True)
                     slot_data = []
                     for slot in slots:
+                        pay_url = PayUrl.objects.filter(batch_type_id=slot.batch_type_id).first()
+                        payment_link_price = pay_url.payment_link_price if pay_url else None
                         students = Student.objects.filter(slot_id=slot)
                         student_details = [{
                             'id':student.id,
@@ -13732,6 +13737,7 @@ class FilterData(APIView):
                             'razorpay_signature': student.razorpay_signature,
                             'stupayment_status': student.stupayment_status,
                             'paylinkdate': student.paylinkdate,
+                            'payment_link_price':payment_link_price,
                         } for student in students]
                         batch_type_name = slot.batch_type.name
                         userid = slot.user_id.first_name
@@ -13809,6 +13815,8 @@ class FilterData(APIView):
 
                     slot_data = []
                     for slot in slots:
+                        pay_url = PayUrl.objects.filter(batch_type_id=slot.batch_type_id).first()
+                        payment_link_price = pay_url.payment_link_price if pay_url else None
                         students = Student.objects.filter(slot_id=slot.id, student_name__istartswith=search_query)
                         student_details = []
                         for student in students:
@@ -13826,6 +13834,7 @@ class FilterData(APIView):
                                 'razorpay_signature': student.razorpay_signature,
                                 'stupayment_status': student.stupayment_status,
                                 'paylinkdate': student.paylinkdate,
+                                'payment_link_price':payment_link_price,
                             })
 
                         if student_details:
@@ -13850,6 +13859,8 @@ class FilterData(APIView):
 
                     slot_data = []
                     for slot in slots:
+                        pay_url = PayUrl.objects.filter(batch_type_id=slot.batch_type_id).first()
+                        payment_link_price = pay_url.payment_link_price if pay_url else None
                         students = Student.objects.filter(slot_id=slot)
                         student_details = [{
                             'id':student.id,
@@ -13865,6 +13876,7 @@ class FilterData(APIView):
                             'razorpay_signature': student.razorpay_signature,
                             'stupayment_status': student.stupayment_status,
                             'paylinkdate': student.paylinkdate,
+                            'payment_link_price':payment_link_price,
                         } for student in students]
                         batch_type_name = slot.batch_type.name
                         userid = slot.user_id.first_name
