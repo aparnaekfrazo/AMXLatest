@@ -13571,6 +13571,7 @@ def generate_payment_links_view(request):
                 })
                 student.paylinkdate = timezone.now()  # Capture the current datetime
                 student.payment_url = f'https://amx-crm-dev.thestorywallcafe.com/#/payment-link?order_id={order["id"]}'
+                student.stupayment_status = 'Pending'
                 student.save()
 
             except Student.DoesNotExist:
