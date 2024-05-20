@@ -13578,7 +13578,7 @@ def generate_payment_links_view(request):
 
                 # Send email to student with payment link
                 subject = 'Payment Link for Course'
-                message = f"Dear {student.student_name},\n\nHere is your payment link for the course: {payment_link}\n\nRegards,\nYour Institution"
+                message = f"Dear {student.student_name},\n\nHere is your payment link for the course: {payment_link}\n\nRegards,\nAMX"
                 send_mail(subject, message, settings.EMAIL_HOST_USER, [student.student_email])
 
                 # Save payment link details in the response list
