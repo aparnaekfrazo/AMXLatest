@@ -13650,6 +13650,7 @@ class CheckPaymentStatusView(APIView):
             return Response({'message': str(e)}, status=400)
 
 
+from dateutil import parser as date_parser
 class FilterData(APIView):
     def get(self, request, user_id):
         try:
@@ -13665,7 +13666,7 @@ class FilterData(APIView):
                 slots = Slot.objects.all()
 
                 if partner_id and slot_date and batchtype_id and batch_name and search_query:
-                    slots = slots.filter(user_id=partner_id, slot_date=datetime.strptime(slot_date, '%Y-%m-%d'),
+                    slots = slots.filter(user_id=partner_id, slot_date=date_parser.parse(slot_date).date(),
                                          batch_type_id=batchtype_id, batch_name=batch_name)
 
                     slots = slots.exclude(slotstudentrelation__isnull=True)
@@ -13716,7 +13717,7 @@ class FilterData(APIView):
                     return Response({'slots': slot_data})
 
                 elif partner_id and slot_date and batchtype_id and batch_name:
-                    slots = slots.filter(user_id=partner_id, slot_date=datetime.strptime(slot_date, '%Y-%m-%d'), batch_type_id=batchtype_id,batch_name=batch_name)
+                    slots = slots.filter(user_id=partner_id, slot_date=date_parser.parse(slot_date).date(), batch_type_id=batchtype_id,batch_name=batch_name)
 
                     slots = slots.exclude(slotstudentrelation__isnull=True)
                     slot_data = []
@@ -13761,7 +13762,7 @@ class FilterData(APIView):
                 # If partner_id, slot_date, and batchtype_id are provided
                 elif partner_id and slot_date and batchtype_id:
                     # Filter slots by partner_id, slot_date, and batchtype_id
-                    slots = slots.filter(user_id=partner_id, slot_date=datetime.strptime(slot_date, '%Y-%m-%d'), batch_type_id=batchtype_id)
+                    slots = slots.filter(user_id=partner_id, slot_date=date_parser.parse(slot_date).date(), batch_type_id=batchtype_id)
                     slots = slots.exclude(slotstudentrelation__isnull=True)
 
                     # Get distinct batch names related to the provided parameters
@@ -13773,7 +13774,7 @@ class FilterData(APIView):
 
                 elif partner_id and slot_date:
                     # Filter slots by partner_id and slot_date
-                    slots = slots.filter(user_id=partner_id, slot_date=datetime.strptime(slot_date, '%Y-%m-%d'))
+                    slots = slots.filter(user_id=partner_id, slot_date=date_parser.parse(slot_date).date())
 
                     slots = slots.exclude(slotstudentrelation__isnull=True)
 
@@ -13810,7 +13811,7 @@ class FilterData(APIView):
                 slots = Slot.objects.filter(user_id=user_id)
 
                 if slot_date and batchtype_id and batch_name and search_query:
-                    slots = slots.filter(slot_date=datetime.strptime(slot_date, '%Y-%m-%d'),
+                    slots = slots.filter(slot_date=date_parser.parse(slot_date).date(),
                                          batch_type_id=batchtype_id, batch_name=batch_name)
                     slots = slots.exclude(slotstudentrelation__isnull=True)
 
@@ -13854,7 +13855,7 @@ class FilterData(APIView):
 
                 elif slot_date and batchtype_id and batch_name:
                     # Filter slots by slot_date, batch_type_id, batch_name, and user_id (partner's ID)
-                    slots = Slot.objects.filter(slot_date=datetime.strptime(slot_date, '%Y-%m-%d'),
+                    slots = Slot.objects.filter(slot_date=date_parser.parse(slot_date).date(),
                                                 batch_type_id=batchtype_id, batch_name=batch_name, user_id=user_id)
                     slots = slots.exclude(slotstudentrelation__isnull=True)
 
@@ -13899,7 +13900,7 @@ class FilterData(APIView):
 
                 elif slot_date and batchtype_id:
                     # Filter slots by slot_date, batch_type_id, and user_id (partner's ID)
-                    slots = Slot.objects.filter(slot_date=datetime.strptime(slot_date, '%Y-%m-%d'),
+                    slots = Slot.objects.filter(slot_date=date_parser.parse(slot_date).date(),
                                                 batch_type_id=batchtype_id, user_id=user_id)
                     slots = slots.exclude(slotstudentrelation__isnull=True)
 
@@ -13912,7 +13913,7 @@ class FilterData(APIView):
 
                 elif slot_date:
                     # Filter slots by slot_date and user_id (partner's ID)
-                    slots = Slot.objects.filter(slot_date=datetime.strptime(slot_date, '%Y-%m-%d'), user_id=user_id)
+                    slots = Slot.objects.filter(slot_date=date_parser.parse(slot_date).date(), user_id=user_id)
                     slots = slots.exclude(slotstudentrelation__isnull=True)
 
                     # Get distinct batch names related to the provided slot date
