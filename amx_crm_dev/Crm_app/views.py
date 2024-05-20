@@ -509,6 +509,11 @@ class PartnerCompanyUpdateForSuperAdminAPIView(APIView):
         return Response({"message": "Partner company details updated successfully"}, status=status.HTTP_200_OK)
 
 
+from datetime import datetime, timedelta
+
+from django.utils import timezone
+from datetime import timedelta
+
 class LoginAPIView(APIView):
     def post(self, request):
         data = request.data
@@ -531,7 +536,7 @@ class LoginAPIView(APIView):
             lastname = user.last_name
 
             auth_token = jwt.encode(
-                {'user_id': user_id, 'name': user_name, 'exp': datetime.utcnow() + timedelta(days=5)},
+                {'user_id': user_id, 'name': user_name, 'exp': timezone.now() + timedelta(days=5)},
                 str(settings.JWT_SECRET_KEY), algorithm="HS256")
 
             authorization = "Bearer " + str(auth_token)
@@ -563,6 +568,7 @@ class LoginAPIView(APIView):
             return Response(response, status=status.HTTP_200_OK)
 
         return Response({'result': {'error': 'Invalid credentials'}}, status=status.HTTP_401_UNAUTHORIZED)
+
 
 
 class DroneCategoryAPIView(APIView):
