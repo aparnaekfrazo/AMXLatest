@@ -180,10 +180,15 @@ class SlotSerializer(serializers.ModelSerializer):
             return False
 
 class StudentSerializer(serializers.ModelSerializer):
+    payment_link_price = serializers.SerializerMethodField()
     class Meta:
         model = Student
         fields = ['id', 'slot_id', 'student_name', 'student_age', 'student_mobile', 'student_email', 'student_adhar',
-                  'created_date_time', 'updated_date_time']
+                  'created_date_time', 'updated_date_time','payment_link_price']
+
+    def get_payment_link_price(self, obj):
+        pay_url = PayUrl.objects.filter(batch_type_id=obj.slot_id.batch_type_id).first()
+        return pay_url.payment_link_price if pay_url else None
 
 
 class SlotStudentSerializer(serializers.ModelSerializer):
