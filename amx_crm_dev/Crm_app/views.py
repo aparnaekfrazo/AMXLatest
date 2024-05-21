@@ -1262,19 +1262,24 @@ class CompanydetailsAPIView(APIView):
                     old_signature = partner.user_signature
                     new_signature = data.get("user_signature")
 
-                    if new_signature and new_signature != str(old_signature):
+                    if new_signature:
                         try:
-                            characters = string.ascii_letters + string.digits
-                            random_string = ''.join(random.choice(characters) for _ in range(10))
-                            format, imgstr = new_signature.split(';base64,')
-                            ext = format.split('/')[-1]
-                            signature_name = f'signature_{random_string}.{ext}'
-                            signature_data = ContentFile(base64.b64decode(imgstr), name=signature_name)
-                            requested_changes["user_signature"] = {
-                                "old": server_address + media_url + str(old_signature),
-                                "new": server_address + media_url + signature_name
-                            }
-                            new_changes["user_signature"] = signature_data
+                            # Check if the new signature is different from the old signature
+                            old_signature_data = old_signature.read() if old_signature else None
+                            new_signature_data = base64.b64decode(new_signature.split(';base64,')[1])
+
+                            if old_signature_data != new_signature_data:
+                                characters = string.ascii_letters + string.digits
+                                random_string = ''.join(random.choice(characters) for _ in range(10))
+                                format, imgstr = new_signature.split(';base64,')
+                                ext = format.split('/')[-1]
+                                signature_name = f'signature_{random_string}.{ext}'
+                                signature_data = ContentFile(new_signature_data, name=signature_name)
+                                requested_changes["user_signature"] = {
+                                    "old": server_address + media_url + str(old_signature),
+                                    "new": server_address + media_url + signature_name
+                                }
+                                new_changes["user_signature"] = signature_data
                         except Exception as e:
                             print(f"Error saving signature image: {e}")
 
