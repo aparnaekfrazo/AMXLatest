@@ -2626,7 +2626,7 @@ class OrderStatusView(APIView):
                             orders = Order.objects.filter(id=single_order_id)
                             for order in orders:
                                 order.order_status = new_status
-                                order.updated_date_time = datetime.now()
+                                order.updated_date_time = timezone.now()
                                 order.save()
 
                                 if order.user_id:
