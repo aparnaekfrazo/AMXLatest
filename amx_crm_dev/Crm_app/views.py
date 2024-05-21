@@ -2669,7 +2669,7 @@ class OrderStatusView(APIView):
                             orders = Order.objects.filter(id__in=order_ids)
                             for order in orders:
                                 order.order_status = new_status
-                                order.updated_date_time = datetime.now()
+                                order.updated_date_time = timezone.now()
                                 order.save()
 
                                 # Increment inventory_count for the associated user
