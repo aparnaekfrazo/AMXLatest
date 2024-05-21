@@ -2291,7 +2291,6 @@ def checkout(request):
         # cart_ids = [int(cart_id) for cart_id in cart_ids_param.strip('[]').split(',')]
         cart_ids = [int(cart_id) if cart_id else 0 for cart_id in cart_ids_param.strip('[]').split(',')]
         selected_items = DroneSales.objects.filter(user_id=partner_id, id__in=cart_ids)
-        print(selected_items, "sssssssssssssssss")
 
         selected_cart_ids_param = request.GET.get('selected_cart_ids')
 
@@ -2347,8 +2346,8 @@ def checkout(request):
                 order_status=Status.objects.get(status_name='Failure'), order_id=razorpay_order['id'],
                 drone_id=item.drone_id,
                 user_id=user_instance,
-                created_date_time=datetime.now(),
-                updated_date_time=datetime.now(),
+                created_date_time=timezone.now(),
+                updated_date_time=timezone.now(),
                 quantity=quantity,
             )
 
