@@ -1240,8 +1240,7 @@ class CompanydetailsAPIView(APIView):
                     super_admin_email = super_admin.email if super_admin else None
 
                     if not super_admin_email:
-                        return Response({"message": "Super admin email not found"},
-                                        status=status.HTTP_400_BAD_REQUEST)
+                        return Response({"message": "Super admin email not found"}, status=status.HTTP_400_BAD_REQUEST)
 
                     requested_changes = {}
                     new_changes = {}
@@ -1249,45 +1248,58 @@ class CompanydetailsAPIView(APIView):
 
                     fields_to_check = ["company_name", "company_email", "shipping_address", "billing_address",
                                        "company_phn_number", "company_gst_num", "company_cin_num", "pan_number",
-                                       "reason", "shipping_pincode", "billing_pincode", "user_signature"]
+                                       "reason", "shipping_pincode", "billing_pincode"]
 
                     for field in fields_to_check:
                         old_value = getattr(partner, field)
                         new_value = data.get(field)
 
                         if old_value != new_value:
-                            if field == "user_signature":
-                                try:
-                                    characters = string.ascii_letters + string.digits
-                                    random_string = ''.join(random.choice(characters) for _ in range(10))
-                                    format, imgstr = new_value.split(';base64,')
-                                    ext = format.split('/')[-1]
-                                    signature_name = f'signature_{random_string}.{ext}'
-                                    data = ContentFile(base64.b64decode(imgstr), name=signature_name)
-                                except Exception as e:
-                                    print(f"Error saving signature image: {e}")
-
-                                requested_changes[field] = {"old": server_address + media_url + str(old_value),
-                                                            "new": server_address + media_url + signature_name}
-                            else:
-                                requested_changes[field] = {"old": old_value, "new": new_value}
+                            requested_changes[field] = {"old": old_value, "new": new_value}
                             new_changes[field] = new_value
 
+                    # Handle user signature separately
+                    old_signature = partner.user_signature
+                    new_signature = data.get("user_signature")
+
+                    if new_signature and new_signature != str(old_signature):
+                        try:
+                            characters = string.ascii_letters + string.digits
+                            random_string = ''.join(random.choice(characters) for _ in range(10))
+                            format, imgstr = new_signature.split(';base64,')
+                            ext = format.split('/')[-1]
+                            signature_name = f'signature_{random_string}.{ext}'
+                            signature_data = ContentFile(base64.b64decode(imgstr), name=signature_name)
+                            requested_changes["user_signature"] = {
+                                "old": server_address + media_url + str(old_signature),
+                                "new": server_address + media_url + signature_name
+                            }
+                            new_changes["user_signature"] = signature_data
+                        except Exception as e:
+                            print(f"Error saving signature image: {e}")
+
                     change = ChangeRequestCompanyDetails.objects.create(**new_changes, created_by=pk)
-                    change.user_signature.save(signature_name, data, save=True)
+                    if "user_signature" in new_changes:
+                        change.user_signature.save(signature_name, signature_data, save=True)
+
                     approve_url = request.build_absolute_uri(reverse('approve_request', kwargs={'pk': change.id}))
                     reject_url = request.build_absolute_uri(reverse('reject_request', kwargs={'pk': change.id}))
 
                     logger.debug(f"Generated 'approve' URL: {approve_url}")
                     logger.debug(f"Generated 'reject' URL: {reject_url}")
 
-                    email_content = render_to_string('email/partner_update_request_email.html', {
+                    email_context = {
                         'requested_changes': requested_changes,
-                        "user_signature": server_address + media_url + signature_name,  # Use signature_name directly
                         'approve_url': approve_url,
                         'reject_url': reject_url,
                         'user_id': change.id
-                    })
+                    }
+
+                    # Only add user_signature to the email context if it exists in requested_changes
+                    if "user_signature" in requested_changes:
+                        email_context['user_signature'] = server_address + media_url + signature_name
+
+                    email_content = render_to_string('email/partner_update_request_email.html', email_context)
 
                     send_mail(
                         'Partner Update Request',
@@ -1298,8 +1310,7 @@ class CompanydetailsAPIView(APIView):
                         html_message=email_content,
                     )
 
-                    return Response({"message": "Update request sent to the super admin"},
-                                    status=status.HTTP_200_OK)
+                    return Response({"message": "Update request sent to the super admin"}, status=status.HTTP_200_OK)
             else:
 
                 company_name = data.get('company_name')
