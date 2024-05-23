@@ -13407,9 +13407,8 @@ class MatchingSlotsAPIView(APIView):
         try:
             # Retrieve the slot based on the provided slot_id
             base_slot = Slot.objects.get(id=slot_id)
-
             # Calculate current date
-            current_date = timezone.now()
+            current_date = timezone.now().date()
 
             # Retrieve matching slots with the same batch type
             matching_slots = Slot.objects.filter(user_id=base_slot.user_id, batch_type=base_slot.batch_type).exclude(id=slot_id)
