@@ -13210,7 +13210,7 @@ class SlotsWithSameBatchSizeAPIView(APIView):
             slot_instance = Slot.objects.get(id=slot_id)
 
             # Calculate current date
-            current_date = datetime.now().date()
+            current_date = timezone.now().date()
 
             # Get other slots created by the same user and exclude the current slot
             other_slots = Slot.objects.filter(user_id=slot_instance.user_id).exclude(id=slot_id)
