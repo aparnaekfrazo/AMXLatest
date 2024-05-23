@@ -13115,11 +13115,19 @@ class StudentCreateAPIView(APIView):
         # Filter students based on slot and user
         students_to_delete = Student.objects.filter(slot_id=slot_instance, id__in=student_ids)
 
+        # Check if any of the student IDs have stupayment_status = "Success"
+        successful_payment_students = students_to_delete.filter(stupayment_status="Success")
+        if successful_payment_students.exists():
+            successful_payment_student_ids = successful_payment_students.values_list('id', flat=True)
+            return Response({
+                'message': f'{", ".join(student.student_name for student in successful_payment_students)} have already done the payment for this slot and cannot be deleted'},
+                status=status.HTTP_400_BAD_REQUEST)
+
         # Check if any of the student IDs do not belong to the specified slot
         invalid_student_ids = [id for id in student_ids if id not in students_to_delete.values_list('id', flat=True)]
         if invalid_student_ids:
             return Response({
-                'message': f'The following student IDs do not belong to the specified slot: {", ".join(str(id) for id in invalid_student_ids)}'},
+                'message': f'The following students IDs do not belong to the specified slot: {", ".join(str(id) for id in invalid_student_ids)}'},
                 status=status.HTTP_400_BAD_REQUEST)
 
         # Get the SlotStudentRelation objects associated with the students to be deleted
