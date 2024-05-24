@@ -619,7 +619,7 @@ class DroneCategoryAPIView(APIView):
                                 status=status.HTTP_400_BAD_REQUEST)
 
             status_instance.category_name = category_name
-            status_instance.updated_date_time = datetime.now()
+            status_instance.updated_date_time = timezone.now()
             status_instance.save()
 
             return Response({'message': 'DroneCategory status updated successfully'})
@@ -1592,7 +1592,7 @@ class DroneSalesPaymentAPI(APIView):
 
             payment_gateway_instance.custom_amount = custom_amount
             payment_gateway_instance.description = description
-            payment_gateway_instance.updated_date_time = datetime.now()
+            payment_gateway_instance.updated_date_time = timezone.now()
             payment_gateway_instance.save()
 
             return Response({'message': 'Payment gateway updated successfully'})
@@ -1994,7 +1994,7 @@ class StatusAPI(APIView):
                                 status=status.HTTP_400_BAD_REQUEST)
 
             status_instance.status_name = status_name
-            status_instance.updated_date_time = datetime.now()
+            status_instance.updated_date_time = timezone.now()
             status_instance.save()
 
             return Response({'message': 'Order status updated successfully'})
@@ -3634,7 +3634,7 @@ class InvoiceTypeAPI(APIView):
                                 status=status.HTTP_400_BAD_REQUEST)
 
             status_instance.invoice_type_name = invoice_type_name
-            status_instance.updated_date_time = datetime.now()
+            status_instance.updated_date_time = timezone.now()
             status_instance.save()
 
             return Response({'message': 'invoice_type_name Updated!!'})
@@ -6722,7 +6722,7 @@ class InvoiceStatusAPI(APIView):
                                 status=status.HTTP_400_BAD_REQUEST)
 
             status_instance.invoice_status_name = invoice_status_name
-            status_instance.updated_date_time = datetime.now()
+            status_instance.updated_date_time = timezone.now()
             status_instance.save()
 
             return Response({'message': 'Invoice status name  Updated!!'})
@@ -12411,7 +12411,7 @@ class BatchSizeAPI(APIView):
         batch_size.maximum = maximum
         batch_size.description = description
         batch_size.batch_type = batch_type
-        batch_size.updated_date_time = datetime.now()
+        batch_size.updated_date_time = timezone.now()
 
         batch_size.save()
         return Response({'message': 'BatchSize updated successfully'})
@@ -12441,7 +12441,7 @@ class BatchTypeAPI(APIView):
         if Batchtype.objects.filter(name=name).exists():
             return Response({'message': 'Batch type with this name already exists'}, status=status.HTTP_400_BAD_REQUEST)
 
-        batch_type = Batchtype.objects.create(name=name, created_date_time=datetime.now())
+        batch_type = Batchtype.objects.create(name=name, created_date_time=timezone.now())
         data = {'id': batch_type.id, 'name': batch_type.name, 'created_date_time': batch_type.created_date_time,
                 'updated_date_time': batch_type.updated_date_time}
         return Response({'message': 'Batch type created successfully'}, status=status.HTTP_201_CREATED)
@@ -12464,7 +12464,7 @@ class BatchTypeAPI(APIView):
                                 status=status.HTTP_400_BAD_REQUEST)
 
             batch_type.name = name
-            batch_type.updated_date_time = datetime.now()
+            batch_type.updated_date_time = timezone.now()
             batch_type.save()
             data = {'id': batch_type.id, 'name': batch_type.name, 'created_date_time': batch_type.created_date_time,
                     'updated_date_time': batch_type.updated_date_time}
@@ -12500,7 +12500,7 @@ class SlotStatusAPI(APIView):
 
         days_in_advance = request.data.get('days_in_advance')
         slot_status_obj = SlotStatus.objects.create(slot_status=slot_status, days_in_advance=days_in_advance,
-                                                    created_date_time=datetime.now())
+                                                    created_date_time=timezone.now())
 
         return Response({'message': 'Slot status created successfully'}, status=status.HTTP_201_CREATED)
 
@@ -12524,7 +12524,7 @@ class SlotStatusAPI(APIView):
 
             slot_status.slot_status = new_slot_status
             slot_status.days_in_advance = request.data.get('days_in_advance', slot_status.days_in_advance)
-            slot_status.updated_date_time = datetime.now()
+            slot_status.updated_date_time = timezone.now()
             slot_status.save()
             return Response({'message': 'Slot status updated successfully'})
         except SlotStatus.DoesNotExist:
@@ -12559,7 +12559,7 @@ class SlotBookingPriceAPI(APIView):
         description = request.data.get('description')
         slot_status_obj = SlotBookingPrice.objects.create(slot_booking_price=slot_booking_price,
                                                           description=description,
-                                                          created_date_time=datetime.now())
+                                                          created_date_time=timezone.now())
 
         return Response({'message': 'Slot booking price created successfully'}, status=status.HTTP_201_CREATED)
 
@@ -12585,7 +12585,7 @@ class SlotBookingPriceAPI(APIView):
 
             slot_status.slot_booking_price = slot_booking_price
             slot_status.description = request.data.get('description', slot_status.description)
-            slot_status.updated_date_time = datetime.now()
+            slot_status.updated_date_time = timezone.now()
             slot_status.save()
             return Response({'message': 'Slot booking price updated successfully'})
         except ValueError:
@@ -13362,7 +13362,7 @@ class PayUrlAPI(APIView):
         pay_url = PayUrl(payment_link_price=payment_link_price,
                          batch_type=batch_type,
                          description=description)
-        pay_url.updated_date_time = datetime.now()
+        pay_url.updated_date_time = timezone.now()
         pay_url.save()
         return JsonResponse({'message': 'PayUrl created successfully'}, status=201)
 
@@ -13389,7 +13389,7 @@ class PayUrlAPI(APIView):
         pay_url.payment_link_price = payment_link_price
         pay_url.batch_type = batch_type
         pay_url.description = description
-        pay_url.updated_date_time = datetime.now()
+        pay_url.updated_date_time = timezone.now()
         pay_url.save()
         return JsonResponse({'message': 'PayUrl updated successfully'})
 

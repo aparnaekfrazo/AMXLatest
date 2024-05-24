@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from .models import *
 from datetime import datetime, timedelta
+from django.utils import timezone
+
 
 class RoleSerializer(serializers.ModelSerializer):
     class Meta:
@@ -170,7 +172,7 @@ class SlotSerializer(serializers.ModelSerializer):
 
     def get_slot_status(self, obj):
         # Get the current date
-        current_date = datetime.now().date()
+        current_date = timezone.now().date()
         # Calculate the threshold date (10 days before slot_date)
         threshold_date = obj.slot_date - timedelta(days=10)
         # Check if the current date is before the threshold date
@@ -228,7 +230,7 @@ class SlotStudentSerializer(serializers.ModelSerializer):
 
     def get_slot_status(self, obj):
         # Get the current date
-        current_date = datetime.now().date()
+        current_date = timezone.now().date()
         # Calculate the threshold date (10 days before slot_date)
         threshold_date = obj.slot_date - timedelta(days=10)
         # Check if the current date is before the threshold date
