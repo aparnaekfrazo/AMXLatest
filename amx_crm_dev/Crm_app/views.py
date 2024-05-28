@@ -14123,3 +14123,42 @@ class getcalendarAPI(APIView):
 #         except Exception as e:
 #             return Response({'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+class UpdateInvoiceStatusView(APIView):
+    def post(self, request, invoice_number):
+        new_status_id = request.data.get('invoice_status')
+
+        if not new_status_id:
+            return JsonResponse({'message': 'invoice_status is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            new_status = InvoiceStatus.objects.get(invoice_status_name=new_status_id)
+        except InvoiceStatus.DoesNotExist:
+            return JsonResponse({'message': 'Invalid invoice_status name.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check in AddItem
+        add_item = AddItem.objects.filter(
+            invoice_number=invoice_number,
+            customer_type_id__name='Individual'
+        ).first()
+
+        if add_item:
+            add_item.invoice_status = new_status
+            add_item.save()
+            return JsonResponse({'message': 'Invoice status updated successfully for Droneinvoice.'},
+                                status=status.HTTP_200_OK)
+
+        # Check in CustomInvoice
+        custom_invoice = CustomInvoice.objects.filter(
+            invoice_number=invoice_number,
+            customer_type_id__name='Individual'
+        ).first()
+
+        if custom_invoice:
+            custom_invoice.invoice_status = new_status
+            custom_invoice.save()
+            return JsonResponse({'message': 'Invoice status updated successfully for CustomInvoice.'},
+                                status=status.HTTP_200_OK)
+
+        return JsonResponse({'error': 'Invoice not found or customer_type is not Individual.'},
+                            status=status.HTTP_404_NOT_FOUND)
+

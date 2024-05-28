@@ -148,6 +148,8 @@ urlpatterns = [
     path('check-payment-status/<int:student_id>/', CheckPaymentStatusView.as_view(), name='check_payment_status'),
     path('filter-data/<int:user_id>/', FilterData.as_view(), name='filter_data'),
     path('getcalendar/', getcalendarAPI.as_view()),
+    path('update-invoice-status/<str:invoice_number>/', UpdateInvoiceStatusView.as_view(),
+         name='update-invoice-status'),
 
 ]
 
