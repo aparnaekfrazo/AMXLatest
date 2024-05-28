@@ -12772,6 +12772,9 @@ class SlotListView(APIView):
         if batch_name:
             slots = slots.filter(batch_name=batch_name)
 
+        slots = slots.annotate(student_count=Count('slotstudentrelation'))
+        slots = slots.filter(student_count=0)
+
         serializer = SlotSerializer(slots, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
