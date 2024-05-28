@@ -13555,8 +13555,18 @@ def generate_payment_links_view(request):
         student_ids = request.data.get('student_ids', [])
 
         # Retrieve the price for payment link based on batch type
-        individual_price = PayUrl.objects.get(batch_type__name='Individual').payment_link_price
-        group_price = PayUrl.objects.get(batch_type__name='Group').payment_link_price
+        # individual_price = PayUrl.objects.get(batch_type__name='Individual').payment_link_price
+        # group_price = PayUrl.objects.get(batch_type__name='Group').payment_link_price
+
+        try:
+            individual_price = PayUrl.objects.get(batch_type__name='Individual').payment_link_price
+        except PayUrl.DoesNotExist:
+            return Response({'message': 'Individual PayUrl does not exist.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            group_price = PayUrl.objects.get(batch_type__name='Group').payment_link_price
+        except PayUrl.DoesNotExist:
+            return Response({'message': 'Group PayUrl does not exist.'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Initialize Razorpay client
         client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
