@@ -458,7 +458,7 @@ class Student(models.Model):
     # student_adhar = models.IntegerField(null=True, blank=True)
     student_adhar = models.BigIntegerField(null=True, blank=True)
     created_date_time = models.DateTimeField(auto_now_add=True, null=True, blank=True)
-    updated_date_time = models.DateTimeField(null=True, blank=True)
+    updated_date_time = models.DateTimeField(auto_now_add=True,null=True, blank=True)
     payment_url = models.URLField(max_length=500,null=True, blank=True)
     payment_status = models.ForeignKey(PaymentLinkStatus, on_delete=models.PROTECT, null=True, blank=True)
     order_id = models.CharField(max_length=250, null=True, blank=True)
