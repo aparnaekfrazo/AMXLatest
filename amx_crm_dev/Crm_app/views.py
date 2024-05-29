@@ -6247,6 +6247,8 @@ class GetItemsByOwnerIdView(View):
             items = AddItem.objects.filter(owner_id=owner)
         else:
             items = AddItem.objects.filter(owner_id=owner)
+        ###new change for completed status ####
+        items = items.exclude(customer_type_id__name="Orginization")
 
         items = items.exclude(invoice_status__invoice_status_name="Completed")
 
