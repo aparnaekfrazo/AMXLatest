@@ -13550,7 +13550,6 @@ class PaymentLinkStatusAPI(APIView):
         except PaymentLinkStatus.DoesNotExist:
             return Response({'message': 'Payment status does not exist'}, status=status.HTTP_404_NOT_FOUND)
 
-
 @api_view(['POST'])
 def generate_payment_links_view(request):
     try:
@@ -13558,9 +13557,6 @@ def generate_payment_links_view(request):
         student_ids = request.data.get('student_ids', [])
 
         # Retrieve the price for payment link based on batch type
-        # individual_price = PayUrl.objects.get(batch_type__name='Individual').payment_link_price
-        # group_price = PayUrl.objects.get(batch_type__name='Group').payment_link_price
-
         try:
             individual_price = PayUrl.objects.get(batch_type__name='Individual').payment_link_price
         except PayUrl.DoesNotExist:
@@ -13584,13 +13580,14 @@ def generate_payment_links_view(request):
                 student = Student.objects.get(id=student_id)
 
                 # Determine the payment link price based on batch type
-                price = individual_price if student.slot_id.batch_type.name == 'Individual' else group_price  # Moved here
+                price = individual_price if student.slot_id.batch_type.name == 'Individual' else group_price
 
-                # Check if payment link already exists
-                if student.payment_url:
+                # Check if payment link already exists and emails match
+                if student.testemail and student.testemail == student.student_email and student.stupayment_status == 'Pending':
+                    # Use existing order ID and payment link
                     payment_link = student.payment_url
                 else:
-                    # Create order ID using Razorpay
+                    # Create new order ID using Razorpay
                     order_data = {
                         'amount': price * 100,  # Razorpay accepts amount in paise
                         'currency': 'INR',
@@ -13599,18 +13596,19 @@ def generate_payment_links_view(request):
                     }
                     order = client.order.create(data=order_data)
 
-                    # Save order ID in student object
+                    # Save new order ID in student object
                     student.order_id = order['id']
-                    student.save()
 
-                    # Generate payment link
-                    payment_link = f'https://amx-crm-dev.thestorywallcafe.com/#/payment-link?order_id={order["id"]}'
+                    # Generate new payment link
+                    payment_link = f' https://amx-crm-dev.thestorywallcafe.com/#/payment-link?order_id={order["id"]}'
 
-                    # Save the payment link and other details
+                    # Save the new payment link and other details
                     student.payment_url = payment_link
                     student.paylinkdate = timezone.now()  # Capture the current datetime
                     student.stupayment_status = 'Pending'
-                    student.save()
+                    student.testemail = student.student_email  # Update the testemail field
+
+                student.save()
 
                 # Send email to student with payment link
                 subject = 'Payment Link for Course'
@@ -13621,7 +13619,7 @@ def generate_payment_links_view(request):
                 payment_links.append({
                     'student_id': student_id,
                     'order_id': student.order_id,
-                    'amount': price  # No error here because price is always defined
+                    'amount': price
                 })
 
             except Student.DoesNotExist:
@@ -13668,7 +13666,6 @@ class CheckPaymentStatusView(APIView):
         try:
             # Get payment details from the request data
             razorpay_payment_id = request.data.get('razorpay_payment_id')
-            print(razorpay_payment_id,"oooooooooooooo")
             razorpay_order_id = request.data.get('razorpay_order_id')
             razorpay_signature = request.data.get('razorpay_signature')
 

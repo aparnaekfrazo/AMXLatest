@@ -145,7 +145,7 @@ class ModelAdmin(admin.ModelAdmin):
     list_display = ['id','slot_id','student_name','student_age','student_mobile',
                     'student_email','student_adhar','payment_url','stupayment_status',
                     'order_id','razorpay_payment_id','razorpay_signature',
-                    'created_date_time','updated_date_time']
+                    'created_date_time','updated_date_time','testemail']
 
 @admin.register(SlotStudentRelation)
 class ModelAdmin(admin.ModelAdmin):

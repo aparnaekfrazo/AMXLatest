@@ -466,6 +466,7 @@ class Student(models.Model):
     razorpay_signature = models.TextField(max_length=250, null=True, blank=True)
     stupayment_status = models.CharField(max_length=50, null=True, blank=True)
     paylinkdate = models.DateTimeField(null=True, blank=True)
+    testemail = models.EmailField(null=True, blank=True)
     def __str__(self):
         return str(self.student_name)
 
