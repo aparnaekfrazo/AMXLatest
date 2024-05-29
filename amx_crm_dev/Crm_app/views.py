@@ -6247,10 +6247,22 @@ class GetItemsByOwnerIdView(View):
             items = AddItem.objects.filter(owner_id=owner)
         else:
             items = AddItem.objects.filter(owner_id=owner)
-        ###new change for completed status ####
-        #items = items.exclude(customer_type_id__name="Orginization")
+        #old oneeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+        #items = items.exclude(invoice_status__invoice_status_name="Completed")
+        """newwwwwwwwwwwwwww"""
+        items = AddItem.objects.filter(owner_id=owner)
 
-        items = items.exclude(invoice_status__invoice_status_name="Completed")
+        # Filter items with `invoice_status__invoice_status_name="Completed"` to include if `CustomerCategory__name="Individual"`
+        individual_items_with_completed_status = items.filter(
+            Q(customer_type_id__name="Individual") & Q(invoice_status__invoice_status_name="Completed")
+        )
+
+        # Filter items to exclude those with `invoice_status__invoice_status_name="Completed"`
+        other_items = items.exclude(invoice_status__invoice_status_name="Completed")
+
+        # Combine the querysets
+        items = individual_items_with_completed_status | other_items
+        """newwwww"""
 
         item_list = []
         for item in items:
