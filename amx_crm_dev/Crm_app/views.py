@@ -7579,12 +7579,325 @@ class MyApiView(APIView):
 import ast
 
 
+# class InvoiceHistoy(APIView):
+#     def get(self, request, owner_id=None, invoice_number=None):
+#         role_filter = request.query_params.get('filter', '').lower()
+#         partner_id = request.query_params.get('id', None)
+#         page = int(request.GET.get('page', 1))
+#         page_size = int(request.GET.get('page_size', 10))
+#
+#         if role_filter == 'all':
+#             if owner_id:
+#                 try:
+#                     owner = CustomUser.objects.get(id=owner_id)
+#                 except CustomUser.DoesNotExist:
+#                     return JsonResponse({"message": "Owner not found"}, status=404)
+#
+#                 # Assuming 'role' is a field in your user model
+#                 user_role = owner.role_id.role_name  # Replace 'role' with your actual field name for role
+#
+#                 if user_role != 'Super_admin':
+#                     return JsonResponse({"message": "Access denied"}, status=403)
+#
+#             # Display all data for super admin and partner with status as completed
+#             items = AddItem.objects.filter(invoice_status__invoice_status_name="Completed")
+#
+#         elif role_filter == 'partner':
+#             if partner_id and owner_id and CustomUser.objects.filter(id=owner_id,
+#                                                                      role_id__role_name='Super_admin').exists():
+#                 # Display all partners with status as completed based on the provided partner_id
+#                 items = AddItem.objects.filter(owner_id__role_id__role_name='Partner', owner_id=partner_id,
+#                                                invoice_status__invoice_status_name="Completed")
+#             else:
+#                 # Display all partners with status as completed
+#                 items = AddItem.objects.filter(owner_id__role_id__role_name='Partner',
+#                                                invoice_status__invoice_status_name="Completed")
+#
+#         elif owner_id:
+#             try:
+#                 owner = CustomUser.objects.get(id=owner_id)
+#             except CustomUser.DoesNotExist:
+#                 return JsonResponse({"message": "Owner not found"}, status=404)
+#
+#             items = AddItem.objects.filter(owner_id=owner, invoice_status__invoice_status_name="Completed")
+#
+#         elif invoice_number:
+#             try:
+#                 item = AddItem.objects.get(invoice_number=invoice_number,
+#                                            invoice_status__invoice_status_name="Completed")
+#             except AddItem.DoesNotExist:
+#                 return JsonResponse({"message": "Invoice not found"}, status=404)
+#             owner = item.owner_id
+#             items = [item]  # Since we are dealing with a single invoice
+#
+#         else:
+#             return JsonResponse({"message": "Invalid request"}, status=400)
+#         # items = items.order_by('-id')
+#         item_list = []
+#         for item in items:
+#             ewaybill_status = False
+#
+#             # Check if the invoice status is completed
+#             if item.invoice_status == "Completed":
+#                 # Set ewaybill_status to True
+#                 ewaybill_status = True
+#             # Your existing code to process owner_data, customer_data, etc.
+#             owner = item.owner_id
+#             owner_data = {
+#                 "id": owner.id,
+#                 "first_name": owner.first_name,
+#                 "last_name": owner.last_name,
+#                 "full_name": owner.get_full_name(),
+#                 "email": owner.email,
+#                 "mobile_number": owner.mobile_number,
+#                 "address": owner.address,
+#                 "pin_code": owner.pin_code,
+#                 "pan_number": owner.pan_number,
+#                 "profile_pic": f"/media/{owner.profile_pic}" if owner.profile_pic else None,
+#                 # "profile_pic": str(owner.profile_pic) if owner.profile_pic else None,
+#                 "company_name": owner.company_name,
+#                 "company_email": owner.company_email,
+#                 "company_address": owner.company_address,
+#                 "shipping_address": owner.shipping_address,
+#                 "billing_address": owner.billing_address,
+#                 "company_phn_number": owner.company_phn_number,
+#                 "company_gst_num": owner.company_gst_num,
+#                 "company_cin_num": owner.company_cin_num,
+#                 "company_logo": f"/media/{owner.company_logo}" if owner.company_logo else None,
+#                 # "company_logo": str(owner.company_logo) if owner.company_logo else None,
+#                 "role_id": owner.role_id.id if owner.role_id else None,
+#                 "location": owner.location,
+#                 "reason": owner.reason,
+#                 "partner_initial_update": owner.partner_initial_update,
+#                 "gst_number": owner.gst_number,
+#                 "inventory_count": owner.inventory_count,
+#                 "category_id": owner.category.id if owner.category else None,
+#                 "date_of_birth": owner.date_of_birth,
+#                 "gender": owner.gender,
+#                 "created_by_id": owner.created_by_id,
+#                 "state_name": owner.state_name,
+#                 "state_code": owner.state_code,
+#                 "shipping_pincode": owner.shipping_pincode,
+#                 "billing_pincode": owner.billing_pincode,
+#                 "shipping_state": owner.shipping_state,
+#                 "shipping_state_code": owner.shipping_state_code,
+#                 "shipping_state_city": owner.shipping_state_city,
+#                 "shipping_state_country": owner.shipping_state_country,
+#                 "billing_state": owner.billing_state,
+#                 "billing_state_code": owner.billing_state_code,
+#                 "billing_state_city": owner.billing_state_city,
+#                 "billing_state_country": owner.billing_state_country,
+#                 "gstin_reg_type": owner.gstin_reg_type,
+#             }
+#
+#             customer_data = {
+#                 "id": item.customer_id.id if item.customer_id else None,
+#                 "first_name": item.customer_id.first_name if item.customer_id else None,
+#                 "last_name": item.customer_id.last_name if item.customer_id else None,
+#                 "full_name": item.customer_id.get_full_name() if item.customer_id else None,
+#                 "email": item.customer_id.email if item.customer_id else None,
+#                 "mobile_number": item.customer_id.mobile_number if item.customer_id else None,
+#                 "address": item.customer_id.address if item.customer_id else None,
+#                 "pin_code": item.customer_id.pin_code if item.customer_id else None,
+#                 "pan_number": item.customer_id.pan_number if item.customer_id else None,
+#                 'profile_pic': f"/media/{item.customer_id.profile_pic}" if item.customer_id and item.customer_id.profile_pic else None,
+#
+#                 # "profile_pic": str(
+#                 #     item.customer_id.profile_pic) if item.customer_id and item.customer_id.profile_pic else None,
+#                 "company_name": item.customer_id.company_name if item.customer_id else None,
+#                 "company_email": item.customer_id.company_email if item.customer_id else None,
+#                 "company_address": item.customer_id.company_address if item.customer_id else None,
+#                 "shipping_address": item.customer_id.shipping_address if item.customer_id else None,
+#                 "billing_address": item.customer_id.billing_address if item.customer_id else None,
+#                 "company_phn_number": item.customer_id.company_phn_number if item.customer_id else None,
+#                 "company_gst_num": item.customer_id.company_gst_num if item.customer_id else None,
+#                 "company_cin_num": item.customer_id.company_cin_num if item.customer_id else None,
+#                 # "company_logo": str(
+#                 #     item.customer_id.company_logo) if item.customer_id and item.customer_id.company_logo else None,
+#                 'company_logo': f"/media/{item.customer_id.company_logo}" if item.customer_id and item.customer_id.company_logo else None,
+#                 "role_id": item.customer_id.role_id.id if item.customer_id and item.customer_id.role_id else None,
+#                 "created_date_time": item.customer_id.created_date_time if item.customer_id else None,
+#                 "updated_date_time": item.customer_id.updated_date_time if item.customer_id else None,
+#                 "status": item.customer_id.status if item.customer_id else None,
+#                 "location": item.customer_id.location if item.customer_id else None,
+#                 "reason": item.customer_id.reason if item.customer_id else None,
+#                 "partner_initial_update": item.customer_id.partner_initial_update if item.customer_id else None,
+#                 "gst_number": item.customer_id.gst_number if item.customer_id else None,
+#                 "inventory_count": item.customer_id.inventory_count if item.customer_id else None,
+#                 "category_id": item.customer_id.category.id if item.customer_id and item.customer_id.category else None,
+#                 "date_of_birth": item.customer_id.date_of_birth if item.customer_id else None,
+#                 "gender": item.customer_id.gender if item.customer_id else None,
+#                 "created_by_id": item.customer_id.created_by_id if item.customer_id else None,
+#                 "shipping_pincode": item.customer_id.shipping_pincode if item.customer_id else None,
+#                 "billing_pincode": item.customer_id.billing_pincode if item.customer_id else None,
+#                 "shipping_state": item.customer_id.shipping_state if item.customer_id else None,
+#                 "shipping_state_code": item.customer_id.shipping_state_code if item.customer_id else None,
+#                 "shipping_state_city": item.customer_id.shipping_state_city if item.customer_id else None,
+#                 "shipping_state_country": item.customer_id.shipping_state_country if item.customer_id else None,
+#                 "billing_state": item.customer_id.billing_state if item.customer_id else None,
+#                 "billing_state_code": item.customer_id.billing_state_code if item.customer_id else None,
+#                 "billing_state_city": item.customer_id.billing_state_city if item.customer_id else None,
+#                 "billing_state_country": item.customer_id.billing_state_country if item.customer_id else None,
+#                 "gstin_reg_type": item.customer_id.gstin_reg_type if item.customer_id else None,
+#             }
+#
+#             invoice_type_details = {
+#                 'id': item.invoice_type_id.id if item.invoice_type_id else None,
+#                 'name': item.invoice_type_id.invoice_type_name if item.invoice_type_id else None,
+#             }
+#
+#             customer_category = {
+#                 "category_id": item.customer_id.category.id if item.customer_id and item.customer_id.category else None,
+#                 "category_name": item.customer_id.category.name if item.customer_id and item.customer_id.category else None,
+#             }
+#             drone_details = item.dronedetails
+#             drone_info_list = []
+#
+#             if drone_details:
+#                 for drone_detail in drone_details:
+#                     drone_id = drone_detail["drone_id"]
+#                     quantity = drone_detail["quantity"]
+#                     price = drone_detail["price"]
+#                     serial_numbers = drone_detail.get("serial_numbers", [])
+#                     hsn_number = drone_detail["hsn_number"]
+#                     item_total_price = drone_detail.get("item_total_price", 0)
+#                     discount = drone_detail.get("discount", 0)
+#                     igst = drone_detail.get("igst", 0)
+#                     cgst = drone_detail.get("cgst", 0)
+#                     sgst = drone_detail.get("sgst", 0)
+#                     created_datetime = drone_detail.get("created_datetime")
+#                     updated_datetime = drone_detail.get("updated_datetime")
+#                     discount_amount = drone_detail.get("discount_amount")
+#                     price_after_discount = drone_detail.get("price_after_discount")
+#                     igst_percentage = drone_detail.get("igst_percentage", 0)
+#                     cgst_percentage = drone_detail.get("cgst_percentage", 0)
+#                     sgst_percentage = drone_detail.get("sgst_percentage", 0)
+#                     total = drone_detail.get("total", 0)
+#
+#                     try:
+#                         drone = Drone.objects.get(id=drone_id)
+#                         drone_ownership = DroneOwnership.objects.filter(user=owner, drone=drone_id).first()
+#                         remaining_quantity = drone_ownership.quantity if drone_ownership else 0
+#                         drone_info = {
+#                             "drone_id": drone.id,
+#                             "drone_name": drone.drone_name,
+#                             "drone_category": drone.drone_category.category_name if drone.drone_category else None,
+#                             "quantity": quantity,
+#                             "price": price,
+#                             "serial_numbers": drone_detail.get("serial_numbers", []),
+#                             "hsn_number": drone_detail["hsn_number"],
+#                             "item_total_price": drone_detail.get("item_total_price", 0),
+#                             "remaining_quantity": remaining_quantity,
+#                             "discount": discount,
+#                             "igst": igst,
+#                             "cgst": cgst,
+#                             "sgst": sgst,
+#                             "created_datetime": created_datetime,
+#                             "updated_datetime": updated_datetime,
+#                             "discount_amount": discount_amount,
+#                             "price_after_discount": price_after_discount,
+#                             "igst_percentage": igst_percentage,
+#                             "cgst_percentage": cgst_percentage,
+#                             "sgst_percentage": sgst_percentage,
+#                             "total": total
+#                         }
+#                         drone_info_list.append(drone_info)
+#                     except Drone.DoesNotExist:
+#                         pass
+#
+#             item_data = {
+#                 "id": item.id,
+#                 "customer_type_id": item.customer_type_id.id if item.customer_type_id else None,
+#                 "customer_details": customer_data,
+#                 "owner_id": owner.id if owner else None,
+#                 "owner_details": owner_data,
+#                 'invoice_type_details': invoice_type_details,
+#                 'customer_category': customer_category,
+#                 "dronedetails": drone_info_list,
+#                 "e_invoice_status": item.e_invoice_status,
+#                 "ewaybill_status": item.ewaybill_status,
+#                 "invoice_number": item.invoice_number,
+#                 "created_date_time": item.created_date_time,
+#                 "updated_date_time": item.updated_date_time,
+#                 "signature_url": item.signature.url if item.signature else None,
+#                 "invoice_status": item.invoice_status.invoice_status_name if item.invoice_status else None,
+#                 "invoice_status_id": item.invoice_status.id if item.invoice_status else None,
+#                 "amount_to_pay": item.amount_to_pay,
+#                 "sum_of_item_total_price": item.sum_of_item_total_price,
+#                 "sum_of_igst_percentage": item.sum_of_igst_percentage,
+#                 "sum_of_cgst_percentage": item.sum_of_cgst_percentage,
+#                 "sum_of_sgst_percentage": item.sum_of_sgst_percentage,
+#                 "sum_of_discount_amount": item.sum_of_discount_amount,
+#                 "sum_of_price_after_discount": item.sum_of_price_after_discount,
+#                 "transportation_details": item.transportation_details,
+#
+#             }
+#
+#             e_invoice_data = EInvoice.objects.filter(invoice_number=item).values('api_response', 'data',
+#                                                                                  'e_waybill').first()
+#
+#             # Check if e_invoice_data is not None
+#             if e_invoice_data:
+#                 # Parse JSON data if available
+#                 api_response_data = json.loads(e_invoice_data['api_response']) if e_invoice_data and e_invoice_data[
+#                     'api_response'] else None
+#
+#                 # Convert 'data' field from string to dictionary
+#                 data_dict = ast.literal_eval(e_invoice_data['data']) if e_invoice_data and e_invoice_data[
+#                     'data'] else None
+#
+#                 # Add EInvoice data to the item_data dictionary
+#                 item_data['e_invoice_data'] = {
+#                     'api_response': api_response_data,
+#                     'data': data_dict,
+#                 }
+#
+#                 # Convert 'e_waybill' field from string to dictionary
+#                 try:
+#                     e_waybill_dict = ast.literal_eval(e_invoice_data.get('e_waybill', '{}'))
+#                 except ValueError:
+#                     e_waybill_dict = {}
+#
+#                 # Add e_waybill outside e_invoice_data
+#                 item_data['ewaybill'] = {
+#                     'EwbNo': e_waybill_dict.get('EwbNo', None),
+#                     'EwbDt': e_waybill_dict.get('EwbDt', None),
+#                     'EwbValidTill': e_waybill_dict.get('EwbValidTill', None),
+#                 }
+#
+#             item_list.append(item_data)
+#         item_list.sort(key=lambda x: x['updated_date_time'], reverse=True)
+#
+#         # return JsonResponse({"items": item_list}, status=200)
+#         paginator = Paginator(item_list, page_size)
+#         try:  # return JsonResponse({"items": item_list}, status=200)
+#             items = paginator.page(page)
+#         except PageNotAnInteger:
+#             items = paginator.page(1)
+#         except EmptyPage:
+#             items = paginator.page(paginator.num_pages)
+#
+#         if items.number != page:
+#             return JsonResponse([], safe=False)
+#
+#         response_data = {
+#             "count": paginator.count,
+#             "count_in_current_page": len(items),
+#             "items": items.object_list
+#         }
+#         return JsonResponse(response_data, status=200)
+
 class InvoiceHistoy(APIView):
     def get(self, request, owner_id=None, invoice_number=None):
         role_filter = request.query_params.get('filter', '').lower()
         partner_id = request.query_params.get('id', None)
         page = int(request.GET.get('page', 1))
         page_size = int(request.GET.get('page_size', 10))
+
+        # Base queryset excluding 'Individual' with 'Completed' status
+        base_query = AddItem.objects.exclude(
+            Q(customer_type_id__name="Individual") & Q(invoice_status__invoice_status_name="Completed")
+        )
 
         if role_filter == 'all':
             if owner_id:
@@ -7593,25 +7906,21 @@ class InvoiceHistoy(APIView):
                 except CustomUser.DoesNotExist:
                     return JsonResponse({"message": "Owner not found"}, status=404)
 
-                # Assuming 'role' is a field in your user model
                 user_role = owner.role_id.role_name  # Replace 'role' with your actual field name for role
 
                 if user_role != 'Super_admin':
                     return JsonResponse({"message": "Access denied"}, status=403)
 
-            # Display all data for super admin and partner with status as completed
-            items = AddItem.objects.filter(invoice_status__invoice_status_name="Completed")
+            # Display all data for super admin with status as completed
+            items = base_query.filter(invoice_status__invoice_status_name="Completed")
 
         elif role_filter == 'partner':
-            if partner_id and owner_id and CustomUser.objects.filter(id=owner_id,
-                                                                     role_id__role_name='Super_admin').exists():
+            if partner_id and owner_id and CustomUser.objects.filter(id=owner_id, role_id__role_name='Super_admin').exists():
                 # Display all partners with status as completed based on the provided partner_id
-                items = AddItem.objects.filter(owner_id__role_id__role_name='Partner', owner_id=partner_id,
-                                               invoice_status__invoice_status_name="Completed")
+                items = base_query.filter(owner_id__role_id__role_name='Partner', owner_id=partner_id, invoice_status__invoice_status_name="Completed")
             else:
                 # Display all partners with status as completed
-                items = AddItem.objects.filter(owner_id__role_id__role_name='Partner',
-                                               invoice_status__invoice_status_name="Completed")
+                items = base_query.filter(owner_id__role_id__role_name='Partner', invoice_status__invoice_status_name="Completed")
 
         elif owner_id:
             try:
@@ -7619,12 +7928,11 @@ class InvoiceHistoy(APIView):
             except CustomUser.DoesNotExist:
                 return JsonResponse({"message": "Owner not found"}, status=404)
 
-            items = AddItem.objects.filter(owner_id=owner, invoice_status__invoice_status_name="Completed")
+            items = base_query.filter(owner_id=owner, invoice_status__invoice_status_name="Completed")
 
         elif invoice_number:
             try:
-                item = AddItem.objects.get(invoice_number=invoice_number,
-                                           invoice_status__invoice_status_name="Completed")
+                item = base_query.get(invoice_number=invoice_number, invoice_status__invoice_status_name="Completed")
             except AddItem.DoesNotExist:
                 return JsonResponse({"message": "Invoice not found"}, status=404)
             owner = item.owner_id
@@ -7632,16 +7940,15 @@ class InvoiceHistoy(APIView):
 
         else:
             return JsonResponse({"message": "Invalid request"}, status=400)
-        # items = items.order_by('-id')
+
         item_list = []
         for item in items:
             ewaybill_status = False
 
             # Check if the invoice status is completed
-            if item.invoice_status == "Completed":
-                # Set ewaybill_status to True
+            if item.invoice_status.invoice_status_name == "Completed":
                 ewaybill_status = True
-            # Your existing code to process owner_data, customer_data, etc.
+
             owner = item.owner_id
             owner_data = {
                 "id": owner.id,
@@ -7654,7 +7961,6 @@ class InvoiceHistoy(APIView):
                 "pin_code": owner.pin_code,
                 "pan_number": owner.pan_number,
                 "profile_pic": f"/media/{owner.profile_pic}" if owner.profile_pic else None,
-                # "profile_pic": str(owner.profile_pic) if owner.profile_pic else None,
                 "company_name": owner.company_name,
                 "company_email": owner.company_email,
                 "company_address": owner.company_address,
@@ -7664,7 +7970,6 @@ class InvoiceHistoy(APIView):
                 "company_gst_num": owner.company_gst_num,
                 "company_cin_num": owner.company_cin_num,
                 "company_logo": f"/media/{owner.company_logo}" if owner.company_logo else None,
-                # "company_logo": str(owner.company_logo) if owner.company_logo else None,
                 "role_id": owner.role_id.id if owner.role_id else None,
                 "location": owner.location,
                 "reason": owner.reason,
@@ -7701,9 +8006,6 @@ class InvoiceHistoy(APIView):
                 "pin_code": item.customer_id.pin_code if item.customer_id else None,
                 "pan_number": item.customer_id.pan_number if item.customer_id else None,
                 'profile_pic': f"/media/{item.customer_id.profile_pic}" if item.customer_id and item.customer_id.profile_pic else None,
-
-                # "profile_pic": str(
-                #     item.customer_id.profile_pic) if item.customer_id and item.customer_id.profile_pic else None,
                 "company_name": item.customer_id.company_name if item.customer_id else None,
                 "company_email": item.customer_id.company_email if item.customer_id else None,
                 "company_address": item.customer_id.company_address if item.customer_id else None,
@@ -7712,8 +8014,6 @@ class InvoiceHistoy(APIView):
                 "company_phn_number": item.customer_id.company_phn_number if item.customer_id else None,
                 "company_gst_num": item.customer_id.company_gst_num if item.customer_id else None,
                 "company_cin_num": item.customer_id.company_cin_num if item.customer_id else None,
-                # "company_logo": str(
-                #     item.customer_id.company_logo) if item.customer_id and item.customer_id.company_logo else None,
                 'company_logo': f"/media/{item.customer_id.company_logo}" if item.customer_id and item.customer_id.company_logo else None,
                 "role_id": item.customer_id.role_id.id if item.customer_id and item.customer_id.role_id else None,
                 "created_date_time": item.customer_id.created_date_time if item.customer_id else None,
@@ -7830,35 +8130,25 @@ class InvoiceHistoy(APIView):
                 "sum_of_discount_amount": item.sum_of_discount_amount,
                 "sum_of_price_after_discount": item.sum_of_price_after_discount,
                 "transportation_details": item.transportation_details,
-
             }
 
-            e_invoice_data = EInvoice.objects.filter(invoice_number=item).values('api_response', 'data',
-                                                                                 'e_waybill').first()
+            e_invoice_data = EInvoice.objects.filter(invoice_number=item).values('api_response', 'data', 'e_waybill').first()
 
-            # Check if e_invoice_data is not None
             if e_invoice_data:
-                # Parse JSON data if available
-                api_response_data = json.loads(e_invoice_data['api_response']) if e_invoice_data and e_invoice_data[
-                    'api_response'] else None
+                api_response_data = json.loads(e_invoice_data['api_response']) if e_invoice_data and e_invoice_data['api_response'] else None
 
-                # Convert 'data' field from string to dictionary
-                data_dict = ast.literal_eval(e_invoice_data['data']) if e_invoice_data and e_invoice_data[
-                    'data'] else None
+                data_dict = ast.literal_eval(e_invoice_data['data']) if e_invoice_data and e_invoice_data['data'] else None
 
-                # Add EInvoice data to the item_data dictionary
                 item_data['e_invoice_data'] = {
                     'api_response': api_response_data,
                     'data': data_dict,
                 }
 
-                # Convert 'e_waybill' field from string to dictionary
                 try:
                     e_waybill_dict = ast.literal_eval(e_invoice_data.get('e_waybill', '{}'))
                 except ValueError:
                     e_waybill_dict = {}
 
-                # Add e_waybill outside e_invoice_data
                 item_data['ewaybill'] = {
                     'EwbNo': e_waybill_dict.get('EwbNo', None),
                     'EwbDt': e_waybill_dict.get('EwbDt', None),
@@ -7866,11 +8156,11 @@ class InvoiceHistoy(APIView):
                 }
 
             item_list.append(item_data)
+
         item_list.sort(key=lambda x: x['updated_date_time'], reverse=True)
 
-        # return JsonResponse({"items": item_list}, status=200)
         paginator = Paginator(item_list, page_size)
-        try:  # return JsonResponse({"items": item_list}, status=200)
+        try:
             items = paginator.page(page)
         except PageNotAnInteger:
             items = paginator.page(1)
@@ -7886,6 +8176,7 @@ class InvoiceHistoy(APIView):
             "items": items.object_list
         }
         return JsonResponse(response_data, status=200)
+
 
 
 @method_decorator(csrf_exempt, name='dispatch')
