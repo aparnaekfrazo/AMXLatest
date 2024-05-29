@@ -9295,22 +9295,166 @@ class AddCustomInvoiceSignature(APIView):
         return Response(response_data, status=status.HTTP_200_OK)
 
 
+# class ALLinvoiceForSuperAdmin(APIView):
+#     def get(self, request, *args, **kwargs):
+#         try:
+#             add_items = AddItem.objects.select_related(
+#                 'customer_id',
+#                 'owner_id',
+#                 'invoice_type_id',
+#                 'invoice_status'
+#             ).filter(owner_id__role_id__role_name='Super_admin', invoice_status__invoice_status_name='Completed')
+#
+#             custom_invoices = CustomInvoice.objects.select_related(
+#                 'customer_id',
+#                 'owner_id',
+#                 'invoice_type_id',
+#                 'invoice_status'
+#             ).filter(owner_id__role_id__role_name='Super_admin', invoice_status__invoice_status_name='Completed')
+#
+#             response_data = []
+#             for add_item in add_items:
+#                 response_data.append(self.get_item_details(add_item))
+#
+#             for custom_invoice in custom_invoices:
+#                 response_data.append(self.get_item_details(custom_invoice))
+#
+#             response_data.sort(key=lambda x: x['updated_date_time'], reverse=True)
+#             return JsonResponse(response_data, safe=False)
+#
+#         except (AddItem.DoesNotExist, CustomInvoice.DoesNotExist):
+#             return JsonResponse({'error': 'Data not found'}, status=404)
+#
+#     def get_item_details(self, item):
+#         customer_details = self.get_custom_user_details(item.customer_id)
+#         owner_details = self.get_custom_user_details(item.owner_id)
+#         invoice_type_details = {
+#             'id': item.invoice_type_id.id,
+#             'name': item.invoice_type_id.invoice_type_name,
+#         }
+#         customer_category = {
+#             "category_id": item.customer_id.category.id if item.customer_id and item.customer_id.category else None,
+#             "category_name": item.customer_id.category.name if item.customer_id and item.customer_id.category else None,
+#         }
+#         if hasattr(item, 'transportation_details') and item.transportation_details:
+#             transportation_details = True
+#         else:
+#             transportation_details = False
+#
+#         item_data = {
+#             'id': item.id,
+#             'customer_details': customer_details,
+#             'owner_details': owner_details,
+#             # 'invoice_type_id': item.invoice_type_id.id,
+#             # 'invoice_type_name': item.invoice_type_id.invoice_type_name,
+#             # 'e_invoice_status': item.e_invoice_status,
+#             'dronedetails': item.dronedetails if hasattr(item, 'dronedetails') else [],
+#             "invoice_type_details": invoice_type_details,
+#             "e_invoice_status": item.e_invoice_status,
+#             "ewaybill_status": item.ewaybill_status,
+#             "customer_category": customer_category,
+#             'custom_item_details': item.custom_item_details if hasattr(item, 'custom_item_details') else [],
+#             'created_date_time': item.created_date_time,
+#             'updated_date_time': item.updated_date_time,
+#             'invoice_number': item.invoice_number,
+#             'signature': item.signature.url if item.signature else None,
+#             'invoice_payload': item.invoice_payload,
+#             'invoice_status': item.invoice_status.invoice_status_name,
+#             'ewaybill_payload': item.ewaybill_payload,
+#             'amount_to_pay': item.amount_to_pay,
+#             'sum_of_item_total_price': item.sum_of_item_total_price,
+#             'sum_of_igst_percentage': item.sum_of_igst_percentage,
+#             'sum_of_cgst_percentage': item.sum_of_cgst_percentage,
+#             'sum_of_sgst_percentage': item.sum_of_sgst_percentage,
+#             'sum_of_discount_amount': item.sum_of_discount_amount,
+#             'sum_of_price_after_discount': item.sum_of_price_after_discount,
+#             'transportation_details': item.transportation_details
+#
+#         }
+#
+#         return item_data
+#
+#     def get_custom_user_details(self, custom_user):
+#         if custom_user:
+#             return {
+#                 'id': custom_user.id,
+#                 'username': custom_user.username,
+#                 'email': custom_user.email,
+#                 'first_name': custom_user.first_name,
+#                 'last_name': custom_user.last_name,
+#                 'full_name': custom_user.get_full_name(),
+#                 'mobile_number': custom_user.mobile_number,
+#                 'address': custom_user.address,
+#                 'pin_code': custom_user.pin_code,
+#                 'pan_number': custom_user.pan_number,
+#                 'profile_pic': custom_user.profile_pic.url if custom_user.profile_pic else None,
+#                 'company_name': custom_user.company_name,
+#                 'company_email': custom_user.company_email,
+#                 'company_address': custom_user.company_address,
+#                 'shipping_address': custom_user.shipping_address,
+#                 'billing_address': custom_user.billing_address,
+#                 'company_phn_number': custom_user.company_phn_number,
+#                 'company_gst_num': custom_user.company_gst_num,
+#                 'company_cin_num': custom_user.company_cin_num,
+#                 'company_logo': custom_user.company_logo.url if custom_user.company_logo else None,
+#                 'role_id': custom_user.role_id.id,
+#                 'created_date_time': custom_user.created_date_time,
+#                 'updated_date_time': custom_user.updated_date_time,
+#                 'status': custom_user.status,
+#                 'location': custom_user.location,
+#                 'reason': custom_user.reason,
+#                 'partner_initial_update': custom_user.partner_initial_update,
+#                 'gst_number': custom_user.gst_number,
+#                 'category': custom_user.category.id if custom_user.category else None,
+#                 'date_of_birth': custom_user.date_of_birth,
+#                 'gender': custom_user.gender,
+#                 'created_by': custom_user.created_by.id if custom_user.created_by else None,
+#                 'invoice': custom_user.invoice.id if custom_user.invoice else None,
+#                 'shipping_pincode': custom_user.shipping_pincode,
+#                 'billing_pincode': custom_user.billing_pincode,
+#                 'shipping_state': custom_user.shipping_state,
+#                 'shipping_state_code': custom_user.shipping_state_code,
+#                 'shipping_state_city': custom_user.shipping_state_city,
+#                 'shipping_state_country': custom_user.shipping_state_country,
+#                 'billing_state': custom_user.billing_state,
+#                 'billing_state_code': custom_user.billing_state_code,
+#                 'billing_state_city': custom_user.billing_state_city,
+#                 'billing_state_country': custom_user.billing_state_country,
+#                 'gstin_reg_type': custom_user.gstin_reg_type,
+#
+#             }
+#         else:
+#             return {}
+
 class ALLinvoiceForSuperAdmin(APIView):
     def get(self, request, *args, **kwargs):
         try:
+            # Base query excluding 'Individual' with 'Completed' status
             add_items = AddItem.objects.select_related(
                 'customer_id',
                 'owner_id',
                 'invoice_type_id',
                 'invoice_status'
-            ).filter(owner_id__role_id__role_name='Super_admin', invoice_status__invoice_status_name='Completed')
+            ).filter(
+                Q(owner_id__role_id__role_name='Super_admin') &
+                (
+                    ~Q(customer_id__category__name="Individual") |
+                    Q(invoice_status__invoice_status_name='Completed')
+                )
+            )
 
             custom_invoices = CustomInvoice.objects.select_related(
                 'customer_id',
                 'owner_id',
                 'invoice_type_id',
                 'invoice_status'
-            ).filter(owner_id__role_id__role_name='Super_admin', invoice_status__invoice_status_name='Completed')
+            ).filter(
+                Q(owner_id__role_id__role_name='Super_admin') &
+                (
+                    ~Q(customer_id__category__name="Individual") |
+                    Q(invoice_status__invoice_status_name='Completed')
+                )
+            )
 
             response_data = []
             for add_item in add_items:
@@ -9345,9 +9489,6 @@ class ALLinvoiceForSuperAdmin(APIView):
             'id': item.id,
             'customer_details': customer_details,
             'owner_details': owner_details,
-            # 'invoice_type_id': item.invoice_type_id.id,
-            # 'invoice_type_name': item.invoice_type_id.invoice_type_name,
-            # 'e_invoice_status': item.e_invoice_status,
             'dronedetails': item.dronedetails if hasattr(item, 'dronedetails') else [],
             "invoice_type_details": invoice_type_details,
             "e_invoice_status": item.e_invoice_status,
@@ -9369,7 +9510,6 @@ class ALLinvoiceForSuperAdmin(APIView):
             'sum_of_discount_amount': item.sum_of_discount_amount,
             'sum_of_price_after_discount': item.sum_of_price_after_discount,
             'transportation_details': item.transportation_details
-
         }
 
         return item_data
@@ -9421,7 +9561,6 @@ class ALLinvoiceForSuperAdmin(APIView):
                 'billing_state_city': custom_user.billing_state_city,
                 'billing_state_country': custom_user.billing_state_country,
                 'gstin_reg_type': custom_user.gstin_reg_type,
-
             }
         else:
             return {}
