@@ -11095,14 +11095,14 @@ class FilterForSuperadmin(View):
             if response_type and customer_type_id and customer_ids and invoice_status:
                 if response_type == 'drone':
                     add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
-                                                       invoice_number__istartswith=search_invoice_number,
+
                                                        invoice_status__in=invoice_status,
                                                        customer_type_id=customer_type_id, customer_id__in=customer_ids)
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
                     custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
-                                                                   invoice_number__istartswith=search_invoice_number,
+
                                                                    invoice_status__in=invoice_status,
                                                                    customer_type_id=customer_type_id,
                                                                    customer_id__in=customer_ids)
@@ -11500,7 +11500,6 @@ class FilterForSuperadmin(View):
             if response_type and customer_type_id and customer_ids and invoice_status and query_key == 'invoice':
                 if response_type == 'drone':
                     add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
-                                                       invoice_number__istartswith=search_invoice_number,
                                                        invoice_status__in=invoice_status,
                                                        customer_type_id=customer_type_id,
                                                        customer_id__in=customer_ids).exclude(
@@ -11510,7 +11509,6 @@ class FilterForSuperadmin(View):
                 elif response_type == 'custom':
                     add_items = []
                     custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
-                                                                   invoice_number__istartswith=search_invoice_number,
                                                                    invoice_status__in=invoice_status,
                                                                    customer_type_id=customer_type_id,
                                                                    customer_id__in=customer_ids).exclude(
