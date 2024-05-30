@@ -11590,284 +11590,284 @@ class FilterForSuperadmin(View):
 
             if query_key == 'einvoice':
                 add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
-                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                   invoice_status__invoice_status_name="Completed")
                 custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
-                                                               invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                               invoice_status__invoice_status_name="Completed")
             if response_type and query_key == 'einvoice':
                 if response_type == 'drone':
                     add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
-                                                       invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                       invoice_status__invoice_status_name="Completed")
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
                     custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
-                                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                                   invoice_status__invoice_status_name="Completed")
 
             if customer_type_id and query_key == 'einvoice':
                 add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                    customer_type_id=customer_type_id,
-                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                   invoice_status__invoice_status_name="Completed")
                 custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                customer_type_id=customer_type_id,
-                                                               invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                               invoice_status__invoice_status_name="Completed")
 
             if invoice_status and query_key == 'einvoice':
                 add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                    invoice_status__in=invoice_status,
-                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                   invoice_status__invoice_status_name="Completed")
                 custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                invoice_status__in=invoice_status,
-                                                               invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                               invoice_status__invoice_status_name="Completed")
 
             if customer_ids and query_key == 'einvoice':
                 add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                    customer_id__in=customer_ids,
-                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                   invoice_status__invoice_status_name="Completed")
                 custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                customer_id__in=customer_ids,
-                                                               invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                               invoice_status__invoice_status_name="Completed")
 
             if search_invoice_number and query_key == 'einvoice':
                 add_items = AddItem.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                    owner_id__role_id__role_name='Super_admin',
-                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                   invoice_status__invoice_status_name="Completed")
                 custom_invoices = CustomInvoice.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                                owner_id__role_id__role_name='Super_admin',
-                                                               invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                               invoice_status__invoice_status_name="Completed")
             #######################2
             if response_type and customer_type_id and query_key == 'einvoice':
                 if response_type == 'drone':
                     add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                        customer_type_id=customer_type_id,
-                                                       invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                       invoice_status__invoice_status_name="Completed")
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
                     custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                    customer_type_id=customer_type_id,
-                                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                                   invoice_status__invoice_status_name="Completed")
 
             if response_type and invoice_status and query_key == 'einvoice':
                 if response_type == 'drone':
                     add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                        invoice_status__in=invoice_status,
-                                                       invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                       invoice_status__invoice_status_name="Completed")
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
                     custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                    invoice_status__in=invoice_status,
-                                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                                   invoice_status__invoice_status_name="Completed")
 
             if response_type and customer_ids and query_key == 'einvoice':
                 if response_type == 'drone':
                     add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                        customer_id__in=customer_ids,
-                                                       invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                       invoice_status__invoice_status_name="Completed")
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
                     custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                    customer_id__in=customer_ids,
-                                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                                   invoice_status__invoice_status_name="Completed")
 
             if response_type and search_invoice_number and query_key == 'einvoice':
                 if response_type == 'drone':
                     add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                        invoice_number__istartswith=search_invoice_number,
-                                                       invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                       invoice_status__invoice_status_name="Completed")
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
                     custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                    invoice_number__istartswith=search_invoice_number,
-                                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                                   invoice_status__invoice_status_name="Completed")
 
             if invoice_status and customer_type_id and query_key == 'einvoice':
                 add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                    invoice_status__in=invoice_status,
                                                    customer_type_id=customer_type_id,
-                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                   invoice_status__invoice_status_name="Completed")
                 custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                invoice_status__in=invoice_status,
                                                                customer_type_id=customer_type_id,
-                                                               invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                               invoice_status__invoice_status_name="Completed")
 
             if customer_ids and customer_type_id and query_key == 'einvoice':
                 add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                    customer_id__in=customer_ids, customer_type_id=customer_type_id,
-                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                   invoice_status__invoice_status_name="Completed")
                 custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                customer_id__in=customer_ids,
                                                                customer_type_id=customer_type_id,
-                                                               invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                               invoice_status__invoice_status_name="Completed")
 
             if search_invoice_number and customer_type_id and query_key == 'einvoice':
                 add_items = AddItem.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                    owner_id__role_id__role_name='Super_admin',
                                                    customer_type_id=customer_type_id,
-                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                   invoice_status__invoice_status_name="Completed")
                 custom_invoices = CustomInvoice.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                                owner_id__role_id__role_name='Super_admin',
                                                                customer_type_id=customer_type_id,
-                                                               invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                               invoice_status__invoice_status_name="Completed")
 
             if customer_ids and invoice_status and query_key == 'einvoice':
                 add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                    customer_id__in=customer_ids, invoice_status__in=invoice_status,
-                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                   invoice_status__invoice_status_name="Completed")
                 custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                customer_id__in=customer_ids,
                                                                invoice_status__in=invoice_status,
-                                                               invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                               invoice_status__invoice_status_name="Completed")
 
             if search_invoice_number and invoice_status and query_key == 'einvoice':
                 add_items = AddItem.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                    owner_id__role_id__role_name='Super_admin',
                                                    invoice_status__in=invoice_status,
-                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                   invoice_status__invoice_status_name="Completed")
                 custom_invoices = CustomInvoice.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                                owner_id__role_id__role_name='Super_admin',
                                                                invoice_status__in=invoice_status,
-                                                               invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                               invoice_status__invoice_status_name="Completed")
 
             if search_invoice_number and customer_ids and query_key == 'einvoice':
                 add_items = AddItem.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                    owner_id__role_id__role_name='Super_admin',
                                                    customer_id__in=customer_ids,
-                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                   invoice_status__invoice_status_name="Completed")
                 custom_invoices = CustomInvoice.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                                owner_id__role_id__role_name='Super_admin',
                                                                customer_id__in=customer_ids,
-                                                               invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                               invoice_status__invoice_status_name="Completed")
 
             if response_type and customer_type_id and invoice_status and query_key == 'einvoice':
                 if response_type == 'drone':
                     add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                        customer_type_id=customer_type_id,
                                                        invoice_status__in=invoice_status,
-                                                       invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                       invoice_status__invoice_status_name="Completed")
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
                     custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                    customer_type_id=customer_type_id,
                                                                    invoice_status__in=invoice_status,
-                                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                                   invoice_status__invoice_status_name="Completed")
 
             if response_type and customer_type_id and customer_ids and query_key == 'einvoice':
                 if response_type == 'drone':
                     add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                        customer_type_id=customer_type_id,
                                                        customer_id__in=customer_ids,
-                                                       invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                       invoice_status__invoice_status_name="Completed")
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
                     custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                    customer_type_id=customer_type_id,
                                                                    customer_id__in=customer_ids,
-                                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                                   invoice_status__invoice_status_name="Completed")
 
             if search_invoice_number and response_type and customer_type_id and query_key == 'einvoice':
                 if response_type == 'drone':
                     add_items = AddItem.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                        owner_id__role_id__role_name='Super_admin',
                                                        customer_type_id=customer_type_id,
-                                                       invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                       invoice_status__invoice_status_name="Completed")
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
                     custom_invoices = CustomInvoice.objects.filter(
                         invoice_number__istartswith=search_invoice_number,
                         owner_id__role_id__role_name='Super_admin',
-                        customer_type_id=customer_type_id, invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                        customer_type_id=customer_type_id, invoice_status__invoice_status_name="Completed")
 
             if response_type and customer_ids and invoice_status and query_key == 'einvoice':
                 if response_type == 'drone':
                     add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                        customer_id__in=customer_ids,
                                                        invoice_status__in=invoice_status,
-                                                       invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                       invoice_status__invoice_status_name="Completed")
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
                     custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                    customer_id__in=customer_ids,
                                                                    invoice_status__in=invoice_status,
-                                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                                   invoice_status__invoice_status_name="Completed")
 
             if response_type and search_invoice_number and invoice_status and query_key == 'einvoice':
                 if response_type == 'drone':
                     add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                        invoice_number__istartswith=search_invoice_number,
                                                        invoice_status__in=invoice_status,
-                                                       invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                       invoice_status__invoice_status_name="Completed")
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
                     custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                    invoice_number__istartswith=search_invoice_number,
                                                                    invoice_status__in=invoice_status,
-                                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                                   invoice_status__invoice_status_name="Completed")
             if response_type and search_invoice_number and customer_ids and query_key == 'einvoice':
                 if response_type == 'drone':
                     add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                        invoice_number__istartswith=search_invoice_number,
                                                        customer_id__in=customer_ids,
-                                                       invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                       invoice_status__invoice_status_name="Completed")
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
                     custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                    invoice_number__istartswith=search_invoice_number,
                                                                    customer_id__in=customer_ids,
-                                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                                   invoice_status__invoice_status_name="Completed")
             if customer_ids and invoice_status and customer_type_id and query_key == 'einvoice':
                 add_items = AddItem.objects.filter(customer_id__in=customer_ids,
                                                    owner_id__role_id__role_name='Super_admin',
                                                    invoice_status__in=invoice_status,
                                                    customer_type_id=customer_type_id,
-                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                   invoice_status__invoice_status_name="Completed")
                 custom_invoices = CustomInvoice.objects.filter(customer_id__in=customer_ids,
                                                                owner_id__role_id__role_name='Super_admin',
                                                                invoice_status__in=invoice_status,
                                                                customer_type_id=customer_type_id,
-                                                               invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                               invoice_status__invoice_status_name="Completed")
 
             if search_invoice_number and invoice_status and customer_type_id and query_key == 'einvoice':
                 add_items = AddItem.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                    owner_id__role_id__role_name='Super_admin',
                                                    invoice_status__in=invoice_status,
                                                    customer_type_id=customer_type_id,
-                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                   invoice_status__invoice_status_name="Completed")
                 custom_invoices = CustomInvoice.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                                owner_id__role_id__role_name='Super_admin',
                                                                invoice_status__in=invoice_status,
                                                                customer_type_id=customer_type_id,
-                                                               invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                               invoice_status__invoice_status_name="Completed")
 
             if search_invoice_number and invoice_status and customer_ids and query_key == 'einvoice':
                 add_items = AddItem.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                    owner_id__role_id__role_name='Super_admin',
                                                    invoice_status__in=invoice_status, customer_id__in=customer_ids,
-                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                   invoice_status__invoice_status_name="Completed")
                 custom_invoices = CustomInvoice.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                                owner_id__role_id__role_name='Super_admin',
                                                                invoice_status__in=invoice_status,
                                                                customer_id__in=customer_ids,
-                                                               invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                               invoice_status__invoice_status_name="Completed")
 
             if search_invoice_number and customer_type_id and customer_ids and query_key == 'einvoice':
                 add_items = AddItem.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                    owner_id__role_id__role_name='Super_admin',
                                                    customer_type_id=customer_type_id, customer_id__in=customer_ids,
-                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                   invoice_status__invoice_status_name="Completed")
                 custom_invoices = CustomInvoice.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                                owner_id__role_id__role_name='Super_admin',
                                                                customer_type_id=customer_type_id,
                                                                customer_id__in=customer_ids,
-                                                               invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                               invoice_status__invoice_status_name="Completed")
 
             if response_type and customer_type_id and customer_ids and invoice_status and query_key == 'einvoice':
                 if response_type == 'drone':
@@ -11876,7 +11876,7 @@ class FilterForSuperadmin(View):
                                                        invoice_status__in=invoice_status,
                                                        customer_type_id=customer_type_id,
                                                        customer_id__in=customer_ids,
-                                                       invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                       invoice_status__invoice_status_name="Completed")
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
@@ -11885,7 +11885,7 @@ class FilterForSuperadmin(View):
                                                                    invoice_status__in=invoice_status,
                                                                    customer_type_id=customer_type_id,
                                                                    customer_id__in=customer_ids,
-                                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                                   invoice_status__invoice_status_name="Completed")
 
             if response_type and customer_type_id and search_invoice_number and invoice_status and query_key == 'einvoice':
                 if response_type == 'drone':
@@ -11893,7 +11893,7 @@ class FilterForSuperadmin(View):
                                                        invoice_number__istartswith=search_invoice_number,
                                                        invoice_status__in=invoice_status,
                                                        customer_type_id=customer_type_id,
-                                                       invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                       invoice_status__invoice_status_name="Completed")
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
@@ -11901,7 +11901,7 @@ class FilterForSuperadmin(View):
                                                                    invoice_number__istartswith=search_invoice_number,
                                                                    invoice_status__in=invoice_status,
                                                                    customer_type_id=customer_type_id,
-                                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                                   invoice_status__invoice_status_name="Completed")
 
             if response_type and customer_ids and search_invoice_number and invoice_status and query_key == 'einvoice':
                 if response_type == 'drone':
@@ -11909,7 +11909,7 @@ class FilterForSuperadmin(View):
                                                        invoice_number__istartswith=search_invoice_number,
                                                        invoice_status__in=invoice_status,
                                                        customer_id__in=customer_ids,
-                                                       invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                       invoice_status__invoice_status_name="Completed")
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
@@ -11917,20 +11917,20 @@ class FilterForSuperadmin(View):
                                                                    invoice_number__istartswith=search_invoice_number,
                                                                    invoice_status__in=invoice_status,
                                                                    customer_id__in=customer_ids,
-                                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                                   invoice_status__invoice_status_name="Completed")
 
             if search_invoice_number and customer_type_id and invoice_status and customer_ids and query_key == 'einvoice':
                 add_items = AddItem.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                    owner_id__role_id__role_name='Super_admin',
                                                    customer_type_id=customer_type_id, customer_id__in=customer_ids,
                                                    invoice_status__in=invoice_status,
-                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                   invoice_status__invoice_status_name="Completed")
                 custom_invoices = CustomInvoice.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                                owner_id__role_id__role_name='Super_admin',
                                                                customer_type_id=customer_type_id,
                                                                customer_id__in=customer_ids,
                                                                invoice_status__in=invoice_status,
-                                                               invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                               invoice_status__invoice_status_name="Completed")
 
             if response_type and customer_ids and customer_type_id and search_invoice_number and invoice_status and query_key == 'einvoice':
                 if response_type == 'drone':
@@ -11939,7 +11939,7 @@ class FilterForSuperadmin(View):
                                                        invoice_status__in=invoice_status,
                                                        customer_id__in=customer_ids,
                                                        customer_type_id=customer_type_id,
-                                                       invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                       invoice_status__invoice_status_name="Completed")
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
@@ -11948,7 +11948,7 @@ class FilterForSuperadmin(View):
                                                                    invoice_status__in=invoice_status,
                                                                    customer_id__in=customer_ids,
                                                                    customer_type_id=customer_type_id,
-                                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                                   invoice_status__invoice_status_name="Completed")
 
             if query_key == 'partners':
                 add_items = AddItem.objects.filter(owner_id__role_id__role_name='Partner')
