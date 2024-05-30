@@ -9436,11 +9436,9 @@ class ALLinvoiceForSuperAdmin(APIView):
                 'invoice_type_id',
                 'invoice_status'
             ).filter(
-                Q(owner_id__role_id__role_name='Super_admin') &
-                (
-                    ~Q(customer_id__category__name="Individual") |
-                    Q(invoice_status__invoice_status_name='Completed')
-                )
+                owner_id__role_id__role_name='Super_admin',
+                customer_id__category__name="Organization",
+                invoice_status__invoice_status_name='Completed'
             )
 
             custom_invoices = CustomInvoice.objects.select_related(
@@ -9449,11 +9447,9 @@ class ALLinvoiceForSuperAdmin(APIView):
                 'invoice_type_id',
                 'invoice_status'
             ).filter(
-                Q(owner_id__role_id__role_name='Super_admin') &
-                (
-                    ~Q(customer_id__category__name="Individual") |
-                    Q(invoice_status__invoice_status_name='Completed')
-                )
+                owner_id__role_id__role_name='Super_admin',
+                customer_id__category__name="Organization",
+                invoice_status__invoice_status_name='Completed'
             )
 
             response_data = []
