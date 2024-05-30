@@ -9566,6 +9566,38 @@ class ALLinvoiceForSuperAdmin(APIView):
             return {}
 
 
+# class ExculdeInvoiceSuperAdmin(APIView):
+#     def get(self, request, *args, **kwargs):
+#         try:
+#             add_items = AddItem.objects.select_related(
+#                 'customer_id',
+#                 'owner_id',
+#                 'invoice_type_id',
+#                 'invoice_status'
+#             ).filter(owner_id__role_id__role_name='Super_admin').exclude(
+#                 invoice_status__invoice_status_name='Completed')
+#
+#             custom_invoices = CustomInvoice.objects.select_related(
+#                 'customer_id',
+#                 'owner_id',
+#                 'invoice_type_id',
+#                 'invoice_status'
+#             ).filter(owner_id__role_id__role_name='Super_admin').exclude(
+#                 invoice_status__invoice_status_name='Completed')
+#
+#             response_data = []
+#             for add_item in add_items:
+#                 response_data.append(self.get_item_details(add_item))
+#
+#             for custom_invoice in custom_invoices:
+#                 response_data.append(self.get_item_details(custom_invoice))
+#
+#             response_data.sort(key=lambda x: x['updated_date_time'], reverse=True)
+#             return JsonResponse(response_data, safe=False)
+#
+#         except (AddItem.DoesNotExist, CustomInvoice.DoesNotExist):
+#             return JsonResponse({'error': 'Data not found'}, status=404)
+
 class ExculdeInvoiceSuperAdmin(APIView):
     def get(self, request, *args, **kwargs):
         try:
@@ -9575,7 +9607,9 @@ class ExculdeInvoiceSuperAdmin(APIView):
                 'invoice_type_id',
                 'invoice_status'
             ).filter(owner_id__role_id__role_name='Super_admin').exclude(
-                invoice_status__invoice_status_name='Completed')
+                Q(invoice_status__invoice_status_name='Completed') &
+                Q(customer_type_id__name="Organization"))
+            print(add_items,"aaaaaaaaaaaa")
 
             custom_invoices = CustomInvoice.objects.select_related(
                 'customer_id',
@@ -9583,7 +9617,8 @@ class ExculdeInvoiceSuperAdmin(APIView):
                 'invoice_type_id',
                 'invoice_status'
             ).filter(owner_id__role_id__role_name='Super_admin').exclude(
-                invoice_status__invoice_status_name='Completed')
+                Q(invoice_status__invoice_status_name='Completed') &
+                Q(customer_type_id__name="Organization"))
 
             response_data = []
             for add_item in add_items:
