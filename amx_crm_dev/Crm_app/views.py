@@ -10854,12 +10854,9 @@ class FilterForSuperadmin(View):
             search_invoice_number = request.GET.get('search_invoice_number', None)
             query_key = request.GET.get('key', None)
 
-            # if customer_ids:
-            customer_ids = customer_ids.split(',')
-            # if invoice_status:
-            invoice_status = invoice_status.split(',')
-            # if owner_ids:
-            owner_ids = owner_ids.split(',')
+            customer_ids = customer_ids.split(',') if customer_ids else []
+            invoice_status = invoice_status.split(',') if invoice_status else []
+            owner_ids = owner_ids.split(',') if owner_ids else []
 
             add_items = AddItem.objects.none()  # Initialize queryset
             custom_invoices = CustomInvoice.objects.none()  # Initialize queryset
