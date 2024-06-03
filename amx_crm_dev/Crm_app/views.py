@@ -11355,6 +11355,7 @@ class FilterForSuperadmin(View):
                                                        invoice_status__in=invoice_status).exclude(
                 Q(invoice_status__invoice_status_name='Completed') &
                 Q(customer_type_id__name="Organization"))
+                    custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
                     custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
