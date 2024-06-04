@@ -8372,6 +8372,26 @@ class GstRateValuesAPI(APIView):
         else:
             return Response({'result': 'gstrates not found!!'})
 
+    def put(self,request,pk):
+        try:
+            gst_rate_value = GstRateValues.objects.get(id=pk)
+        except GstRateValues.DoesNotExist:
+            return Response({"message": 'GstRateValues not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        data = request.data
+        gstrates = data.get('gstrates')
+
+        if gstrates is not None:
+            if GstRateValues.objects.filter(gstrates=gstrates).exclude(id=pk).exists():
+                return Response({'message': 'gstrates already exists'}, status=status.HTTP_400_BAD_REQUEST)
+
+            gst_rate_value.gstrates = gstrates
+            gst_rate_value.updated_date_time = timezone.now()
+            gst_rate_value.save()
+            return Response({'message': 'GST rate value updated successfully'})
+        else:
+            return Response({'message': 'Invalid data'}, status=status.HTTP_400_BAD_REQUEST)
+
 
 from decimal import Decimal, ROUND_HALF_UP
 
