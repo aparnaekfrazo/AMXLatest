@@ -13364,10 +13364,67 @@ class UserSlotList(APIView):
 
         return Response(slot_data)
 
+# class SlotsWithStudents(APIView):
+#     def get(self, request, user_id):
+#         # Query slot dates with associated students for the given user ID
+#         slots_with_students = Slot.objects.filter(user_id=user_id).annotate(has_students=Exists(Student.objects.filter(slot_id=OuterRef('id')))).filter(has_students=True)
+#
+#         # Get the first created_date_time for each slot_date
+#         slots_with_students = slots_with_students.values('slot_date').annotate(first_created_date=Min('created_date_time'), id=Min('id')).order_by('first_created_date')
+#
+#         # Extract unique slot dates with the first created slot date and id
+#         unique_slot_dates = {}
+#         for slot in slots_with_students:
+#             slot_date = slot['slot_date']
+#             if slot_date not in unique_slot_dates:
+#                 unique_slot_dates[slot_date] = {
+#                     'id': slot['id'],
+#                     'created_date_time': slot['first_created_date']
+#                 }
+#
+#         # Restructure the data in the desired format
+#         response_data = []
+#         for slot_date, info in unique_slot_dates.items():
+#             slot_info = {
+#                 'id': info['id'],
+#                 'slot_date': slot_date,
+#                 'created_date_time': info['created_date_time'],
+#                 # Add any other slot details you want to include here
+#             }
+#
+#             # Get the slot instance
+#             slot_instance = Slot.objects.get(id=info['id'])
+#             # Create a serializer instance with the slot instance
+#             serializer = SlotStudentSerializer(slot_instance)
+#             # Validate and add slot_status to the response
+#             slot_info['slot_status'] = serializer.get_slot_status(slot_instance)
+#
+#             response_data.append(slot_info)
+#
+#         return Response(response_data)
+
+
 class SlotsWithStudents(APIView):
     def get(self, request, user_id):
         # Query slot dates with associated students for the given user ID
         slots_with_students = Slot.objects.filter(user_id=user_id).annotate(has_students=Exists(Student.objects.filter(slot_id=OuterRef('id')))).filter(has_students=True)
+
+        # Check if 'payment' query parameter is passed and is 'True'
+        payment_param = request.query_params.get('payment')
+        if payment_param and payment_param.lower() == 'true':
+            # Get the slot IDs where all associated students have 'Success' status
+            slots_to_exclude = []
+            for slot in slots_with_students:
+                # Get all students associated with the slot
+                students = Student.objects.filter(slot_id=slot.id)
+                # Check if all students have 'Success' status
+                all_success = all(student.stupayment_status == 'Success' for student in students)
+                # If all students have 'Success' status, add the slot ID to the list of slots to exclude
+                if all_success:
+                    slots_to_exclude.append(slot.id)
+
+            # Exclude the slots where all associated students have 'Success' status
+            slots_with_students = slots_with_students.exclude(id__in=slots_to_exclude)
 
         # Get the first created_date_time for each slot_date
         slots_with_students = slots_with_students.values('slot_date').annotate(first_created_date=Min('created_date_time'), id=Min('id')).order_by('first_created_date')
