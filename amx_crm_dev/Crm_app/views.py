@@ -12406,98 +12406,114 @@ class InvoiceHistoyFilter(APIView):
         ### status without Complete###
         if query_key == 'invoice':
             items = AddItem.objects.filter(owner_id__role_id__role_name='Partner', owner_id=user_id).exclude(
-                invoice_status__invoice_status_name="Completed")
+                Q(invoice_status__invoice_status_name='Completed') &
+                Q(customer_type_id__name="Organization"))
 
         if query_key == 'invoice' and customer_type_id:
             items = AddItem.objects.filter(owner_id__role_id__role_name='Partner', customer_type_id=customer_type_id,
                                            owner_id=user_id).exclude(
-                invoice_status__invoice_status_name="Completed")
+                Q(invoice_status__invoice_status_name='Completed') &
+                Q(customer_type_id__name="Organization"))
 
         if query_key == 'invoice' and invoice_status:
             items = AddItem.objects.filter(owner_id__role_id__role_name='Partner',
                                            invoice_status__in=invoice_status, owner_id=user_id).exclude(
-                invoice_status__invoice_status_name="Completed")
+                Q(invoice_status__invoice_status_name='Completed') &
+                Q(customer_type_id__name="Organization"))
 
         if query_key == 'invoice' and customer_ids:
             items = AddItem.objects.filter(owner_id__role_id__role_name='Partner', customer_id__in=customer_ids,
                                            owner_id=user_id).exclude(
-                invoice_status__invoice_status_name="Completed")
+                Q(invoice_status__invoice_status_name='Completed') &
+                Q(customer_type_id__name="Organization"))
 
         if query_key == 'invoice' and search_invoice_number:
             items = AddItem.objects.filter(invoice_number__istartswith=search_invoice_number,
                                            owner_id__role_id__role_name='Partner', owner_id=user_id).exclude(
-                invoice_status__invoice_status_name="Completed")
+                Q(invoice_status__invoice_status_name='Completed') &
+                Q(customer_type_id__name="Organization"))
 
         if query_key == 'invoice' and invoice_status and customer_type_id:
             items = AddItem.objects.filter(owner_id__role_id__role_name='Partner',
                                            invoice_status__in=invoice_status, customer_type_id=customer_type_id,
                                            owner_id=user_id).exclude(
-                invoice_status__invoice_status_name="Completed")
+                Q(invoice_status__invoice_status_name='Completed') &
+                Q(customer_type_id__name="Organization"))
 
         if query_key == 'invoice' and customer_ids and customer_type_id:
             items = AddItem.objects.filter(owner_id__role_id__role_name='Partner',
                                            customer_id__in=customer_ids, customer_type_id=customer_type_id,
                                            owner_id=user_id).exclude(
-                invoice_status__invoice_status_name="Completed")
+                Q(invoice_status__invoice_status_name='Completed') &
+                Q(customer_type_id__name="Organization"))
 
         if query_key == 'invoice' and search_invoice_number and customer_type_id:
             items = AddItem.objects.filter(invoice_number__istartswith=search_invoice_number,
                                            owner_id__role_id__role_name='Partner',
                                            customer_type_id=customer_type_id, owner_id=user_id).exclude(
-                invoice_status__invoice_status_name="Completed")
+                Q(invoice_status__invoice_status_name='Completed') &
+                Q(customer_type_id__name="Organization"))
 
         if query_key == 'invoice' and customer_ids and invoice_status:
             items = AddItem.objects.filter(owner_id__role_id__role_name='Partner',
                                            customer_id__in=customer_ids, invoice_status__in=invoice_status,
                                            owner_id=user_id).exclude(
-                invoice_status__invoice_status_name="Completed")
+                Q(invoice_status__invoice_status_name='Completed') &
+                Q(customer_type_id__name="Organization"))
 
         if query_key == 'invoice' and search_invoice_number and invoice_status:
             items = AddItem.objects.filter(invoice_number__istartswith=search_invoice_number,
                                            owner_id__role_id__role_name='Partner',
                                            invoice_status__in=invoice_status, owner_id=user_id).exclude(
-                invoice_status__invoice_status_name="Completed")
+                Q(invoice_status__invoice_status_name='Completed') &
+                Q(customer_type_id__name="Organization"))
 
         if query_key == 'invoice' and search_invoice_number and customer_ids:
             items = AddItem.objects.filter(invoice_number__istartswith=search_invoice_number,
                                            owner_id__role_id__role_name='Partner',
                                            customer_id__in=customer_ids, owner_id=user_id).exclude(
-                invoice_status__invoice_status_name="Completed")
+                Q(invoice_status__invoice_status_name='Completed') &
+                Q(customer_type_id__name="Organization"))
 
         if query_key == 'invoice' and customer_ids and invoice_status and customer_type_id:
             items = AddItem.objects.filter(customer_id__in=customer_ids,
                                            owner_id__role_id__role_name='Partner',
                                            invoice_status__in=invoice_status, customer_type_id=customer_type_id,
                                            owner_id=user_id).exclude(
-                invoice_status__invoice_status_name="Completed")
+                Q(invoice_status__invoice_status_name='Completed') &
+                Q(customer_type_id__name="Organization"))
 
         if query_key == 'invoice' and search_invoice_number and invoice_status and customer_type_id:
             items = AddItem.objects.filter(invoice_number__istartswith=search_invoice_number,
                                            owner_id__role_id__role_name='Partner',
                                            invoice_status__in=invoice_status, customer_type_id=customer_type_id,
                                            owner_id=user_id).exclude(
-                invoice_status__invoice_status_name="Completed")
+                Q(invoice_status__invoice_status_name='Completed') &
+                Q(customer_type_id__name="Organization"))
 
         if query_key == 'invoice' and search_invoice_number and invoice_status and customer_ids:
             items = AddItem.objects.filter(invoice_number__istartswith=search_invoice_number,
                                            owner_id__role_id__role_name='Partner',
                                            invoice_status__in=invoice_status, customer_id__in=customer_ids,
                                            owner_id=user_id).exclude(
-                invoice_status__invoice_status_name="Completed")
+                Q(invoice_status__invoice_status_name='Completed') &
+                Q(customer_type_id__name="Organization"))
 
         if query_key == 'invoice' and search_invoice_number and customer_type_id and customer_ids:
             items = AddItem.objects.filter(invoice_number__istartswith=search_invoice_number,
                                            owner_id__role_id__role_name='Partner',
                                            customer_type_id=customer_type_id, customer_id__in=customer_ids,
                                            owner_id=user_id).exclude(
-                invoice_status__invoice_status_name="Completed")
+                Q(invoice_status__invoice_status_name='Completed') &
+                Q(customer_type_id__name="Organization"))
 
         if query_key == 'invoice' and search_invoice_number and customer_type_id and invoice_status and customer_ids:
             items = AddItem.objects.filter(invoice_number__istartswith=search_invoice_number,
                                            owner_id__role_id__role_name='Partner',
                                            customer_type_id=customer_type_id, customer_id__in=customer_ids,
                                            invoice_status__in=invoice_status, owner_id=user_id).exclude(
-                invoice_status__invoice_status_name="Completed")
+                Q(invoice_status__invoice_status_name='Completed') &
+                Q(customer_type_id__name="Organization"))
 
         ######filter only Completed status ####
         if query_key == 'einvoice':
