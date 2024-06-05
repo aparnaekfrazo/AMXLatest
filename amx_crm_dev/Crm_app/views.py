@@ -13795,7 +13795,19 @@ class SlotListStudents(APIView):
 
         # Filter slots that have associated students
         slots_with_students = slots.filter(student__isnull=False).distinct()
-
+        """new with out success"""
+        if slot_date:
+            filtered_slots = []
+            for slot in slots_with_students:
+                # Get all students in the slot
+                students = Student.objects.filter(slot_id=slot.id)
+                # Check the payment status of all students
+                all_success = all(student.stupayment_status == 'Success' for student in students)
+                # If not all students have 'Success' status, include the slot in the filtered list
+                if not all_success:
+                    filtered_slots.append(slot)
+            slots_with_students = filtered_slots
+            """end of new"""
         # Serialize the queryset
         serializer = SlotStudentSerializer(slots_with_students, many=True)
 
@@ -14800,4 +14812,601 @@ class UpdateInvoiceStatusView(APIView):
 
         return JsonResponse({'error': 'Invoice not found or customer_type is not Individual.'},
                             status=status.HTTP_404_NOT_FOUND)
+
+
+class GetdashbordAPI(APIView):
+    def get(self, request):
+        user_id = request.query_params.get('user_id')
+        drone_model = request.query_params.get('drone_model')
+        start_time_str = request.query_params.get('start_time')
+        end_time_str = request.query_params.get('end_time')
+        inventory_count = DroneOwnership.objects.filter(user_id=user_id).aggregate(Sum('quantity'))['quantity__sum']
+        print('inventory_coun-----------------t', inventory_count)
+        total_billings = AddItem.objects.filter(owner_id__id=user_id).count()
+        print('total_billing---------ddd----------------', total_billings)
+        total_billing = AddItem.objects.filter(owner_id__id=user_id,
+                                               invoice_status__invoice_status_name='completed').count()
+        print('total_billing-------------------------', total_billing)
+        # inventory_count = DroneOwnership.objects.filter(id=user_idr).aggregate(Sum('quantity'))['quantity__sum']
+        # inventory_count = DroneOwnership.objects.filter(id=user_id).aggregate(Sum('quantity'))['quantity__sum']
+
+        if user_id and start_time_str and end_time_str and drone_model:
+            try:
+                user = CustomUser.objects.get(id=user_id)
+            except CustomUser.DoesNotExist:
+                return Response({'error': 'User not found'}, status=404)
+
+            start_time = timezone.datetime.strptime(start_time_str, '%d-%m-%Y')
+            end_time = timezone.datetime.strptime(end_time_str, '%d-%m-%Y')
+            date_range = [start_time.date() + timezone.timedelta(days=x) for x in
+                          range((end_time - start_time).days + 1)]
+            drone_model_ids = [int(model_id) for model_id in drone_model.split(',') if model_id]
+
+            if user.role_id.role_name == 'Partner':
+                queryset = Order.objects.filter(
+                    order_status__status_name='Shipped',
+                    user_id=user_id,
+                    created_date_time__date__in=date_range
+                ).values(
+                    'created_date_time__date',
+                    'drone_id__drone_category__category_name'
+                ).annotate(count=Count('id'))
+
+                total_count = \
+                queryset.filter(drone_id__drone_category__id__in=drone_model_ids).aggregate(total=Sum('count'))[
+                    'total'] or 0
+
+                # Calculate total billing
+                total_billing_queryset = AddItem.objects.filter(
+                    invoice_status__invoice_status_name='Completed',
+                    created_date_time__date__in=date_range
+                ).aggregate(total=Count('id'))
+                total_billing = total_billing_queryset['total'] or 0
+
+                result = {
+                    'result': {
+                        'data': {
+                            'inventory_count': total_count,
+                            'total_billing': total_billing,
+                            'purchased_drones_Graph': []
+                        }
+                    }
+                }
+
+                for drone_model_id in drone_model_ids:
+                    purchased_drones_entry = {
+                        'drone_model': None,
+                        'drone_model_id': None,
+                    }
+
+                    data = queryset.filter(drone_id__drone_category__id=drone_model_id).values(
+                        'created_date_time__date'
+                    ).annotate(count=Count('id'))
+
+                    if data:
+                        drone_model_name = DroneCategory.objects.get(id=drone_model_id).category_name
+
+                        purchased_drones_entry['drone_model'] = drone_model_name
+                        purchased_drones_entry['drone_model_id'] = drone_model_id
+
+                        purchased_drones_entry['purchased_drones'] = [
+                            {'date': date_entry['created_date_time__date'].strftime('%d-%m-%Y'),
+                             'count': date_entry['count']} for date_entry in data]
+
+                        date_set = set(date_entry['created_date_time__date'] for date_entry in data)
+                        missing_dates = date_set.symmetric_difference(date_range)
+                        purchased_drones_entry['purchased_drones'].extend(
+                            {'date': date.strftime('%d-%m-%Y'), 'count': 0} for date in missing_dates
+                        )
+
+                    else:
+                        default_model = DroneCategory.objects.filter(id=drone_model_id).first()
+
+                        if default_model:
+                            purchased_drones_entry['drone_model'] = default_model.category_name
+                            purchased_drones_entry['drone_model_id'] = drone_model_id
+
+                            purchased_drones_entry['purchased_drones'] = [
+                                {'date': date.strftime('%d-%m-%Y'), 'count': 0} for date in date_range
+                            ]
+                    purchased_drones_entry['purchased_drones'] = sorted(purchased_drones_entry['purchased_drones'],
+                                                                        key=lambda x: x['date'])
+
+                    result['result']['data']['purchased_drones_Graph'].append(purchased_drones_entry)
+
+                return Response(result)
+
+            else:
+
+                date_range = [timezone.datetime.strptime(start_time_str, '%d-%m-%Y').date() + timezone.timedelta(days=x)
+                              for x in range((timezone.datetime.strptime(end_time_str,
+                                                                         '%d-%m-%Y') - timezone.datetime.strptime(
+                        start_time_str, '%d-%m-%Y')).days + 1)]
+
+                drone_model_ids = [int(model_id) for model_id in drone_model.split(',') if model_id]
+
+                queryset = Order.objects.filter(
+                    order_status__status_name='Shipped',
+                    created_date_time__date__in=date_range
+                ).values(
+                    'created_date_time__date',
+                    'drone_id__drone_category__category_name'
+                ).annotate(count=Count('id'))
+
+                result = {
+                    'result': {
+                        'data': {
+                            'inventory_count': inventory_count,
+                            'total_billing': total_billing,
+                            'drone_sales': []
+                        }
+                    }
+                }
+
+                for drone_model_id in drone_model_ids:
+
+                    purchased_drones_entry = {
+                        'drone_model': None,
+                        'drone_model_id': None,
+                        'Sales_drones': [],
+                    }
+
+                    data = queryset.filter(drone_id__drone_category__id=drone_model_id).values(
+                        'created_date_time__date'
+                    ).annotate(count=Count('id'))
+
+                    if data:
+                        drone_model_name = DroneCategory.objects.get(id=drone_model_id).category_name
+
+                        purchased_drones_entry['drone_model'] = drone_model_name
+                        purchased_drones_entry['drone_model_id'] = drone_model_id
+
+                        purchased_drones_entry['Sales_drones'] = [
+                            {'date': date_entry['created_date_time__date'].strftime('%d-%m-%Y'),
+                             'count': date_entry['count']} for date_entry in data]
+
+                        date_set = set(date_entry['created_date_time__date'] for date_entry in data)
+                        missing_dates = date_set.symmetric_difference(date_range)
+                        purchased_drones_entry['Sales_drones'].extend(
+                            {'date': date.strftime('%d-%m-%Y'), 'count': 0} for date in missing_dates
+                        )
+
+                    else:
+
+                        default_model = DroneCategory.objects.filter(id=drone_model_id).first()
+
+                        if default_model:
+                            purchased_drones_entry['drone_model'] = default_model.category_name
+                            purchased_drones_entry['drone_model_id'] = drone_model_id
+
+                            purchased_drones_entry['Sales_drones'] = [
+                                {'date': date.strftime('%d-%m-%Y'), 'count': 0} for date in date_range
+                            ]
+                    purchased_drones_entry['Sales_drones'] = sorted(purchased_drones_entry['Sales_drones'],
+                                                                    key=lambda x: x['date'])
+
+                    result['result']['data']['drone_sales'].append(purchased_drones_entry)
+
+                return Response(result)
+
+        if user_id and start_time_str and end_time_str:
+            try:
+                user = CustomUser.objects.get(id=user_id)
+            except CustomUser.DoesNotExist:
+                return Response({'error': 'User not found'}, status=404)
+
+            if user.role_id.role_name == 'Partner':
+
+                start_time = timezone.datetime.strptime(start_time_str, '%d-%m-%Y')
+                end_time = timezone.datetime.strptime(end_time_str, '%d-%m-%Y')
+
+                date_range = [start_time.date() + timezone.timedelta(days=x) for x in
+                              range((end_time - start_time).days + 1)]
+
+                queryset = Order.objects.filter(
+                    order_status__status_name='Shipped',
+                    user_id=user_id,
+                    created_date_time__date__in=date_range
+                ).values(
+                    'created_date_time__date',
+                    'drone_id__drone_category__category_name'
+                ).annotate(count=Count('id'))
+
+                result = {
+                    'result': {
+                        'data': {
+                            'inventory_count': inventory_count,
+                            'total_billing': total_billing,
+                            'purchased_drones_Graph': [],
+                        }
+                    }
+                }
+
+                dates_data = {date: {'count': 0, 'drone_category_name': []} for date in date_range}
+                drone_models = set()
+
+                for entry in queryset:
+                    date_entry = entry['created_date_time__date']
+                    if date_entry is not None:
+                        dates_data[date_entry]['count'] += entry['count']
+                        dates_data[date_entry]['drone_category_name'].append(
+                            entry['drone_id__drone_category__category_name'])
+
+                        drone_models.add(entry['drone_id__drone_category__category_name'])
+
+                drone_sales_data = []
+
+                for date_entry, date_data in dates_data.items():
+                    formatted_date = date_entry.strftime('%d-%m-%Y')
+                    drone_sales_data.append({
+                        'date': formatted_date,
+                        'count': date_data['count'],
+                    })
+
+                drone_entry = {
+                    'Purchased_drones': [
+                        {
+                            'label': 'Purchased Drones',
+                            'data': drone_sales_data,
+                        }
+                    ],
+                    'drone_model': [
+                        {
+                            'drone_category_name': list(drone_models),
+                        }
+                    ],
+                }
+
+                result['result']['data']['purchased_drones_Graph'].append(drone_entry)
+
+                return Response(result)
+            else:
+                start_time = timezone.datetime.strptime(start_time_str, '%d-%m-%Y')
+                end_time = timezone.datetime.strptime(end_time_str, '%d-%m-%Y')
+
+                date_range = [start_time.date() + timezone.timedelta(days=x) for x in
+                              range((end_time - start_time).days + 1)]
+
+                queryset = Order.objects.filter(
+                    order_status__status_name='Shipped',
+                    created_date_time__date__range=[str(start_time.date()), str(end_time.date())]
+                ).values(
+                    'created_date_time__date',
+                    'drone_id__drone_category__category_name'
+                ).annotate(count=Count('id'))
+
+                result = {
+                    'result': {
+                        'data': {
+                            'inventory_count': inventory_count,
+                            'total_billing': total_billing,
+                            'drone_sales': [],
+                        }
+                    }
+                }
+
+                dates_data = {date: {'count': 0, 'drone_category_name': []} for date in date_range}
+                drone_models = set()
+
+                for entry in queryset:
+                    date_entry = entry['created_date_time__date']
+                    if date_entry is not None:
+                        dates_data[date_entry]['count'] += entry['count']
+                        dates_data[date_entry]['drone_category_name'].append(
+                            entry['drone_id__drone_category__category_name'])
+                        drone_models.add(entry['drone_id__drone_category__category_name'])
+
+                drone_sales_data = []
+
+                for date_entry, date_data in dates_data.items():
+                    formatted_date = date_entry.strftime('%d-%m-%Y')
+                    drone_sales_data.append({
+                        'date': formatted_date,
+                        'count': date_data['count'],
+                    })
+
+                drone_entry = {
+                    'Sales_drones': [
+                        {
+                            'label': 'Sales_drones ',
+                            'data': drone_sales_data,
+                        }
+                    ],
+                    'drone_model': [
+                        {
+                            'drone_category_name': list(drone_models),
+                        }
+                    ],
+                }
+
+                result['result']['data']['drone_sales'].append(drone_entry)
+
+                return Response(result)
+
+        if user_id and not drone_model:
+
+            try:
+                user = CustomUser.objects.get(id=user_id)
+            except CustomUser.DoesNotExist:
+                return Response({'error': 'User not found'}, status=404)
+
+            if user.role_id.role_name == 'Partner':
+
+                queryset = Order.objects.filter(
+                    order_status__status_name='Shipped',
+                    user_id=user_id
+                )
+
+                data = queryset.values(
+                    'created_date_time__month',
+                    'drone_id__drone_category__category_name',
+                    'drone_id__drone_category__id'
+                ).annotate(count=Count('id'))
+
+                result = {
+                    'data': {
+                        'inventory_count': inventory_count,
+                        'total_billing': total_billing,
+                        'purchased_drones_Graph': [],
+                    }
+                }
+
+                overall_count_dict = {}
+                months_data = {month: {'count': 0, 'drone_category_name': []} for month in range(1, 13)}
+
+                drone_models = set()
+                drone_models_id = set()
+                for entry in data:
+                    month_number = entry['created_date_time__month']
+                    if month_number is not None:
+                        month_name_loop = timezone.datetime(2022, month_number, 1).strftime('%B')
+
+                        if month_name_loop not in overall_count_dict:
+                            overall_count_dict[month_name_loop] = entry['count']
+                        else:
+                            overall_count_dict[month_name_loop] += entry['count']
+
+                        months_data[month_number]['count'] = overall_count_dict[month_name_loop]
+                        months_data[month_number]['drone_category_name'].append(
+                            entry['drone_id__drone_category__category_name'])
+
+                        drone_models.add(entry['drone_id__drone_category__category_name'])
+                        drone_models_id.add(entry['drone_id__drone_category__id'])
+
+                drone_sales_data = []
+
+                for month_number, month_data in months_data.items():
+                    month_name = timezone.datetime(2022, month_number, 1).strftime('%B')
+                    drone_sales_data.append({
+                        'month': month_name,
+                        'count': month_data['count'],
+                    })
+
+                drone_entry = {
+                    'Purchased_drones': [
+                        {
+                            'label': 'Purchased Drones ',
+                            'data': drone_sales_data,
+                        }
+                    ],
+                    'drone_model': [
+                        {
+                            'drone_category_name': list(drone_models),
+                            'drone_model_id': list(drone_models_id),
+                        }
+                    ],
+                }
+
+                result['data']['purchased_drones_Graph'].append(drone_entry)
+
+                return Response({'result': result})
+
+            else:
+
+                queryset = Order.objects.filter(order_status__status_name='Shipped')
+
+                data = queryset.values(
+                    'created_date_time__month',
+                    'drone_id__drone_category__category_name'
+                ).annotate(count=Count('id'))
+
+                result = {
+                    'data': {
+                        'inventory_count': inventory_count,
+                        'total_billing': total_billing,
+                        'drone_sales': [],
+                    }
+                }
+
+                overall_count_dict = {}
+                months_data = {month: {'count': 0, 'drone_category_name': []} for month in range(1, 13)}
+
+                drone_models = set()
+
+                for entry in data:
+                    month_number = entry['created_date_time__month']
+                    if month_number is not None:
+                        month_name_loop = timezone.datetime(2022, month_number, 1).strftime('%B')
+
+                        if month_name_loop not in overall_count_dict:
+                            overall_count_dict[month_name_loop] = entry['count']
+                        else:
+                            overall_count_dict[month_name_loop] += entry['count']
+
+                        months_data[month_number]['count'] = overall_count_dict[month_name_loop]
+                        months_data[month_number]['drone_category_name'].append(
+                            entry['drone_id__drone_category__category_name'])
+
+                        drone_models.add(entry['drone_id__drone_category__category_name'])
+
+                drone_sales_data = []
+
+                for month_number, month_data in months_data.items():
+                    month_name = timezone.datetime(2022, month_number, 1).strftime('%B')
+                    drone_sales_data.append({
+                        'month': month_name,
+                        'count': month_data['count'],
+                    })
+
+                drone_entry = {
+                    'Sales_drones': [
+                        {
+                            'label': 'Sales Drones',
+                            'data': drone_sales_data,
+                        }
+                    ],
+                    'drone_model': [
+                        {
+                            'drone_category_name': list(drone_models),
+                        }
+                    ],
+                }
+
+                result['data']['drone_sales'].append(drone_entry)
+
+                return Response({'result': result})
+
+        if user_id and drone_model:
+            try:
+                user = CustomUser.objects.get(id=user_id)
+            except CustomUser.DoesNotExist:
+                return Response({'error': 'User not found'}, status=404)
+
+            drone_model_ids = [int(model_id) for model_id in drone_model.split(',')]
+
+            if user.role_id.role_name == 'Partner':
+                queryset = Order.objects.filter(
+                    user_id=user_id,
+                    order_status__status_name='Shipped',
+                    drone_id__drone_category__id__in=drone_model_ids
+                ).order_by('id')
+
+                data = queryset.values(
+                    'drone_id__drone_category__category_name',
+                    'drone_id__drone_category__id',
+                    'created_date_time__month'
+                ).annotate(count=Count('id'))
+
+                inventory_count = queryset.aggregate(Sum('quantity'))['quantity__sum'] or 0
+                total_billing = queryset.aggregate(Sum('amount'))['amount__sum'] or 0
+
+                result = {
+                    'result': {
+                        'data': {
+                            'inventory_count': inventory_count,
+                            'total_billing': total_billing,
+                            'purchased_drones_Graph': []
+                        }
+                    }
+                }
+
+                counts_by_model = {drone_model_id: {month: 0 for month in range(1, 13)} for drone_model_id in
+                                   drone_model_ids}
+
+                for entry in data:
+                    model_id = entry['drone_id__drone_category__id']
+                    month = entry['created_date_time__month']
+                    count = entry['count']
+                    if model_id in counts_by_model:
+                        counts_by_model[model_id][month] += count
+
+                for drone_model_id in drone_model_ids:
+                    purchased_drones_entry = {
+                        'drone_model': None,
+                        'drone_model_id': None,
+                    }
+
+                    model_data = data.filter(drone_id__drone_category__id=drone_model_id).first()
+
+                    if model_data:
+                        drone_model_name = model_data['drone_id__drone_category__category_name']
+                        purchased_drones_entry['drone_model'] = drone_model_name
+                        purchased_drones_entry['drone_model_id'] = drone_model_id
+                    else:
+                        default_model = DroneCategory.objects.filter(id=drone_model_id).first()
+                        if default_model:
+                            purchased_drones_entry['drone_model'] = default_model.category_name
+                            purchased_drones_entry['drone_model_id'] = drone_model_id
+                        else:
+                            purchased_drones_entry['drone_model'] = 'Unknown'
+                            purchased_drones_entry['drone_model_id'] = 'Unknown'
+
+                    purchased_drones_entry['purchased_drones'] = [
+                        {'month': timezone.datetime(2022, month_number, 1).strftime('%B'),
+                         'count': counts_by_model[drone_model_id].get(month_number, 0)} for month_number in
+                        range(1, 13)]
+
+                    result['result']['data']['purchased_drones_Graph'].append(purchased_drones_entry)
+
+                return Response(result)
+
+            else:
+                queryset = Order.objects.filter(
+                    order_status__status_name='Shipped',
+                    drone_id__drone_category__id__in=drone_model_ids
+                ).order_by('id')
+
+                data = queryset.values(
+                    'drone_id__drone_category__category_name',
+                    'drone_id__drone_category__id',
+                    'created_date_time__month'
+                ).annotate(count=Count('id'))
+
+                inventory_count = queryset.aggregate(Sum('quantity'))['quantity__sum'] or 0
+                total_billing = queryset.aggregate(Sum('amount'))['amount__sum'] or 0
+
+                result = {
+                    'result': {
+                        'data': {
+                            'inventory_count': inventory_count,
+                            'total_billing': total_billing,
+                            'drone_sales': []
+                        }
+                    }
+                }
+
+                counts_by_model = {drone_model_id: {month: 0 for month in range(1, 13)} for drone_model_id in
+                                   drone_model_ids}
+
+                for entry in data:
+                    model_id = entry['drone_id__drone_category__id']
+                    month = entry['created_date_time__month']
+                    count = entry['count']
+                    if model_id in counts_by_model:
+                        counts_by_model[model_id][month] += count
+
+                for drone_model_id in drone_model_ids:
+                    purchased_drones_entry = {
+                        'drone_model': None,
+                        'drone_model_id': None,
+                        'Sales_drones': [],
+                    }
+
+                    model_data = data.filter(drone_id__drone_category__id=drone_model_id).first()
+
+                    if model_data:
+                        drone_model_name = model_data['drone_id__drone_category__category_name']
+                        purchased_drones_entry['drone_model'] = drone_model_name
+                        purchased_drones_entry['drone_model_id'] = drone_model_id
+                    else:
+                        default_model = DroneCategory.objects.filter(id=drone_model_id).first()
+                        if default_model:
+                            purchased_drones_entry['drone_model'] = default_model.category_name
+                            purchased_drones_entry['drone_model_id'] = drone_model_id
+                        else:
+                            purchased_drones_entry['drone_model'] = 'Unknown'
+                            purchased_drones_entry['drone_model_id'] = 'Unknown'
+
+                    purchased_drones_entry['Sales_drones'] = [
+                        {'month': timezone.datetime(2022, month_number, 1).strftime('%B'),
+                         'count': counts_by_model[drone_model_id].get(month_number, 0)} for month_number in
+                        range(1, 13)]
+
+                    result['result']['data']['drone_sales'].append(purchased_drones_entry)
+
+                return Response(result)
+
+        else:
+            return Response({'error': 'Invalid parameters'})
+
 

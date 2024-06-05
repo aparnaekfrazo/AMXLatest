@@ -150,6 +150,7 @@ urlpatterns = [
     path('getcalendar/', getcalendarAPI.as_view()),
     path('update-invoice-status/<str:invoice_number>/', UpdateInvoiceStatusView.as_view(),
          name='update-invoice-status'),
+    path('getdashboard/', GetdashbordAPI.as_view(), name='Get Dashboard')
 
 ]
 
