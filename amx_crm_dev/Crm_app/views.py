@@ -13796,7 +13796,7 @@ class SlotListStudents(APIView):
 
         # Filter slots that have associated students
         slots_with_students = slots.filter(student__isnull=False).distinct()
-        if payment == 'true' and slot_date:
+        if payment == 'True' and slot_date:
             filtered_slots = []
             for slot in slots_with_students:
                 students = Student.objects.filter(slot_id=slot.id)
