@@ -13787,6 +13787,7 @@ class SlotListStudents(APIView):
         # Filter slots by slot_date and batch_name if provided in query parameters
         slot_date = request.query_params.get('slot_date')
         batch_name = request.query_params.get('batch_name')
+        payment = request.query_params.get('payment')
 
         if slot_date:
             slots = slots.filter(slot_date=slot_date)
@@ -13795,19 +13796,15 @@ class SlotListStudents(APIView):
 
         # Filter slots that have associated students
         slots_with_students = slots.filter(student__isnull=False).distinct()
-        """new with out success"""
-        if slot_date:
+        if payment == 'true' and slot_date:
             filtered_slots = []
             for slot in slots_with_students:
-                # Get all students in the slot
                 students = Student.objects.filter(slot_id=slot.id)
-                # Check the payment status of all students
                 all_success = all(student.stupayment_status == 'Success' for student in students)
-                # If not all students have 'Success' status, include the slot in the filtered list
                 if not all_success:
                     filtered_slots.append(slot)
             slots_with_students = filtered_slots
-            """end of new"""
+
         # Serialize the queryset
         serializer = SlotStudentSerializer(slots_with_students, many=True)
 
