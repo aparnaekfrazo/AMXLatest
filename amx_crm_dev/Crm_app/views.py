@@ -57,8 +57,9 @@ from django.db import transaction
 from django.db import transaction, IntegrityError
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
+from .auth import authorization_required
 
-
+@method_decorator([authorization_required], name='dispatch')
 class RoleAPIView(APIView):
     def get(self, request, pk=None):
         if pk is None:
@@ -127,7 +128,7 @@ def convertBase64(image, image_name, username, folder_name):
 
     return fname1
 
-
+@method_decorator([authorization_required], name='dispatch')
 class PartnerAPIView(APIView):
     def get(self, request, pk=None):
         # Retrieve query parameters
@@ -355,7 +356,7 @@ class PartnerAPIView(APIView):
             except CustomUser.DoesNotExist:
                 return Response({"message": "Partner not found"}, status=status.HTTP_404_NOT_FOUND)
 
-
+@method_decorator([authorization_required], name='dispatch')
 class PartnerProfileUpdateForSuperAdminAPIView(APIView):
     def put(self, request, pk):
         try:
@@ -445,7 +446,7 @@ class PartnerProfileUpdateForSuperAdminAPIView(APIView):
         partner.save()
         return Response({"message": "Partner profile details updated successfully"}, status=status.HTTP_200_OK)
 
-
+@method_decorator([authorization_required], name='dispatch')
 class PartnerCompanyUpdateForSuperAdminAPIView(APIView):
     def put(self, request, pk):
         try:
@@ -570,7 +571,7 @@ class LoginAPIView(APIView):
         return Response({'result': {'error': 'Invalid credentials'}}, status=status.HTTP_401_UNAUTHORIZED)
 
 
-
+@method_decorator([authorization_required], name='dispatch')
 class DroneCategoryAPIView(APIView):
     def get(self, request, *args, **kwargs):
         id = request.query_params.get('id')
@@ -634,7 +635,7 @@ class DroneCategoryAPIView(APIView):
         except DroneCategory.DoesNotExist:
             return Response({"message": "Drone category not found"}, status=status.HTTP_404_NOT_FOUND)
 
-
+@method_decorator([authorization_required], name='dispatch')
 class DroneAPIView(APIView):
     def get(self, request, pk=None):
         # Retrieve query parameters
@@ -1017,7 +1018,7 @@ class DroneAPIView(APIView):
             except Drone.DoesNotExist:
                 return Response({"message": "Drone not found"}, status=status.HTTP_404_NOT_FOUND)
 
-
+@method_decorator([authorization_required], name='dispatch')
 class SalesStatusAPIview(APIView):
     def put(self, request):
         sales_status = request.data.get("sales_status")
@@ -1036,7 +1037,7 @@ class SalesStatusAPIview(APIView):
             Drone.objects.update(sales_status=sales_status)
             return Response({"message": "All drones' sales_status updated successfully"}, status=status.HTTP_200_OK)
 
-
+@method_decorator([authorization_required], name='dispatch')
 class SendBulkEmail(APIView):
     def post(self, request):
         subject = request.data.get('subject')
@@ -1125,7 +1126,7 @@ class ResetpasswordAPI(APIView):
 
         return Response({'message': 'Password reset successfully'}, status=status.HTTP_200_OK)
 
-
+@method_decorator([authorization_required], name='dispatch')
 class ChangePasswordAPI(APIView):
     def post(self, request):
         data = request.data
@@ -1154,7 +1155,7 @@ def setup_logger():
 
 logger = setup_logger()
 
-
+@method_decorator([authorization_required], name='dispatch')
 class CompanydetailsAPIView(APIView):
     def get_state_code(self, state_name):
         # Define a dictionary mapping state names to their codes
@@ -1541,6 +1542,7 @@ def RejectRequest(request, id):
 
 
 from datetime import datetime
+@method_decorator([authorization_required], name='dispatch')
 class DroneSalesPaymentAPI(APIView):
     def post(self, request):
         data = request.data
@@ -1600,7 +1602,7 @@ class DroneSalesPaymentAPI(APIView):
         except CustomizablePrice.DoesNotExist:
             return Response({'message': 'Payment gateway ID not found'}, status=status.HTTP_404_NOT_FOUND)
 
-
+@method_decorator([authorization_required], name='dispatch')
 class Partner_slotAPI(APIView):
     def post(self, request):
         data = request.data
@@ -1657,7 +1659,7 @@ class Partner_slotAPI(APIView):
         else:
             return Response({'message': 'ID not found!'})
 
-
+@method_decorator([authorization_required], name='dispatch')
 class PaymentLinksAPI(APIView):
     def post(self, request):
         data = request.data
@@ -1714,7 +1716,7 @@ class PaymentLinksAPI(APIView):
         else:
             return Response({'message': 'ID not found!'})
 
-
+@method_decorator([authorization_required], name='dispatch')
 class Slot_batch_rangeAPI(APIView):
     def post(self, request):
         data = request.data
@@ -1779,7 +1781,7 @@ class Slot_batch_rangeAPI(APIView):
         else:
             return Response({'message': 'ID not found!'})
 
-
+@method_decorator([authorization_required], name='dispatch')
 class AddToCart(APIView):
     def post(self, request):
         data = request.data
@@ -1939,7 +1941,7 @@ class AddToCart(APIView):
         else:
             return Response({'message': 'No matching IDs found for deletion'}, status=status.HTTP_404_NOT_FOUND)
 
-
+@method_decorator([authorization_required], name='dispatch')
 class DroneCountAPI(APIView):
     def put(self, request, pk):
         data = request.data
@@ -1957,7 +1959,7 @@ class DroneCountAPI(APIView):
         else:
             return Response({'error': 'id not found'})
 
-
+@method_decorator([authorization_required], name='dispatch')
 class StatusAPI(APIView):
     def get(self, request):
         id = request.query_params.get('id')
@@ -2012,7 +2014,7 @@ class StatusAPI(APIView):
         else:
             return Response({'result': 'status Id not found!!'})
 
-
+@method_decorator([authorization_required], name='dispatch')
 class PaymentStatusAPI(APIView):
     def get(self, request):
         id = request.query_params.get('id')
@@ -2058,7 +2060,7 @@ class PaymentStatusAPI(APIView):
         else:
             return Response({'result': 'status id not found!!'})
 
-
+@method_decorator([authorization_required], name='dispatch')
 class CreateOrderAPI(APIView):
     def post(self, request, *args, **kwargs):
         drone_id = request.data.get('drone_id')
@@ -2086,7 +2088,7 @@ class CreateOrderAPI(APIView):
 
         return Response(response_data, status=status.HTTP_201_CREATED)
 
-
+@method_decorator([authorization_required], name='dispatch')
 class MydronesAPI(APIView):
     def get(self, request):
         user_id = request.query_params.get('user_id')
@@ -2227,7 +2229,7 @@ class MydronesAPI(APIView):
                 f"?page_number={paginated_data.previous_page_number}&data_per_page={paginated_data.paginator.per_page}")
         return None
 
-
+@method_decorator([authorization_required], name='dispatch')
 class CustomizablePriceAPIView(APIView):
     def put(self, request, *args, **kwargs):
 
@@ -2493,7 +2495,7 @@ def track_order(request):
 class MyPagination(PageNumberPagination):
     page_size_query_param = 'data_per_page'
 
-
+@method_decorator([authorization_required], name='dispatch')
 @method_decorator(csrf_exempt, name='dispatch')
 class OrderStatusView(APIView):
     def get(self, request):
@@ -2733,7 +2735,7 @@ class OrderStatusView(APIView):
         except Exception as e:
             return JsonResponse({"message": f"Error: {str(e)}"}, status=500)
 
-
+@method_decorator([authorization_required], name='dispatch')
 class GetdashbordAPI(APIView):
     def get(self, request):
         user_id = request.query_params.get('user_id')
@@ -3313,7 +3315,7 @@ class GetdashbordAPI(APIView):
         else:
             return Response({'error': 'Invalid parameters'})
 
-
+@method_decorator([authorization_required], name='dispatch')
 class GetCompanyDetailAPI(APIView):
     def get(self, request, *args, **kwargs):
         gst_number = request.query_params.get('gst_number')
@@ -3346,7 +3348,7 @@ class GetCompanyDetailAPI(APIView):
             return Response({"message": f"Error: {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-
+@method_decorator([authorization_required], name='dispatch')
 class CompanyAndPartnerDetailsAPIView(APIView):
     def get_state_code(self, state_name):
         # Define a dictionary mapping state names to their codes
@@ -3587,7 +3589,7 @@ class CompanyAndPartnerDetailsAPIView(APIView):
         except CustomUser.DoesNotExist:
             return Response({"message": "Partner not found"}, status=status.HTTP_404_NOT_FOUND)
 
-
+@method_decorator([authorization_required], name='dispatch')
 class InvoiceTypeAPI(APIView):
     def get(self, request, *args, **kwargs):
         id = request.query_params.get('id')
@@ -3661,7 +3663,7 @@ class CustomPagination(PageNumberPagination):
     page_size_query_param = 'page_size'
     max_page_size = 1000
 
-
+@method_decorator([authorization_required], name='dispatch')
 class CustomerCreateAPIView(APIView):
     pagination_class = CustomPagination
 
@@ -3848,7 +3850,7 @@ class CustomerCreateAPIView(APIView):
         # serializer = CustomUserSerializer(customers, many=True, context={'request': request})
         # return Response(serializer.data)
 
-
+@method_decorator([authorization_required], name='dispatch')
 class CustomerCategoryAPI(APIView):
     def post(self, request, *args, **kwargs):
         data = request.data
@@ -3895,7 +3897,7 @@ class CustomerCategoryAPI(APIView):
             return Response({"message": "Category with ID {} does not exist.".format(category_id)},
                             status=status.HTTP_404_NOT_FOUND)
 
-
+@method_decorator([authorization_required], name='dispatch')
 class GetPartnerDronesAPI(APIView):
     def get(self, request):
         user_id = request.query_params.get('user_id')
@@ -4008,7 +4010,7 @@ def decrypt_aes_256_ecb(data, key):
     decrypted_data = decryptor.update(data) + decryptor.finalize()
     return decrypted_data
 
-
+@method_decorator([authorization_required], name='dispatch')
 class GetCompanyDetailsAPIView(generics.RetrieveAPIView):
     def clean_string(self, input_string):
         # Remove non-printable ASCII characters and control characters
@@ -4076,7 +4078,7 @@ from django.db import transaction
 
 from django.shortcuts import get_object_or_404
 
-
+@method_decorator([authorization_required], name='dispatch')
 class AddItemAPI(APIView):
     def generate_serial_numbers(self, quantity):
         # Generate a list of unique serial numbers
@@ -5158,7 +5160,7 @@ class AddItemAPI(APIView):
 
 from django.db.models import F
 
-
+@method_decorator([authorization_required], name='dispatch')
 class AddDiscountAPI(APIView):
     def post(self, request, item_id):
         item = get_object_or_404(AddItem, id=item_id)
@@ -5235,7 +5237,7 @@ class AddDiscountAPI(APIView):
 import requests
 from geopy.geocoders import Nominatim
 
-
+@method_decorator([authorization_required], name='dispatch')
 class CustomerCreateOrginizationAPIView(APIView):
     def get_state_code(self, state_name):
         # Define a dictionary mapping state names to their codes
@@ -5511,7 +5513,7 @@ class CustomerCreateOrginizationAPIView(APIView):
         except Exception as e:
             return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-
+@method_decorator([authorization_required], name='dispatch')
 class CustomerCreateIndividualAPIView(APIView):
 
     def get_state_code(self, state_name):
@@ -5777,7 +5779,7 @@ from .models import CustomInvoice, CustomerCategory, CustomUser, InvoiceType
 
 from django.shortcuts import get_object_or_404
 
-
+@method_decorator([authorization_required], name='dispatch')
 class CustomInvoiceTypeAPI(APIView):
     def get(self, request, *args, **kwargs):
         id = request.query_params.get('id')
@@ -5965,7 +5967,7 @@ class CustomInvoiceTypeAPI(APIView):
 
 from django.db.models import Sum
 
-
+@method_decorator([authorization_required], name='dispatch')
 class MydronespartnerAPI(APIView):
     def get(self, request):
         user_id = request.query_params.get('user_id')
@@ -6453,7 +6455,7 @@ class GetItemsByOwnerIdView(View):
         item_list.sort(key=lambda x: x['updated_date_time'], reverse=True)
         return JsonResponse({"items": item_list}, status=200)
 
-
+@method_decorator([authorization_required], name='dispatch')
 class PartnerAddedItems(APIView):
     def get(self, request):
         partners = CustomUser.objects.filter(role_id__role_name='Partner')
@@ -6642,7 +6644,7 @@ class PartnerAddedItems(APIView):
 from rest_framework.views import APIView
 import pycountry
 
-
+@method_decorator([authorization_required], name='dispatch')
 class StateCodeAPI(APIView):
     def get(self, request, *args, **kwargs):
         # List of states with their codes
@@ -6688,7 +6690,7 @@ class StateCodeAPI(APIView):
         # Return the state data in the response
         return Response({'state_data': states_data}, status=status.HTTP_200_OK)
 
-
+@method_decorator([authorization_required], name='dispatch')
 class InvoiceStatusAPI(APIView):
     def get(self, request, *args, **kwargs):
         id = request.query_params.get('id')
@@ -6774,7 +6776,7 @@ from Crypto.Cipher import AES
 from Crypto.Protocol.KDF import PBKDF2
 from collections import OrderedDict
 
-
+@method_decorator([authorization_required], name='dispatch')
 class MyApiView(APIView):
     def clean_payload(self, payload):
         cleaned_payload = ''.join(char for char in payload if char.isprintable())
@@ -7886,7 +7888,7 @@ import ast
 #             "items": items.object_list
 #         }
 #         return JsonResponse(response_data, status=200)
-
+@method_decorator([authorization_required], name='dispatch')
 class InvoiceHistoy(APIView):
     def get(self, request, owner_id=None, invoice_number=None):
         role_filter = request.query_params.get('filter', '').lower()
@@ -8178,7 +8180,7 @@ class InvoiceHistoy(APIView):
         return JsonResponse(response_data, status=200)
 
 
-
+@method_decorator([authorization_required], name='dispatch')
 @method_decorator(csrf_exempt, name='dispatch')
 class EwayBill(View):
     @transaction.atomic
@@ -8336,7 +8338,7 @@ class EwayBill(View):
         cleaned_payload = ''.join(char for char in payload if char.isprintable())
         return cleaned_payload
 
-
+@method_decorator([authorization_required], name='dispatch')
 class GstRateValuesAPI(APIView):
     def get(self, request):
         id = request.query_params.get('id')
@@ -8395,7 +8397,7 @@ class GstRateValuesAPI(APIView):
 
 from decimal import Decimal, ROUND_HALF_UP
 
-
+@method_decorator([authorization_required], name='dispatch')
 class AddCustomItemAPI(APIView):
     def create_invoice_number(self):
         try:
@@ -9245,7 +9247,7 @@ class AddCustomItemAPI(APIView):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
+@method_decorator([authorization_required], name='dispatch')
 class AddCustomInvoiceSignature(APIView):
     def post(self, request, item_id):
         item = get_object_or_404(CustomInvoice, id=item_id)
@@ -9445,7 +9447,7 @@ class AddCustomInvoiceSignature(APIView):
 #             }
 #         else:
 #             return {}
-
+@method_decorator([authorization_required], name='dispatch')
 class ALLinvoiceForSuperAdmin(APIView):
     def get(self, request, *args, **kwargs):
         try:
@@ -9614,6 +9616,7 @@ class ALLinvoiceForSuperAdmin(APIView):
 #         except (AddItem.DoesNotExist, CustomInvoice.DoesNotExist):
 #             return JsonResponse({'error': 'Data not found'}, status=404)
 
+@method_decorator([authorization_required], name='dispatch')
 class ExculdeInvoiceSuperAdmin(APIView):
     def get(self, request, *args, **kwargs):
         try:
@@ -9742,7 +9745,7 @@ class ExculdeInvoiceSuperAdmin(APIView):
         else:
             return {}
 
-
+@method_decorator([authorization_required], name='dispatch')
 class GetByInvoiceNumber(View):
     def get(self, request, *args, **kwargs):
         try:
@@ -9993,7 +9996,7 @@ class GetByInvoiceNumber(View):
         else:
             return {}
 
-
+@method_decorator([authorization_required], name='dispatch')
 class TransportationAPI(APIView):
     def post(self, request):
         data = request.data
@@ -10139,7 +10142,7 @@ class TransportationAPI(APIView):
         else:
             return Response({'message': 'Please provide a valid primary key (pk)'}, status=status.HTTP_400_BAD_REQUEST)
 
-
+@method_decorator([authorization_required], name='dispatch')
 class UnitPriceListAPI(APIView):
     def post(self, request):
         data = request.data
@@ -10195,7 +10198,7 @@ from io import BytesIO
 from django.core.files.base import ContentFile
 import base64
 
-
+@method_decorator([authorization_required], name='dispatch')
 class CompanydetailsSuperAdminAPIView(APIView):
     def get_state_code(self, state_name):
         # Define a dictionary mapping state names to their codes
@@ -10355,7 +10358,6 @@ class CompanydetailsSuperAdminAPIView(APIView):
 
 import qrcode
 from weasyprint import HTML
-
 
 class MyAPIView(APIView):
     def generate_qr_code(self, data):
@@ -10860,7 +10862,7 @@ class MyAPIView(APIView):
 
 from itertools import chain
 
-
+@method_decorator([authorization_required], name='dispatch')
 class FilterForSuperadmin(View):
     def get(self, request, *args, **kwargs):
         try:
@@ -12325,7 +12327,7 @@ class FilterForSuperadmin(View):
         else:
             return {}
 
-
+@method_decorator([authorization_required], name='dispatch')
 class InvoiceHistoyFilter(APIView):
     def get(self, request, user_id=None, invoice_number=None):
         role_filter = request.query_params.get('filter', '').lower()
@@ -12812,7 +12814,7 @@ class InvoiceHistoyFilter(APIView):
         }
         return JsonResponse(response_data, status=200)
 
-
+@method_decorator([authorization_required], name='dispatch')
 class SuperAdminGetAllViewwithoutpagination(APIView):
     def get(self, request, super_admin_id):
         try:
@@ -12873,7 +12875,7 @@ class SuperAdminGetAllViewwithoutpagination(APIView):
         except CustomUser.DoesNotExist:
             return Response({"message": "Super Admin user not found"}, status=status.HTTP_404_NOT_FOUND)
 
-
+@method_decorator([authorization_required], name='dispatch')
 class CustomerGet(APIView):
     def get(self, request, *args, **kwargs):
         partner_id = self.kwargs.get('partner_id')
@@ -12904,7 +12906,7 @@ class CustomerGet(APIView):
 
         return Response(serialized_data, status=status.HTTP_200_OK)
 
-
+@method_decorator([authorization_required], name='dispatch')
 class BatchSizeAPI(APIView):
     def get(self, request, pk=None):
         if pk:
@@ -12997,7 +12999,7 @@ class BatchSizeAPI(APIView):
         batch_size.delete()
         return Response({'message': 'BatchSize deleted successfully'})
 
-
+@method_decorator([authorization_required], name='dispatch')
 class BatchTypeAPI(APIView):
     def get(self, request, pk=None):
         if pk is not None:
@@ -13052,7 +13054,7 @@ class BatchTypeAPI(APIView):
         except Batchtype.DoesNotExist:
             return Response({'message': 'Batch type does not exist'}, status=status.HTTP_404_NOT_FOUND)
 
-
+@method_decorator([authorization_required], name='dispatch')
 class SlotStatusAPI(APIView):
     def get(self, request, pk=None):
         if pk is not None:
@@ -13110,7 +13112,7 @@ class SlotStatusAPI(APIView):
         except SlotStatus.DoesNotExist:
             return Response({'message': 'Slot status does not exist'}, status=status.HTTP_404_NOT_FOUND)
 
-
+@method_decorator([authorization_required], name='dispatch')
 class SlotBookingPriceAPI(APIView):
     def get(self, request, pk=None):
         if pk is not None:
@@ -13173,6 +13175,7 @@ class SlotBookingPriceAPI(APIView):
         except SlotBookingPrice.DoesNotExist:
             return Response({'message': 'Slot booking price does not exist'}, status=status.HTTP_404_NOT_FOUND)
 
+@method_decorator([authorization_required], name='dispatch')
 class GetAllTraningMaster(APIView):
     def get(self, request):
         batch_sizes = Batchsize.objects.all()
@@ -13324,7 +13327,7 @@ def handle_payment_success(request):
 
     return JsonResponse({'message': 'Invalid request method'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-
+@method_decorator([authorization_required], name='dispatch')
 class SlotListView(APIView):
     def get(self, request, *args, **kwargs):
         user_id = self.request.query_params.get('user_id')
@@ -13350,7 +13353,7 @@ class SlotListView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 from django.db.models import Min, Exists, OuterRef
-
+@method_decorator([authorization_required], name='dispatch')
 class UserSlotList(APIView):
     def get(self, request, user_id):
         # Query the minimum created_date_time for each unique slot_date
@@ -13403,7 +13406,7 @@ class UserSlotList(APIView):
 #
 #         return Response(response_data)
 
-
+@method_decorator([authorization_required], name='dispatch')
 class SlotsWithStudents(APIView):
     def get(self, request, user_id):
         # Query slot dates with associated students for the given user ID
@@ -13460,6 +13463,7 @@ class SlotsWithStudents(APIView):
 
         return Response(response_data)
 
+@method_decorator([authorization_required], name='dispatch')
 class SlotsWithoutStudents(APIView):
     def get(self, request, user_id):
         # Query slot dates without associated students for the given user ID
@@ -13499,6 +13503,7 @@ class SlotsWithoutStudents(APIView):
 
         return Response(response_data)
 
+@method_decorator([authorization_required], name='dispatch')
 class StudentCreateAPIView(APIView):
     def post(self, request, *args, **kwargs):
         slot_id = request.data.get('slot_id')
@@ -13771,7 +13776,7 @@ class StudentCreateAPIView(APIView):
 
         return Response({'message': 'Students deleted successfully'}, status=status.HTTP_200_OK)
 
-
+@method_decorator([authorization_required], name='dispatch')
 class SlotListStudents(APIView):
     def get(self, request, user_id):
         # Check if the user is a Super_admin
@@ -13810,7 +13815,7 @@ class SlotListStudents(APIView):
 
         return Response(serializer.data)
 
-
+@method_decorator([authorization_required], name='dispatch')
 class SlotDetailsAPIView(APIView):
     def get(self, request, slot_id):
         try:
@@ -13844,6 +13849,7 @@ class SlotDetailsAPIView(APIView):
         except Slot.DoesNotExist:
             return Response({'message': 'Slot not found'}, status=status.HTTP_404_NOT_FOUND)
 
+@method_decorator([authorization_required], name='dispatch')
 class SlotsWithSameBatchSizeAPIView(APIView):
     def get(self, request, slot_id):
         try:
@@ -13876,7 +13882,7 @@ class SlotsWithSameBatchSizeAPIView(APIView):
             return Response({'message': 'Slot not found'}, status=status.HTTP_404_NOT_FOUND)
 
 
-
+@method_decorator([authorization_required], name='dispatch')
 class SlotSwapAPIView(APIView):
     def post(self, request):
         slot1_id = request.data.get('slot1_id')
@@ -13954,7 +13960,7 @@ class SlotSwapAPIView(APIView):
         except Slot.DoesNotExist:
             return Response({'message': 'One or both slots not found'}, status=status.HTTP_404_NOT_FOUND)
 
-
+@method_decorator([authorization_required], name='dispatch')
 class PayUrlAPI(APIView):
     def get(self, request, pk=None):
         if pk:
@@ -14042,7 +14048,7 @@ class PayUrlAPI(APIView):
         except PayUrl.DoesNotExist:
             return JsonResponse({'message': 'PayUrl not found'}, status=404)
 
-
+@method_decorator([authorization_required], name='dispatch')
 class MatchingSlotsAPIView(APIView):
     def get(self, request, slot_id):
         try:
@@ -14088,7 +14094,7 @@ class MatchingSlotsAPIView(APIView):
             return Response({'message': 'Slot not found'}, status=status.HTTP_404_NOT_FOUND)
 
 
-
+@method_decorator([authorization_required], name='dispatch')
 class MoveStudentsAPIView(APIView):
     def post(self, request):
         # Extract slot_from, slot_to, and student_ids_to_move from the request body
@@ -14134,6 +14140,7 @@ class MoveStudentsAPIView(APIView):
         except Student.DoesNotExist:
             return Response({'message': 'One of the students does not exist'}, status=status.HTTP_404_NOT_FOUND)
 
+@method_decorator([authorization_required], name='dispatch')
 class PaymentLinkStatusAPI(APIView):
     def get(self, request, pk=None):
         if pk is not None:
@@ -14337,6 +14344,7 @@ class CheckPaymentStatusView(APIView):
 
 
 from dateutil import parser as date_parser
+@method_decorator([authorization_required], name='dispatch')
 class FilterData(APIView):
     def get(self, request, user_id):
         try:
@@ -14622,6 +14630,7 @@ from django.db.models.functions import ExtractMonth
 from calendar import monthrange
 import calendar
 import datetime
+@method_decorator([authorization_required], name='dispatch')
 class getcalendarAPI(APIView):
     def get(self, request):
         # Get the user_id and date from query parameters
@@ -14771,6 +14780,7 @@ class getcalendarAPI(APIView):
 #         except Exception as e:
 #             return Response({'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+@method_decorator([authorization_required], name='dispatch')
 class UpdateInvoiceStatusView(APIView):
     def post(self, request, invoice_number):
         new_status_id = request.data.get('invoice_status')
@@ -14810,7 +14820,7 @@ class UpdateInvoiceStatusView(APIView):
         return JsonResponse({'error': 'Invoice not found or customer_type is not Individual.'},
                             status=status.HTTP_404_NOT_FOUND)
 
-
+@method_decorator([authorization_required], name='dispatch')
 class GetdashbordAPI(APIView):
     def get(self, request):
         user_id = request.query_params.get('user_id')
