@@ -13815,7 +13815,7 @@ class SlotListStudents(APIView):
 
         return Response(serializer.data)
 
-@method_decorator([authorization_required], name='dispatch')
+# @method_decorator([authorization_required], name='dispatch')
 class SlotDetailsAPIView(APIView):
     def get(self, request, slot_id):
         try:
@@ -15415,5 +15415,57 @@ class GetdashbordAPI(APIView):
 
         else:
             return Response({'error': 'Invalid parameters'})
+
+@method_decorator([authorization_required], name='dispatch')
+class DeleteInvoice(APIView):
+    def delete(self, request, invoice_number):
+        owner_id = request.query_params.get('owner_id')
+        if not owner_id:
+            return Response({'message': 'Owner ID is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        add_item = AddItem.objects.filter(invoice_number=invoice_number).first()
+        if add_item:
+            # Check if the owner_id matches
+            if str(add_item.owner_id.id) != str(owner_id):
+                return Response({'message': 'Only the owner have the access to delete this invoice.'}, status=status.HTTP_403_FORBIDDEN)
+
+            # Check if the invoice status is "Completed"
+            if add_item.invoice_status and add_item.invoice_status.invoice_status_name == "Completed":
+                return Response({'message': 'Cannot delete an invoice with status Completed'},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+            # If AddItem has associated drones, update DroneOwnership
+            if add_item.dronedetails:
+                for drone_detail in add_item.dronedetails:
+                    drone_id = drone_detail.get('drone_id')
+                    quantity = drone_detail.get('quantity')
+
+                    # Check if the drone ownership exists for the owner
+                    drone_ownership = DroneOwnership.objects.filter(user=add_item.owner_id, drone_id=drone_id).first()
+                    if drone_ownership:
+                        if add_item.owner_id.role_id.role_name != "Super_admin":
+                        # Update the quantity of drones in the ownership record
+                            drone_ownership.quantity = F('quantity') + quantity
+                            drone_ownership.save()
+            add_item.delete()
+            return Response({'message': 'DroneInvoice deleted successfully.'}, status=status.HTTP_200_OK)
+
+        # Try to find the invoice in CustomInvoice
+        custom_invoice = CustomInvoice.objects.filter(invoice_number=invoice_number).first()
+
+        if custom_invoice:
+            # Check if the owner_id matches
+            if str(custom_invoice.owner_id.id) != str(owner_id):
+                return Response({'message': 'Only the owner can delete this invoice.'}, status=status.HTTP_403_FORBIDDEN)
+
+            # Check if the invoice status is "Completed"
+            if custom_invoice.invoice_status and custom_invoice.invoice_status.invoice_status_name == "Completed":
+                return Response({'message': 'Cannot delete an invoice with status Completed'},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+            custom_invoice.delete()
+            return Response({'message': 'CustomInvoice deleted successfully.'}, status=status.HTTP_200_OK)
+
+        return Response({'message': 'Invoice not found.'}, status=status.HTTP_404_NOT_FOUND)
 
 
