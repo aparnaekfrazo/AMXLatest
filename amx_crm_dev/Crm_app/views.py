@@ -15448,7 +15448,7 @@ class DeleteInvoice(APIView):
                             drone_ownership.quantity = F('quantity') + quantity
                             drone_ownership.save()
             add_item.delete()
-            return Response({'message': 'DroneInvoice deleted successfully.'}, status=status.HTTP_200_OK)
+            return Response({'message': 'Drone Invoice deleted successfully.'}, status=status.HTTP_200_OK)
 
         # Try to find the invoice in CustomInvoice
         custom_invoice = CustomInvoice.objects.filter(invoice_number=invoice_number).first()
@@ -15464,7 +15464,7 @@ class DeleteInvoice(APIView):
                                 status=status.HTTP_400_BAD_REQUEST)
 
             custom_invoice.delete()
-            return Response({'message': 'CustomInvoice deleted successfully.'}, status=status.HTTP_200_OK)
+            return Response({'message': 'Custom Invoice deleted successfully.'}, status=status.HTTP_200_OK)
 
         return Response({'message': 'Invoice not found.'}, status=status.HTTP_404_NOT_FOUND)
 
