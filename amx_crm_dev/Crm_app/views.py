@@ -1464,29 +1464,29 @@ def get_state_code(state_name):
 
 
 @staticmethod
-    def get_location_details(pin_code):
-        geolocator = Nominatim(user_agent="amxcrm")
-        try:
-            location = geolocator.geocode(pin_code)
-            if location:
-                raw_data = location.raw
-                display_name = raw_data.get('display_name', '')
-                print(display_name, "Display Name")
-                parts = display_name.split(', ')
-                state = parts[-2]
-                city = parts[-3]
-                country = parts[-1]
-                state_code = CompanydetailsAPIView.get_state_code(state)
-                print(state_code, "State Code")
-                return {
-                    'state': state,
-                    'state_code': state_code,
-                    'city': city,
-                    'country': country
-                }
-        except Exception as e:
-            print("Error occurred while geocoding:", e)
-        return None
+def get_location_details(pin_code):
+    geolocator = Nominatim(user_agent="amxcrm")
+    try:
+        location = geolocator.geocode(pin_code)
+        if location:
+            raw_data = location.raw
+            display_name = raw_data.get('display_name', '')
+            print(display_name, "Display Name")
+            parts = display_name.split(', ')
+            state = parts[-2]
+            city = parts[-3]
+            country = parts[-1]
+            state_code = CompanydetailsAPIView.get_state_code(state)
+            print(state_code, "State Code")
+            return {
+                'state': state,
+                'state_code': state_code,
+                'city': city,
+                'country': country
+            }
+    except Exception as e:
+        print("Error occurred while geocoding:", e)
+    return None
 
 
 def approveRequest(request, id):
