@@ -1201,34 +1201,7 @@ class CompanydetailsAPIView(APIView):
         # Retrieve the state code from the dictionary
         return state_code_mapping.get(state_name, '')
 
-    # def get_location_details(self, pin_code):
-    #     geolocator = Nominatim(user_agent="amxcrm")
-    #     try:
-    #         location = geolocator.geocode(pin_code)
-    #         if location:
-    #             raw_data = location.raw
-    #             display_name = raw_data.get('display_name', '')
-    #             print(display_name, "Display Name")
-    #             # Extracting information from display_name
-    #             parts = display_name.split(', ')
-    #             state = parts[-2]
-    #             city = parts[-3]
-    #             country = parts[-1]
-    #             # Retrieve state code using the predefined mapping
-    #             state_code = self.get_state_code(state)
-    #             print(state_code, "State Code")
-    #             return {
-    #                 'state': state,
-    #                 'state_code': state_code,
-    #                 'city': city,
-    #                 'country': country
-    #             }
-    #     except Exception as e:
-    #         print("Error occurred while geocoding:", e)
-    #     return None
-
-    @staticmethod
-    def get_location_details(pin_code):
+    def get_location_details(self, pin_code):
         geolocator = Nominatim(user_agent="amxcrm")
         try:
             location = geolocator.geocode(pin_code)
@@ -1236,11 +1209,13 @@ class CompanydetailsAPIView(APIView):
                 raw_data = location.raw
                 display_name = raw_data.get('display_name', '')
                 print(display_name, "Display Name")
+                # Extracting information from display_name
                 parts = display_name.split(', ')
                 state = parts[-2]
                 city = parts[-3]
                 country = parts[-1]
-                state_code = CompanydetailsAPIView.get_state_code(state)
+                # Retrieve state code using the predefined mapping
+                state_code = self.get_state_code(state)
                 print(state_code, "State Code")
                 return {
                     'state': state,
@@ -1463,8 +1438,7 @@ def get_state_code(state_name):
     return state_code_mapping.get(state_name, '')
 
 
-@staticmethod
-def get_location_details(pin_code):
+def get_location_details(self, pin_code):
     geolocator = Nominatim(user_agent="amxcrm")
     try:
         location = geolocator.geocode(pin_code)
@@ -1472,11 +1446,13 @@ def get_location_details(pin_code):
             raw_data = location.raw
             display_name = raw_data.get('display_name', '')
             print(display_name, "Display Name")
+            # Extracting information from display_name
             parts = display_name.split(', ')
             state = parts[-2]
             city = parts[-3]
             country = parts[-1]
-            state_code = CompanydetailsAPIView.get_state_code(state)
+            # Retrieve state code using the predefined mapping
+            state_code = self.get_state_code(state)
             print(state_code, "State Code")
             return {
                 'state': state,
