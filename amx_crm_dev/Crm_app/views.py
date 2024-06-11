@@ -1228,7 +1228,7 @@ class CompanydetailsAPIView(APIView):
         return None
 
     def post(self, request, pk):
-        server_address = "https://amx-crm-dev.thestorywallcafe.com"
+        server_address = "http://127.0.0.1:8000/"
         data = request.data
         media_url = settings.MEDIA_URL
 
@@ -1438,7 +1438,7 @@ def get_state_code(state_name):
     return state_code_mapping.get(state_name, '')
 
 
-def get_location_details(self, pin_code):
+def get_location_details(pin_code):
     geolocator = Nominatim(user_agent="amxcrm")
     try:
         location = geolocator.geocode(pin_code)
@@ -1446,13 +1446,11 @@ def get_location_details(self, pin_code):
             raw_data = location.raw
             display_name = raw_data.get('display_name', '')
             print(display_name, "Display Name")
-            # Extracting information from display_name
             parts = display_name.split(', ')
             state = parts[-2]
             city = parts[-3]
             country = parts[-1]
-            # Retrieve state code using the predefined mapping
-            state_code = self.get_state_code(state)
+            state_code = get_state_code(state)
             print(state_code, "State Code")
             return {
                 'state': state,
@@ -1464,7 +1462,7 @@ def get_location_details(self, pin_code):
         print("Error occurred while geocoding:", e)
     return None
 
-
+# Standalone function to approve the request
 def approveRequest(request, id):
     partner = ChangeRequestCompanyDetails.objects.get(id=id)
     if not partner.status:
@@ -1475,16 +1473,12 @@ def approveRequest(request, id):
 
         for field in fields_to_check:
             old_value = getattr(partner, field)
-
             if old_value:
                 setattr(profile, field, old_value)
-
             if field == "user_signature" and partner.user_signature:
-                # Use the same image name as used while saving the ChangeRequestCompanyDetails
                 signature_name = partner.user_signature.name
                 new_signature = ContentFile(partner.user_signature.read())
                 profile.user_signature.save(signature_name, new_signature)
-
             if field == "company_logo" and partner.company_logo:
                 new_logo = ContentFile(partner.company_logo.read())
                 profile.company_logo.save(partner.company_logo.name, new_logo)
@@ -1497,7 +1491,6 @@ def approveRequest(request, id):
             profile.shipping_state_city = shipping_location_details['city']
             profile.shipping_state_country = shipping_location_details['country']
 
-        # Fetch and update billing location details
         billing_pincode = profile.billing_pincode
         billing_location_details = get_location_details(billing_pincode)
         if billing_location_details:
