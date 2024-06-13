@@ -152,6 +152,7 @@ urlpatterns = [
          name='update-invoice-status'),
     path('getdashboard/', GetdashbordAPI.as_view(), name='Get Dashboard'),
     path('delete-invoice/<path:invoice_number>/', DeleteInvoice.as_view(), name='delete-invoice'),
+    path('drone-orders-graph/', GetDroneOrdersGraph.as_view()),
 
 ]
 

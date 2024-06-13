@@ -2485,6 +2485,8 @@ def track_order(request):
     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
 
+from collections import defaultdict
+
 class MyPagination(PageNumberPagination):
     page_size_query_param = 'data_per_page'
 
@@ -2628,105 +2630,215 @@ class OrderStatusView(APIView):
 
             super_admin = CustomUser.objects.get(id=super_admin_id)
             is_super_admin = super_admin.role_id.role_name == "Super_admin"
-            processed_order_ids = set()
 
             try:
                 with transaction.atomic():
                     if is_super_admin:
+                        # Process single order if provided
                         if single_order_id:
-                            #orders = Order.objects.filter(order_id=single_order_id)
                             orders = Order.objects.filter(id=single_order_id)
-                            for order in orders:
-                                order.order_status = new_status
-                                order.updated_date_time = timezone.now()
-                                order.save()
-
-                                if order.user_id:
-                                    if new_status.status_name == "Shipped":
-                                        order.user_id.inventory_count = F('inventory_count') + order.quantity
-                                        order.user_id.save()
-
-                                    """neww"""
-                                    try:
-                                        drone_ownership = DroneOwnership.objects.get(
-                                            user=order.user_id,
-                                            drone=order.drone_id,
-                                        )
-                                        drone_ownership.quantity += order.quantity
-                                        drone_ownership.save()
-                                    except DroneOwnership.DoesNotExist:
-                                        # If DroneOwnership doesn't exist, create a new one
-                                        DroneOwnership.objects.create(
-                                            user=order.user_id,
-                                            drone=order.drone_id,
-                                            quantity=order.quantity,
-                                        )
-
-                                """newww"""
-
-                                # Increment inventory_count for the Super_admin
-                            if new_status.status_name == "Shipped":
-                                # super_admin.inventory_count = F('inventory_count') + orders.count()
-                                super_admin.inventory_count = F('inventory_count') + sum(
-                                    order.quantity for order in orders)
-                                super_admin.save()
-                            return JsonResponse({"message": "Order status updated successfully"}, status=200)
-
-                        # else:
-                        #     return JsonResponse({"message": f"Order with order_id {single_order_id} not found"},
-                        #                             status=404)
-
+                        # Process multiple orders
                         elif order_ids:
-                            # orders = Order.objects.filter(order_id__in=order_ids)
                             orders = Order.objects.filter(id__in=order_ids)
-                            for order in orders:
-                                order.order_status = new_status
-                                order.updated_date_time = timezone.now()
-                                order.save()
+                        else:
+                            return JsonResponse({"message": "No orders provided"}, status=400)
 
-                                # Increment inventory_count for the associated user
-                                if order.user_id:
-                                    if new_status.status_name == "Shipped":
-                                        order.user_id.inventory_count = F('inventory_count') + order.quantity
-                                        order.user_id.save()
+                        # Group orders by user_id
+                        user_orders = defaultdict(list)
+                        for order in orders:
+                            order.order_status = new_status
+                            order.updated_date_time = timezone.now()
+                            order.save()
 
-                                    """neww"""
-                                    try:
-                                        drone_ownership = DroneOwnership.objects.get(
-                                            user=order.user_id,
-                                            drone=order.drone_id,
-                                        )
-                                        drone_ownership.quantity += order.quantity
-                                        drone_ownership.save()
-                                    except DroneOwnership.DoesNotExist:
-                                        # If DroneOwnership doesn't exist, create a new one
-                                        DroneOwnership.objects.create(
-                                            user=order.user_id,
-                                            drone=order.drone_id,
-                                            quantity=order.quantity,
-                                        )
-
-                                    """new"""
-
-                            # Increment inventory_count for the Super_admin
+                            # Increment inventory_count for the associated user
                             if new_status.status_name == "Shipped":
-                                # super_admin.inventory_count = F('inventory_count') + len(orders)
-                                super_admin.inventory_count = F('inventory_count') + sum(
-                                    order.quantity for order in orders)
-                                super_admin.save()
+                                order.user_id.inventory_count = F('inventory_count') + order.quantity
+                                order.user_id.save()
 
-                            return JsonResponse({"message": "Order status updated successfully"}, status=200)
+                                # Update drone ownership
+                                try:
+                                    drone_ownership = DroneOwnership.objects.get(
+                                        user=order.user_id,
+                                        drone=order.drone_id,
+                                    )
+                                    drone_ownership.quantity += order.quantity
+                                    drone_ownership.save()
+                                except DroneOwnership.DoesNotExist:
+                                    # If DroneOwnership doesn't exist, create a new one
+                                    DroneOwnership.objects.create(
+                                        user=order.user_id,
+                                        drone=order.drone_id,
+                                        quantity=order.quantity,
+                                    )
+
+                            # Group orders by user_id for sending email
+                            user_orders[order.user_id].append(order)
+
+                        # Send emails to each user with their purchased drones
+                        for user, user_order_list in user_orders.items():
+                            drone_info = ", ".join(
+                                [f"{order.drone_id.drone_name} (Order ID: {order.id})" for order in user_order_list])
+                            subject = 'Your order has been shipped'
+                            message = f'Dear {user.username},\n\nYour order containing the following drones has been shipped: {drone_info}\n\nThank you for shopping with us!'
+                            from_email = 'amxdrone123@gmail.com'
+                            to_email = user.email
+                            send_mail(subject, message, from_email, [to_email])
+
+                        # Increment inventory_count for the Super_admin
+                        if new_status.status_name == "Shipped":
+                            super_admin.inventory_count = F('inventory_count') + sum(
+                                order.quantity for order in orders)
+                            super_admin.save()
+
+                        return JsonResponse({"message": "Order status updated successfully"}, status=200)
 
                     else:
                         return JsonResponse({"message": "Permission denied"}, status=403)
 
-            except IntegrityError:
-                return JsonResponse({"message": "IntegrityError: Duplicate key for Super_admin"}, status=500)
+            except Exception as e:
+                return JsonResponse({"message": f"Error: {str(e)}"}, status=500)
 
         except json.JSONDecodeError:
             return JsonResponse({"message": "Invalid JSON in the request body"}, status=400)
-        except Exception as e:
-            return JsonResponse({"message": f"Error: {str(e)}"}, status=500)
+
+    # def put(self, request, super_admin_id):
+    #     try:
+    #         data = json.loads(request.body)
+    #         order_ids = data.get('order_ids', [])
+    #         single_order_id = data.get('order_id')
+    #         status_id = data.get('status_id')
+    #
+    #         if not status_id:
+    #             return JsonResponse({"message": "status_id is required in the request body"}, status=400)
+    #
+    #         new_status = get_object_or_404(Status, id=status_id)
+    #
+    #         super_admin = CustomUser.objects.get(id=super_admin_id)
+    #         is_super_admin = super_admin.role_id.role_name == "Super_admin"
+    #         processed_order_ids = set()
+    #         notified_users = set()
+    #
+    #         try:
+    #             with transaction.atomic():
+    #                 if is_super_admin:
+    #                     if single_order_id:
+    #                         #orders = Order.objects.filter(order_id=single_order_id)
+    #                         orders = Order.objects.filter(id=single_order_id)
+    #                         for order in orders:
+    #                             order.order_status = new_status
+    #                             order.updated_date_time = timezone.now()
+    #                             order.save()
+    #
+    #                             if order.user_id:
+    #                                 if new_status.status_name == "Shipped":
+    #                                     order.user_id.inventory_count = F('inventory_count') + order.quantity
+    #                                     order.user_id.save()
+    #
+    #                                 """neww"""
+    #                                 try:
+    #                                     drone_ownership = DroneOwnership.objects.get(
+    #                                         user=order.user_id,
+    #                                         drone=order.drone_id,
+    #                                     )
+    #                                     drone_ownership.quantity += order.quantity
+    #                                     drone_ownership.save()
+    #                                 except DroneOwnership.DoesNotExist:
+    #                                     # If DroneOwnership doesn't exist, create a new one
+    #                                     DroneOwnership.objects.create(
+    #                                         user=order.user_id,
+    #                                         drone=order.drone_id,
+    #                                         quantity=order.quantity,
+    #                                     )
+    #                                 ##sending email###############
+    #                                 drone_names = ", ".join([order.drone_id.drone_name for order in orders])
+    #                                 subject = 'Your order has been shipped'
+    #                                 message = f'Dear {order.user_id.username},\n\nYour order containing the following drones has been shipped: {drone_names}\n\nThank you for shopping with us!'
+    #                                 from_email = 'amxdrone123@gmail.com'
+    #                                 to_email = order.user_id.email
+    #
+    #                                 send_mail(subject, message, from_email, [to_email])
+    #
+    #                             """newww"""
+    #
+    #
+    #                             # Increment inventory_count for the Super_admin
+    #                         if new_status.status_name == "Shipped":
+    #                             # super_admin.inventory_count = F('inventory_count') + orders.count()
+    #                             super_admin.inventory_count = F('inventory_count') + sum(
+    #                                 order.quantity for order in orders)
+    #                             super_admin.save()
+    #                         return JsonResponse({"message": "Order status updated successfully"}, status=200)
+    #
+    #                     # else:
+    #                     #     return JsonResponse({"message": f"Order with order_id {single_order_id} not found"},
+    #                     #                             status=404)
+    #
+    #                     elif order_ids:
+    #                         user_orders = defaultdict(list)
+    #                         # orders = Order.objects.filter(order_id__in=order_ids)
+    #                         orders = Order.objects.filter(id__in=order_ids)
+    #                         for order in orders:
+    #                             order.order_status = new_status
+    #                             order.updated_date_time = timezone.now()
+    #                             order.save()
+    #
+    #                             # Increment inventory_count for the associated user
+    #                             if order.user_id:
+    #                                 if new_status.status_name == "Shipped":
+    #                                     order.user_id.inventory_count = F('inventory_count') + order.quantity
+    #                                     order.user_id.save()
+    #
+    #                                 """neww"""
+    #                                 try:
+    #                                     drone_ownership = DroneOwnership.objects.get(
+    #                                         user=order.user_id,
+    #                                         drone=order.drone_id,
+    #                                     )
+    #                                     drone_ownership.quantity += order.quantity
+    #                                     drone_ownership.save()
+    #                                 except DroneOwnership.DoesNotExist:
+    #                                     # If DroneOwnership doesn't exist, create a new one
+    #                                     DroneOwnership.objects.create(
+    #                                         user=order.user_id,
+    #                                         drone=order.drone_id,
+    #                                         quantity=order.quantity,
+    #                                     )
+    #                                     ##sending email######
+    #                                 user_orders[order.user_id].append(order)
+    #
+    #                                 # Send emails to each user with their purchased drones
+    #                         for user, user_order_list in user_orders.items():
+    #                             drone_names = ", ".join(
+    #                                 [f"{order.drone_id.drone_name} (Order ID: {order.order_id})" for order in
+    #                                  user_order_list])
+    #                             subject = 'Your order has been shipped'
+    #                             message = f'Dear {user.username},\n\nYour order containing the following drones has been shipped: {drone_names}\n\nThank you for shopping with us!'
+    #                             from_email = 'amxdrone123@gmail.com'
+    #                             to_email = user.email
+    #
+    #                             send_mail(subject, message, from_email, [to_email])
+    #
+    #                                 # """new"""
+    #
+    #                         # Increment inventory_count for the Super_admin
+    #                         if new_status.status_name == "Shipped":
+    #                             # super_admin.inventory_count = F('inventory_count') + len(orders)
+    #                             super_admin.inventory_count = F('inventory_count') + sum(
+    #                                 order.quantity for order in orders)
+    #                             super_admin.save()
+    #
+    #                         return JsonResponse({"message": "Order status updated successfully"}, status=200)
+    #
+    #                 else:
+    #                     return JsonResponse({"message": "Permission denied"}, status=403)
+    #
+    #         except IntegrityError:
+    #             return JsonResponse({"message": "IntegrityError: Duplicate key for Super_admin"}, status=500)
+    #
+    #     except json.JSONDecodeError:
+    #         return JsonResponse({"message": "Invalid JSON in the request body"}, status=400)
+    #     except Exception as e:
+    #         return JsonResponse({"message": f"Error: {str(e)}"}, status=500)
 
 @method_decorator([authorization_required], name='dispatch')
 class GetdashbordAPI(APIView):
@@ -5971,6 +6083,7 @@ class MydronespartnerAPI(APIView):
         user = get_object_or_404(CustomUser, id=user_id)
 
         if user.role_id.role_name == 'Partner':
+            #itemfromorder = order obj
             drone_ownership = DroneOwnership.objects.filter(user=user)
             serialized_data = [{
                 'drone_id': ownership.drone.id,
@@ -5979,6 +6092,7 @@ class MydronespartnerAPI(APIView):
                 'details': {
                     'drone_category': ownership.drone.drone_category.category_name,
                     'market_price': ownership.drone.market_price,
+                    #ourprice mapped with order table amount
                     'our_price': ownership.drone.our_price,
                     'hsn_number': ownership.drone.hsn_number,
                     'units': ownership.drone.units.units if ownership.drone.units else None,
@@ -15460,5 +15574,257 @@ class DeleteInvoice(APIView):
             return Response({'message': 'Custom Invoice deleted successfully.'}, status=status.HTTP_200_OK)
 
         return Response({'message': 'Invoice not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+
+from datetime import datetime
+from django.utils.dateparse import parse_date
+@method_decorator([authorization_required], name='dispatch')
+class GetDroneOrdersGraph(APIView):
+    def get(self, request):
+        user_id = request.query_params.get('user_id')
+        role_name = request.query_params.get('role_name')
+        drone_model = request.query_params.get('drone_model')
+        start_time_str = request.query_params.get('start_time')
+        end_time_str = request.query_params.get('end_time')
+
+        if user_id and role_name and start_time_str and end_time_str and drone_model:
+
+            try:
+                user = CustomUser.objects.get(id=user_id)
+            except CustomUser.DoesNotExist:
+                return Response({'error': 'User not found'}, status=404)
+
+            drone_model_ids = [int(model_id) for model_id in drone_model.split(',')]
+
+            # Parse the start and end dates manually
+            try:
+                start_time = datetime.strptime(start_time_str, '%d-%m-%Y').date()
+                end_time = datetime.strptime(end_time_str, '%d-%m-%Y').date()
+                # Make the dates timezone-aware
+                start_time = timezone.make_aware(datetime.combine(start_time, datetime.min.time()))
+                end_time = timezone.make_aware(datetime.combine(end_time, datetime.min.time()))
+            except ValueError:
+                return Response({'error': 'Invalid date format'}, status=400)
+
+            if user.role_id.role_name == 'Partner':
+                queryset = Order.objects.filter(
+                    user_id=user_id,
+                    order_status__status_name='Shipped',
+                    drone_id_drone_categoryid_in=drone_model_ids,
+                    created_date_time__range=[start_time, end_time]
+                ).order_by('id')
+            else:
+                queryset = Order.objects.filter(
+                    order_status__status_name='Shipped',
+                    drone_id_drone_categoryid_in=drone_model_ids,
+                    created_date_time__range=[start_time, end_time]
+                ).order_by('id')
+
+            data = queryset.values(
+                'drone_id_drone_category_category_name',
+                'drone_id_drone_category_id',
+                'created_date_time__date'
+            ).annotate(count=Count('id'))
+
+            inventory_count = queryset.aggregate(Sum('quantity'))['quantity__sum'] or 0
+            total_billing = queryset.aggregate(Sum('amount'))['amount__sum'] or 0
+
+            result = {
+                'result': {
+                    'data': {
+                        'inventory_count': inventory_count,
+                        'total_billing': total_billing,
+                        'Purchased_drones_Graph': [],
+                    }
+                }
+            }
+
+            counts_by_model = {drone_model_id: {start_time + timedelta(days=i): 0 for i in range((end_time - start_time).days + 1)} for drone_model_id in drone_model_ids}
+
+            for entry in data:
+                model_id = entry['drone_id_drone_category_id']
+                date = entry['created_date_time__date']
+                if model_id in counts_by_model:
+                    if date in counts_by_model[model_id]:
+                        counts_by_model[model_id][date] += entry['count']
+
+            for drone_model_id in drone_model_ids:
+                purchased_drones_entry = {
+                    'label': DroneCategory.objects.get(id=drone_model_id).category_name if drone_model_id else 'Unknown',
+                    'Purchased_drones': [],
+                    'drone_model': None,
+                    'drone_model_id': None,
+                }
+
+                model_data = next((item for item in data if item['drone_id_drone_category_id'] == drone_model_id), None)
+
+                if model_data:
+                    drone_model_name = model_data['drone_id_drone_category_category_name']
+                    purchased_drones_entry['drone_model'] = drone_model_name
+                    purchased_drones_entry['drone_model_id'] = drone_model_id
+                else:
+                    default_model = DroneCategory.objects.filter(id=drone_model_id).first()
+                    if default_model:
+                        purchased_drones_entry['drone_model'] = default_model.category_name
+                        purchased_drones_entry['drone_model_id'] = drone_model_id
+                    else:
+                        purchased_drones_entry['drone_model'] = 'Unknown'
+                        purchased_drones_entry['drone_model_id'] = 'Unknown'
+
+                purchased_drones_entry['Purchased_drones'] = [
+                    {'month': (start_time + timedelta(days=i)).strftime('%Y-%m-%d'),
+                    'count': counts_by_model[drone_model_id].get(start_time + timedelta(days=i), 0)} for i in range((end_time - start_time).days + 1)
+                ]
+
+                result['result']['data']['Purchased_drones_Graph'].append(purchased_drones_entry)
+
+            return Response(result)
+
+        if user_id and role_name and drone_model:
+
+            try:
+                user = CustomUser.objects.get(id=user_id)
+            except CustomUser.DoesNotExist:
+                return Response({'error': 'User not found'}, status=404)
+
+            drone_model_ids = [int(model_id) for model_id in drone_model.split(',')]
+
+            queryset = Order.objects.filter(
+                user_id=user_id,
+                order_status__status_name='Shipped',
+                drone_id_drone_categoryid_in=drone_model_ids
+            ).order_by('id') if user.role_id.role_name == 'Partner' else Order.objects.filter(
+                order_status__status_name='Shipped',
+                drone_id_drone_categoryid_in=drone_model_ids
+            ).order_by('id')
+
+            data = queryset.values(
+                'drone_id_drone_category_category_name',
+                'drone_id_drone_category_id',
+                'created_date_time__month'
+            ).annotate(count=Count('id'))
+
+            inventory_count = queryset.aggregate(Sum('quantity'))['quantity__sum'] or 0
+            total_billing = queryset.aggregate(Sum('amount'))['amount__sum'] or 0
+
+            result = {
+                'result': {
+                    'data': {
+                        'inventory_count': inventory_count,
+                        'total_billing': total_billing,
+                        'Purchased_drones_Graph': [],
+                    }
+                }
+            }
+
+            counts_by_model = {drone_model_id: {month: 0 for month in range(1, 13)} for drone_model_id in drone_model_ids}
+
+            for entry in data:
+                model_id = entry['drone_id_drone_category_id']
+                month = entry['created_date_time__month']
+                count = entry['count']
+                if model_id in counts_by_model:
+                    counts_by_model[model_id][month] += count
+
+            for drone_model_id in drone_model_ids:
+                purchased_drones_entry = {
+                    'label': DroneCategory.objects.get(id=drone_model_id).category_name if drone_model_id else 'Unknown',
+                    'Purchased_drones': [],
+                    'drone_model': None,
+                    'drone_model_id': None,
+                }
+
+                model_data = data.filter(drone_id_drone_category_id=drone_model_id).first()
+
+                if model_data:
+                    drone_model_name = model_data['drone_id_drone_category_category_name']
+                    purchased_drones_entry['drone_model'] = drone_model_name
+                    purchased_drones_entry['drone_model_id'] = drone_model_id
+                else:
+                    default_model = DroneCategory.objects.filter(id=drone_model_id).first()
+                    if default_model:
+                        purchased_drones_entry['drone_model'] = default_model.category_name
+                        purchased_drones_entry['drone_model_id'] = drone_model_id
+                    else:
+                        purchased_drones_entry['drone_model'] = 'Unknown'
+                        purchased_drones_entry['drone_model_id'] = 'Unknown'
+
+                purchased_drones_entry['Purchased_drones'] = [
+                    {'month': timezone.datetime(2022, month_number, 1).strftime('%B'),
+                    'count': counts_by_model[drone_model_id].get(month_number, 0)} for month_number in
+                    range(1, 13)]
+
+                result['result']['data']['Purchased_drones_Graph'].append(purchased_drones_entry)
+
+            return Response(result)
+        if user_id and role_name:
+            try:
+                user = CustomUser.objects.get(id=user_id, role_id__role_name=role_name)
+            except CustomUser.DoesNotExist:
+                return Response({'error': 'User not found'}, status=404)
+
+            inventory_count = DroneOwnership.objects.filter(user_id=user_id).aggregate(Sum('quantity'))['quantity__sum'] or 0
+            total_billings = AddItem.objects.filter(owner_id__id=user_id).count()
+            total_billing_completed = AddItem.objects.filter(owner_id_id=user_id, invoice_status_invoice_status_name='completed').count()
+
+            if user.role_id.role_name == 'Partner':
+                label = 'Purchased Drones'
+                queryset = Order.objects.filter(order_status__status_name='Shipped', user_id=user_id)
+            else:
+                label = 'Sales Drones'
+                queryset = Order.objects.filter(order_status__status_name='Shipped')
+
+            data = queryset.values(
+                'created_date_time__month',
+                'drone_id_drone_category_category_name'
+            ).annotate(count=Count('id'))
+
+            result = {
+                'data': {
+                    'inventory_count': inventory_count,
+                    'total_billing': total_billings,
+                    'total_billing_completed': total_billing_completed,
+                    'Purchased_drones_Graph': [],  # Initialize purchased_drones_Graph here
+                }
+            }
+
+            overall_count_dict = {}
+            months_data = {month: {'count': 0, 'drone_category_name': []} for month in range(1, 13)}
+            drone_models = set()
+
+            for entry in data:
+                month_number = entry['created_date_time__month']
+                if month_number is not None:
+                    month_name_loop = timezone.datetime(2022, month_number, 1).strftime('%B')
+
+                    if month_name_loop not in overall_count_dict:
+                        overall_count_dict[month_name_loop] = entry['count']
+                    else:
+                        overall_count_dict[month_name_loop] += entry['count']
+
+                    months_data[month_number]['count'] = overall_count_dict[month_name_loop]
+                    months_data[month_number]['drone_category_name'].append(entry['drone_id_drone_category_category_name'])
+
+                    drone_models.add(entry['drone_id_drone_category_category_name'])
+
+            drone_sales_data = []
+
+            for month_number, month_data in months_data.items():
+                month_name = timezone.datetime(2022, month_number, 1).strftime('%B')
+                drone_sales_data.append({
+                    'month': month_name,
+                    'count': month_data['count'],
+                })
+
+            drone_entry = {
+                'label': label,
+                'Purchased_drones': drone_sales_data,
+            }
+
+            result['data']['Purchased_drones_Graph'].append(drone_entry)
+
+            return Response({'result': result})
+        else:
+            return Response({'error': 'Missing required parameters'}, status=400)
 
 
