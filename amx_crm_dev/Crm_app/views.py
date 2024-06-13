@@ -1291,10 +1291,13 @@ class CompanydetailsAPIView(APIView):
                     new_logo = data.get("company_logo")
 
                     if new_logo:
+                        print("logooooooooooooooooooooo")
                         try:
                             # Check if the new logo is different from the old logo
                             old_logo_data = old_logo.read() if old_logo else None
+                            print(old_logo_data,"ooooooooooooo")
                             new_logo_data = base64.b64decode(new_logo.split(';base64,')[1])
+                            print(new_logo_data,"newwwwwwwww")
 
                             if old_logo_data != new_logo_data:
                                 characters = string.ascii_letters + string.digits
@@ -1303,6 +1306,7 @@ class CompanydetailsAPIView(APIView):
                                 ext = format.split('/')[-1]
                                 company_logo_name = f'companylogo_{random_string}.{ext}'
                                 logo_data = ContentFile(new_logo_data, name=company_logo_name)
+                                print(logo_data,"logoooooooooooooooooooooooooooooooooo")
                                 requested_changes["company_logo"] = {
                                     "old": server_address + media_url + str(old_logo),
                                     "new": server_address + media_url + company_logo_name
@@ -1315,6 +1319,7 @@ class CompanydetailsAPIView(APIView):
                     if "user_signature" in new_changes:
                         change.user_signature.save(signature_name, signature_data, save=True)
                     if "company_logo" in new_changes:
+                        print("lstttttttttttttttttttttttttt")
                         change.company_logo.save(company_logo_name, logo_data, save=True)
 
                     approve_url = request.build_absolute_uri(reverse('approve_request', kwargs={'pk': change.id}))
