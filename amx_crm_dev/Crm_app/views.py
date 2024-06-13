@@ -1228,7 +1228,7 @@ class CompanydetailsAPIView(APIView):
         return None
 
     def post(self, request, pk):
-        server_address = "http://127.0.0.1:8000/"
+        server_address = "https://amx-crm-dev.thestorywallcafe.com/"
         data = request.data
         media_url = settings.MEDIA_URL
 
