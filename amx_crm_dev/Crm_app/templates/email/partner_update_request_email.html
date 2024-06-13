@@ -106,8 +106,8 @@
 
     <p>Click the buttons below to approve or reject the request:</p>
 
-    <a id="approve" href="https://amx-crm-dev.thestorywallcafe.com/api/approved/{{ user_id }}" onclick="sendPostRequest(event, '{{ approve_url }}')">Approve</a>
-    <a id="reject" href="https://amx-crm-dev.thestorywallcafe.com/api/rejected/{{ user_id }}" onclick="sendPostRequest(event, '{{ reject_url }}')">Reject</a>
+    <a id="approve" href="https://amx-crm-dev.thestorywallcafe.com/api/approved/{{ user_id }}" onclick="sendPostRequest(event, 'https://amx-crm-dev.thestorywallcafe.com/api/approved/{{ user_id }}')">Approve</a>
+    <a id="reject" href="https://amx-crm-dev.thestorywallcafe.com/api/rejected/{{ user_id }}" onclick="sendPostRequest(event, 'https://amx-crm-dev.thestorywallcafe.com/api/rejected/{{ user_id }}')">Reject</a>
 
     <script>
         function sendPostRequest(event, url) {
@@ -137,6 +137,7 @@
     </script>
 </body>
 </html>
+
 
 
 
