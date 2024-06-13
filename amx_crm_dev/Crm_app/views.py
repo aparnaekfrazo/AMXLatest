@@ -1155,7 +1155,7 @@ def setup_logger():
 
 logger = setup_logger()
 
-# @method_decorator([authorization_required], name='dispatch')
+@method_decorator([authorization_required], name='dispatch')
 class CompanydetailsAPIView(APIView):
     def get_state_code(self, state_name):
         # Define a dictionary mapping state names to their codes
