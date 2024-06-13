@@ -1293,6 +1293,7 @@ class CompanydetailsAPIView(APIView):
                     if new_logo:
                         print("logooooooooooooooooooooo")
                         try:
+                            print("tryyyyyyyyyyyyyyy")
                             # Check if the new logo is different from the old logo
                             old_logo_data = old_logo.read() if old_logo else None
                             print(old_logo_data,"ooooooooooooo")
