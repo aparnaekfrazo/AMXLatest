@@ -6,6 +6,7 @@
         body {
             background-color: lightblue;
             padding: 20px;
+            font-family: Arial, sans-serif;
         }
 
         h2 {
@@ -20,7 +21,7 @@
 
         th, td {
             border: 1px solid #ddd;
-            padding: 6px;
+            padding: 8px;
             text-align: center;
         }
 
@@ -53,7 +54,7 @@
         }
 
         img {
-            max-width: 100%;
+            max-width: 100px;
             height: auto;
         }
     </style>
@@ -79,7 +80,7 @@
                     <tr>
                         <td>{{ field }}</td>
                         <td><a href="{{ changes.old }}">Click Here to view old image</a></td>
-                        <td><a href='{{ user_signature }}'>Click Here to view new image</a></td>
+                        <td><a href="{{ changes.new }}">Click Here to view new image</a></td>
                     </tr>
                     {% elif field == 'company_logo' %}
                     <tr>
@@ -105,10 +106,38 @@
 
     <p>Click the buttons below to approve or reject the request:</p>
 
-    <a id="approve" href="https://amx-crm-dev.thestorywallcafe.com/api/approved/{{user_id}}">Approve</a>
-    <a id="reject" href="https://amx-crm-dev.thestorywallcafe.com/api/rejected/{{user_id}}">Reject</a>
+    <a id="approve" href="https://amx-crm-dev.thestorywallcafe.com/api/approved/{{ user_id }}" onclick="sendPostRequest(event, '{{ approve_url }}')">Approve</a>
+    <a id="reject" href="https://amx-crm-dev.thestorywallcafe.com/api/rejected/{{ user_id }}" onclick="sendPostRequest(event, '{{ reject_url }}')">Reject</a>
+
+    <script>
+        function sendPostRequest(event, url) {
+            event.preventDefault();
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'  // Include CSRF token if you're using Django
+                },
+                body: JSON.stringify({ user_id: '{{ user_id }}' })
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert('Request was successful.');
+                    location.reload();  // Reload the page or redirect as necessary
+                } else {
+                    alert('Request failed. Please try again.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            });
+        }
+    </script>
 </body>
 </html>
+
 
 
 
@@ -221,7 +250,7 @@
 <!--    {% endif %}-->
 <!--    <p>New Signature: <a href="{{ requested_changes.user_signature.new }}" target="_blank">View New Signature</a></p>-->
 <!--{% endif %}-->
-<!-- 
+<!--
     <p>Click the buttons below to approve or reject the request:</p>
 
     <a id="approve" href="https://amx-crm-dev.thestorywallcafe.com/api/approved/{{user_id}}">Approve</a>
