@@ -2677,7 +2677,7 @@ class OrderStatusView(APIView):
                         # Send emails to each user with their purchased drones
                         for user, user_order_list in user_orders.items():
                             drone_info = ", ".join(
-                                [f"{order.drone_id.drone_name} (Order ID: {order.id})" for order in user_order_list])
+                                [f"{order.drone_id.drone_name} (Item ID: {order.id})" for order in user_order_list])
                             subject = 'Your order has been shipped'
                             message = f'Dear {user.username},\n\nYour order containing the following drones has been shipped: {drone_info}\n\nThank you for shopping with us!'
                             from_email = 'amxdrone123@gmail.com'
