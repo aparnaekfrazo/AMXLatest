@@ -85,10 +85,11 @@
                     {% elif field == 'company_logo' %}
                         <tr>
                             <td>{{ field }}</td>
-                            <td><img src="{{ changes.old }}" alt="Old Logo"></td>
-                            <td><img src="{{ changes.new }}" alt="New Logo"></td>
+                            <td><a href="{{ changes.old }}">Click Here to view old logo</a></td>
+                            <td><a href="{{ changes.new }}">Click Here to view new logo</a></td>
                         </tr>
                     {% else %}
+
                         <tr>
                             <td>{{ field }}</td>
                             <td>{{ changes.old }}</td>
