@@ -1244,6 +1244,7 @@ class CompanydetailsAPIView(APIView):
                         return Response({"message": "Super admin email not found"}, status=status.HTTP_400_BAD_REQUEST)
 
                     requested_changes = {}
+                    print(requested_changes,"rrrrrrrrrrrrrrrrr")
                     new_changes = {}
                     signature_name = ''  # Initialize the variable here
                     company_logo_name = ''  # Initialize the variable here
