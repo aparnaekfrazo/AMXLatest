@@ -2094,7 +2094,7 @@ class MydronesAPI(APIView):
         drone_category = drone_category_param.split(',') if drone_category_param else []
         order_status = request.query_params.get('order_status', '')
 
-        orders = Order.objects.all()
+        orders = Order.objects.all().order_by('-id')
         # orders = Order.objects.exclude(order_status__isnull=True).order_by('-id')
         print(orders, "oooooooooo")
 
