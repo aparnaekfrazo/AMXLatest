@@ -1155,7 +1155,7 @@ def setup_logger():
 
 logger = setup_logger()
 
-@method_decorator([authorization_required], name='dispatch')
+# @method_decorator([authorization_required], name='dispatch')
 class CompanydetailsAPIView(APIView):
     def get_state_code(self, state_name):
         # Define a dictionary mapping state names to their codes
@@ -1228,7 +1228,7 @@ class CompanydetailsAPIView(APIView):
         return None
 
     def post(self, request, pk):
-        server_address = "https://amx-crm-dev.thestorywallcafe.com/"
+        server_address = "http://127.0.0.1:8000/"
         data = request.data
         media_url = settings.MEDIA_URL
 
@@ -1246,6 +1246,7 @@ class CompanydetailsAPIView(APIView):
                     requested_changes = {}
                     new_changes = {}
                     signature_name = ''  # Initialize the variable here
+                    company_logo_name = ''  # Initialize the variable here
 
                     fields_to_check = ["company_name", "company_email", "shipping_address", "billing_address",
                                        "company_phn_number", "company_gst_num", "company_cin_num", "pan_number",
@@ -1284,9 +1285,36 @@ class CompanydetailsAPIView(APIView):
                         except Exception as e:
                             print(f"Error saving signature image: {e}")
 
+                    # Handle company logo separately
+                    old_logo = partner.company_logo
+                    new_logo = data.get("company_logo")
+
+                    if new_logo:
+                        try:
+                            # Check if the new logo is different from the old logo
+                            old_logo_data = old_logo.read() if old_logo else None
+                            new_logo_data = base64.b64decode(new_logo.split(';base64,')[1])
+
+                            if old_logo_data != new_logo_data:
+                                characters = string.ascii_letters + string.digits
+                                random_string = ''.join(random.choice(characters) for _ in range(10))
+                                format, imgstr = new_logo.split(';base64,')
+                                ext = format.split('/')[-1]
+                                company_logo_name = f'companylogo_{random_string}.{ext}'
+                                logo_data = ContentFile(new_logo_data, name=company_logo_name)
+                                requested_changes["company_logo"] = {
+                                    "old": server_address + media_url + str(old_logo),
+                                    "new": server_address + media_url + company_logo_name
+                                }
+                                new_changes["company_logo"] = logo_data
+                        except Exception as e:
+                            print(f"Error saving logo image: {e}")
+
                     change = ChangeRequestCompanyDetails.objects.create(**new_changes, created_by=pk)
                     if "user_signature" in new_changes:
                         change.user_signature.save(signature_name, signature_data, save=True)
+                    if "company_logo" in new_changes:
+                        change.company_logo.save(company_logo_name, logo_data, save=True)
 
                     approve_url = request.build_absolute_uri(reverse('approve_request', kwargs={'pk': change.id}))
                     reject_url = request.build_absolute_uri(reverse('reject_request', kwargs={'pk': change.id}))
@@ -1301,9 +1329,11 @@ class CompanydetailsAPIView(APIView):
                         'user_id': change.id
                     }
 
-                    # Only add user_signature to the email context if it exists in requested_changes
+                    # Only add user_signature and company_logo to the email context if they exist in requested_changes
                     if "user_signature" in requested_changes:
                         email_context['user_signature'] = server_address + media_url + signature_name
+                    if "company_logo" in requested_changes:
+                        email_context['company_logo'] = server_address + media_url + company_logo_name
 
                     email_content = render_to_string('email/partner_update_request_email.html', email_context)
 
