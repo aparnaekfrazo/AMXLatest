@@ -77,23 +77,23 @@
             {% for field, changes in requested_changes.items %}
                 {% if field != 'reason' %}
                     {% if field == 'user_signature' %}
-                    <tr>
-                        <td>{{ field }}</td>
-                        <td><a href="{{ changes.old }}">Click Here to view old image</a></td>
-                        <td><a href="{{ changes.new }}">Click Here to view new image</a></td>
-                    </tr>
+                        <tr>
+                            <td>{{ field }}</td>
+                            <td><a href="{{ changes.old }}">Click Here to view old image</a></td>
+                            <td><a href="{{ changes.new }}">Click Here to view new image</a></td>
+                        </tr>
                     {% elif field == 'company_logo' %}
-                    <tr>
-                        <td>{{ field }}</td>
-                        <td><img src="{{ changes.old }}" alt="Old Logo"></td>
-                        <td><img src="{{ changes.new }}" alt="New Logo"></td>
-                    </tr>
+                        <tr>
+                            <td>{{ field }}</td>
+                            <td><img src="{{ changes.old }}" alt="Old Logo"></td>
+                            <td><img src="{{ changes.new }}" alt="New Logo"></td>
+                        </tr>
                     {% else %}
-                    <tr>
-                        <td>{{ field }}</td>
-                        <td>{{ changes.old }}</td>
-                        <td>{{ changes.new }}</td>
-                    </tr>
+                        <tr>
+                            <td>{{ field }}</td>
+                            <td>{{ changes.old }}</td>
+                            <td>{{ changes.new }}</td>
+                        </tr>
                     {% endif %}
                 {% endif %}
             {% endfor %}
@@ -137,6 +137,7 @@
     </script>
 </body>
 </html>
+
 
 
 
