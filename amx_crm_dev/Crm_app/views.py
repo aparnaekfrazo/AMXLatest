@@ -1294,6 +1294,8 @@ class CompanydetailsAPIView(APIView):
                         print("logooooooooooooooooooooo")
                         try:
                             print("tryyyyyyyyyyyyyyy")
+                            kk = base64.b64decode(new_logo.split(';base64,')[1])
+                            print(kk, "newkkkkkkkkkkkkkkkkkkk")
                             # Check if the new logo is different from the old logo
                             old_logo_data = old_logo.read() if old_logo else None
                             print(old_logo_data,"ooooooooooooo")
