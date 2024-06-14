@@ -59,6 +59,7 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from .auth import authorization_required
 
+
 @method_decorator([authorization_required], name='dispatch')
 class RoleAPIView(APIView):
     def get(self, request, pk=None):
@@ -127,6 +128,7 @@ def convertBase64(image, image_name, username, folder_name):
     ss.close()
 
     return fname1
+
 
 @method_decorator([authorization_required], name='dispatch')
 class PartnerAPIView(APIView):
@@ -356,6 +358,7 @@ class PartnerAPIView(APIView):
             except CustomUser.DoesNotExist:
                 return Response({"message": "Partner not found"}, status=status.HTTP_404_NOT_FOUND)
 
+
 @method_decorator([authorization_required], name='dispatch')
 class PartnerProfileUpdateForSuperAdminAPIView(APIView):
     def put(self, request, pk):
@@ -446,6 +449,7 @@ class PartnerProfileUpdateForSuperAdminAPIView(APIView):
         partner.save()
         return Response({"message": "Partner profile details updated successfully"}, status=status.HTTP_200_OK)
 
+
 @method_decorator([authorization_required], name='dispatch')
 class PartnerCompanyUpdateForSuperAdminAPIView(APIView):
     def put(self, request, pk):
@@ -514,6 +518,7 @@ from datetime import datetime, timedelta
 
 from django.utils import timezone
 from datetime import timedelta
+
 
 class LoginAPIView(APIView):
     def post(self, request):
@@ -634,6 +639,7 @@ class DroneCategoryAPIView(APIView):
             return Response({"message": "Drone category deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
         except DroneCategory.DoesNotExist:
             return Response({"message": "Drone category not found"}, status=status.HTTP_404_NOT_FOUND)
+
 
 @method_decorator([authorization_required], name='dispatch')
 class DroneAPIView(APIView):
@@ -1018,6 +1024,7 @@ class DroneAPIView(APIView):
             except Drone.DoesNotExist:
                 return Response({"message": "Drone not found"}, status=status.HTTP_404_NOT_FOUND)
 
+
 @method_decorator([authorization_required], name='dispatch')
 class SalesStatusAPIview(APIView):
     def put(self, request):
@@ -1036,6 +1043,7 @@ class SalesStatusAPIview(APIView):
 
             Drone.objects.update(sales_status=sales_status)
             return Response({"message": "All drones' sales_status updated successfully"}, status=status.HTTP_200_OK)
+
 
 @method_decorator([authorization_required], name='dispatch')
 class SendBulkEmail(APIView):
@@ -1126,6 +1134,7 @@ class ResetpasswordAPI(APIView):
 
         return Response({'message': 'Password reset successfully'}, status=status.HTTP_200_OK)
 
+
 @method_decorator([authorization_required], name='dispatch')
 class ChangePasswordAPI(APIView):
     def post(self, request):
@@ -1154,6 +1163,7 @@ def setup_logger():
 
 
 logger = setup_logger()
+
 
 @method_decorator([authorization_required], name='dispatch')
 class CompanydetailsAPIView(APIView):
@@ -1208,7 +1218,6 @@ class CompanydetailsAPIView(APIView):
             if location:
                 raw_data = location.raw
                 display_name = raw_data.get('display_name', '')
-                print(display_name, "Display Name")
                 # Extracting information from display_name
                 parts = display_name.split(', ')
                 state = parts[-2]
@@ -1216,7 +1225,6 @@ class CompanydetailsAPIView(APIView):
                 country = parts[-1]
                 # Retrieve state code using the predefined mapping
                 state_code = self.get_state_code(state)
-                print(state_code, "State Code")
                 return {
                     'state': state,
                     'state_code': state_code,
@@ -1244,7 +1252,6 @@ class CompanydetailsAPIView(APIView):
                         return Response({"message": "Super admin email not found"}, status=status.HTTP_400_BAD_REQUEST)
 
                     requested_changes = {}
-                    print(requested_changes,"rrrrrrrrrrrrrrrrr")
                     new_changes = {}
                     signature_name = ''  # Initialize the variable here
                     company_logo_name = ''  # Initialize the variable here
@@ -1291,14 +1298,10 @@ class CompanydetailsAPIView(APIView):
                     new_logo = data.get("company_logo")
 
                     if new_logo:
-                        print("logooooooooooooooooooooo")
                         try:
-                            print("tryyyyyyyyyyyyyyy")
                             # Check if the new logo is different from the old logo
                             old_logo_data = old_logo.read() if old_logo else None
-                            print(old_logo_data,"ooooooooooooo")
                             new_logo_data = base64.b64decode(new_logo.split(';base64,')[1])
-                            print(new_logo_data,"newwwwwwwww")
 
                             if old_logo_data != new_logo_data:
                                 characters = string.ascii_letters + string.digits
@@ -1307,7 +1310,6 @@ class CompanydetailsAPIView(APIView):
                                 ext = format.split('/')[-1]
                                 company_logo_name = f'companylogo_{random_string}.{ext}'
                                 logo_data = ContentFile(new_logo_data, name=company_logo_name)
-                                print(logo_data,"logoooooooooooooooooooooooooooooooooo")
                                 requested_changes["company_logo"] = {
                                     "old": server_address + media_url + str(old_logo),
                                     "new": server_address + media_url + company_logo_name
@@ -1320,7 +1322,6 @@ class CompanydetailsAPIView(APIView):
                     if "user_signature" in new_changes:
                         change.user_signature.save(signature_name, signature_data, save=True)
                     if "company_logo" in new_changes:
-                        print("lstttttttttttttttttttttttttt")
                         change.company_logo.save(company_logo_name, logo_data, save=True)
 
                     approve_url = request.build_absolute_uri(reverse('approve_request', kwargs={'pk': change.id}))
@@ -1482,13 +1483,11 @@ def get_location_details(pin_code):
         if location:
             raw_data = location.raw
             display_name = raw_data.get('display_name', '')
-            print(display_name, "Display Name")
             parts = display_name.split(', ')
             state = parts[-2]
             city = parts[-3]
             country = parts[-1]
             state_code = get_state_code(state)
-            print(state_code, "State Code")
             return {
                 'state': state,
                 'state_code': state_code,
@@ -1498,6 +1497,7 @@ def get_location_details(pin_code):
     except Exception as e:
         print("Error occurred while geocoding:", e)
     return None
+
 
 # Standalone function to approve the request
 def approveRequest(request, id):
@@ -1572,6 +1572,8 @@ def RejectRequest(request, id):
 
 
 from datetime import datetime
+
+
 @method_decorator([authorization_required], name='dispatch')
 class DroneSalesPaymentAPI(APIView):
     def post(self, request):
@@ -1590,7 +1592,6 @@ class DroneSalesPaymentAPI(APIView):
             )
             return Response({'message': 'Item added to cart successfully!'}, status=status.HTTP_201_CREATED)
 
-
     def get(self, request, *args, **kwargs):
         id = request.query_params.get('id')
         pk = kwargs.get('pk')  # Retrieve pk from URL parameters
@@ -1598,14 +1599,16 @@ class DroneSalesPaymentAPI(APIView):
         if id is not None:
             status = CustomizablePrice.objects.filter(id=id).first()
             if status:
-                data = {'id': status.id, 'custom_amount': status.custom_amount,'description':status.description,'created_date_time':status.created_date_time,'updated_date_time':status.updated_date_time}
+                data = {'id': status.id, 'custom_amount': status.custom_amount, 'description': status.description,
+                        'created_date_time': status.created_date_time, 'updated_date_time': status.updated_date_time}
                 return Response(data)
             else:
                 return Response({'message': 'Status not found for the specified id'}, status=404)
         elif pk is not None:
             status = CustomizablePrice.objects.filter(id=pk).first()  # Use pk instead of id
             if status:
-                data = {'id': status.id, 'custom_amount': status.custom_amount,'description':status.description,'created_date_time':status.created_date_time,'updated_date_time':status.updated_date_time}
+                data = {'id': status.id, 'custom_amount': status.custom_amount, 'description': status.description,
+                        'created_date_time': status.created_date_time, 'updated_date_time': status.updated_date_time}
                 return Response(data)
             else:
                 return Response({'message': 'Status not found for the specified id'}, status=404)
@@ -1631,6 +1634,7 @@ class DroneSalesPaymentAPI(APIView):
             return Response({'message': 'Payment gateway updated successfully'})
         except CustomizablePrice.DoesNotExist:
             return Response({'message': 'Payment gateway ID not found'}, status=status.HTTP_404_NOT_FOUND)
+
 
 @method_decorator([authorization_required], name='dispatch')
 class Partner_slotAPI(APIView):
@@ -1689,6 +1693,7 @@ class Partner_slotAPI(APIView):
         else:
             return Response({'message': 'ID not found!'})
 
+
 @method_decorator([authorization_required], name='dispatch')
 class PaymentLinksAPI(APIView):
     def post(self, request):
@@ -1745,6 +1750,7 @@ class PaymentLinksAPI(APIView):
             return Response({'message': 'Payment link price updated successfully!'})
         else:
             return Response({'message': 'ID not found!'})
+
 
 @method_decorator([authorization_required], name='dispatch')
 class Slot_batch_rangeAPI(APIView):
@@ -1810,6 +1816,7 @@ class Slot_batch_rangeAPI(APIView):
             return Response({'message': 'Slot batch range updated successfully!'})
         else:
             return Response({'message': 'ID not found!'})
+
 
 @method_decorator([authorization_required], name='dispatch')
 class AddToCart(APIView):
@@ -1971,6 +1978,7 @@ class AddToCart(APIView):
         else:
             return Response({'message': 'No matching IDs found for deletion'}, status=status.HTTP_404_NOT_FOUND)
 
+
 @method_decorator([authorization_required], name='dispatch')
 class DroneCountAPI(APIView):
     def put(self, request, pk):
@@ -1988,6 +1996,7 @@ class DroneCountAPI(APIView):
             return Response({'message': 'Drone count updated!!'})
         else:
             return Response({'error': 'id not found'})
+
 
 @method_decorator([authorization_required], name='dispatch')
 class StatusAPI(APIView):
@@ -2044,6 +2053,7 @@ class StatusAPI(APIView):
         else:
             return Response({'result': 'status Id not found!!'})
 
+
 @method_decorator([authorization_required], name='dispatch')
 class PaymentStatusAPI(APIView):
     def get(self, request):
@@ -2090,6 +2100,7 @@ class PaymentStatusAPI(APIView):
         else:
             return Response({'result': 'status id not found!!'})
 
+
 @method_decorator([authorization_required], name='dispatch')
 class CreateOrderAPI(APIView):
     def post(self, request, *args, **kwargs):
@@ -2118,6 +2129,7 @@ class CreateOrderAPI(APIView):
 
         return Response(response_data, status=status.HTTP_201_CREATED)
 
+
 @method_decorator([authorization_required], name='dispatch')
 class MydronesAPI(APIView):
     def get(self, request):
@@ -2133,7 +2145,6 @@ class MydronesAPI(APIView):
 
         orders = Order.objects.all().order_by('-id')
         # orders = Order.objects.exclude(order_status__isnull=True).order_by('-id')
-        print(orders, "oooooooooo")
 
         if search_param:
             orders = orders.filter(
@@ -2258,6 +2269,7 @@ class MydronesAPI(APIView):
             return request.build_absolute_uri(
                 f"?page_number={paginated_data.previous_page_number}&data_per_page={paginated_data.paginator.per_page}")
         return None
+
 
 @method_decorator([authorization_required], name='dispatch')
 class CustomizablePriceAPIView(APIView):
@@ -2524,8 +2536,10 @@ def track_order(request):
 
 from collections import defaultdict
 
+
 class MyPagination(PageNumberPagination):
     page_size_query_param = 'data_per_page'
+
 
 @method_decorator([authorization_required], name='dispatch')
 @method_decorator(csrf_exempt, name='dispatch')
@@ -2876,6 +2890,7 @@ class OrderStatusView(APIView):
     #         return JsonResponse({"message": "Invalid JSON in the request body"}, status=400)
     #     except Exception as e:
     #         return JsonResponse({"message": f"Error: {str(e)}"}, status=500)
+
 
 @method_decorator([authorization_required], name='dispatch')
 class GetdashbordAPI(APIView):
@@ -3457,6 +3472,7 @@ class GetdashbordAPI(APIView):
         else:
             return Response({'error': 'Invalid parameters'})
 
+
 @method_decorator([authorization_required], name='dispatch')
 class GetCompanyDetailAPI(APIView):
     def get(self, request, *args, **kwargs):
@@ -3542,10 +3558,8 @@ class CompanyAndPartnerDetailsAPIView(APIView):
 
         if location:
             raw_data = location.raw
-            print(raw_data, "Raw Data")
 
             display_name = raw_data.get('display_name', '')
-            print(display_name, "Display Name")
 
             # Extracting information from display_name
             parts = display_name.split(', ')
@@ -3555,8 +3569,6 @@ class CompanyAndPartnerDetailsAPIView(APIView):
 
             # Retrieve state code using the predefined mapping
             state_code = self.get_state_code(state)
-            print(state_code, "State Code")
-
             return {
                 'state': state,
                 'state_code': state_code,
@@ -3741,6 +3753,7 @@ class CompanyAndPartnerDetailsAPIView(APIView):
         except CustomUser.DoesNotExist:
             return Response({"message": "Partner not found"}, status=status.HTTP_404_NOT_FOUND)
 
+
 @method_decorator([authorization_required], name='dispatch')
 class InvoiceTypeAPI(APIView):
     def get(self, request, *args, **kwargs):
@@ -3814,6 +3827,7 @@ class CustomPagination(PageNumberPagination):
     page_size = 10
     page_size_query_param = 'page_size'
     max_page_size = 1000
+
 
 @method_decorator([authorization_required], name='dispatch')
 class CustomerCreateAPIView(APIView):
@@ -4002,6 +4016,7 @@ class CustomerCreateAPIView(APIView):
         # serializer = CustomUserSerializer(customers, many=True, context={'request': request})
         # return Response(serializer.data)
 
+
 @method_decorator([authorization_required], name='dispatch')
 class CustomerCategoryAPI(APIView):
     def post(self, request, *args, **kwargs):
@@ -4048,6 +4063,7 @@ class CustomerCategoryAPI(APIView):
         except CustomerCategory.DoesNotExist:
             return Response({"message": "Category with ID {} does not exist.".format(category_id)},
                             status=status.HTTP_404_NOT_FOUND)
+
 
 @method_decorator([authorization_required], name='dispatch')
 class GetPartnerDronesAPI(APIView):
@@ -4162,6 +4178,7 @@ def decrypt_aes_256_ecb(data, key):
     decrypted_data = decryptor.update(data) + decryptor.finalize()
     return decrypted_data
 
+
 @method_decorator([authorization_required], name='dispatch')
 class GetCompanyDetailsAPIView(generics.RetrieveAPIView):
     def clean_string(self, input_string):
@@ -4221,6 +4238,7 @@ class GetCompanyDetailsAPIView(generics.RetrieveAPIView):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
 import hashlib
 import random
 import time
@@ -4229,6 +4247,7 @@ from decimal import Decimal, ROUND_HALF_UP
 from django.db import transaction
 
 from django.shortcuts import get_object_or_404
+
 
 @method_decorator([authorization_required], name='dispatch')
 class AddItemAPI(APIView):
@@ -5312,6 +5331,7 @@ class AddItemAPI(APIView):
 
 from django.db.models import F
 
+
 @method_decorator([authorization_required], name='dispatch')
 class AddDiscountAPI(APIView):
     def post(self, request, item_id):
@@ -5389,6 +5409,7 @@ class AddDiscountAPI(APIView):
 import requests
 from geopy.geocoders import Nominatim
 
+
 @method_decorator([authorization_required], name='dispatch')
 class CustomerCreateOrginizationAPIView(APIView):
     def get_state_code(self, state_name):
@@ -5435,8 +5456,6 @@ class CustomerCreateOrginizationAPIView(APIView):
         # Retrieve the state code from the dictionary
         return state_code_mapping.get(state_name, '')
 
-
-
     def get_location_details(self, pin_code):
         geolocator = Nominatim(user_agent="amxcrm")
         try:
@@ -5444,7 +5463,6 @@ class CustomerCreateOrginizationAPIView(APIView):
             if location:
                 raw_data = location.raw
                 display_name = raw_data.get('display_name', '')
-                print(display_name, "Display Name")
                 # Extracting information from display_name
                 parts = display_name.split(', ')
                 state = parts[-2]
@@ -5452,7 +5470,6 @@ class CustomerCreateOrginizationAPIView(APIView):
                 country = parts[-1]
                 # Retrieve state code using the predefined mapping
                 state_code = self.get_state_code(state)
-                print(state_code, "State Code")
                 return {
                     'state': state,
                     'state_code': state_code,
@@ -5665,6 +5682,7 @@ class CustomerCreateOrginizationAPIView(APIView):
         except Exception as e:
             return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+
 @method_decorator([authorization_required], name='dispatch')
 class CustomerCreateIndividualAPIView(APIView):
 
@@ -5712,7 +5730,6 @@ class CustomerCreateIndividualAPIView(APIView):
         # Retrieve the state code from the dictionary
         return state_code_mapping.get(state_name, '')
 
-
     def get_location_details(self, pin_code):
         geolocator = Nominatim(user_agent="amxcrm")
         try:
@@ -5720,7 +5737,6 @@ class CustomerCreateIndividualAPIView(APIView):
             if location:
                 raw_data = location.raw
                 display_name = raw_data.get('display_name', '')
-                print(display_name, "Display Name")
                 # Extracting information from display_name
                 parts = display_name.split(', ')
                 state = parts[-2]
@@ -5728,7 +5744,6 @@ class CustomerCreateIndividualAPIView(APIView):
                 country = parts[-1]
                 # Retrieve state code using the predefined mapping
                 state_code = self.get_state_code(state)
-                print(state_code, "State Code")
                 return {
                     'state': state,
                     'state_code': state_code,
@@ -5931,6 +5946,7 @@ from .models import CustomInvoice, CustomerCategory, CustomUser, InvoiceType
 
 from django.shortcuts import get_object_or_404
 
+
 @method_decorator([authorization_required], name='dispatch')
 class CustomInvoiceTypeAPI(APIView):
     def get(self, request, *args, **kwargs):
@@ -6119,6 +6135,7 @@ class CustomInvoiceTypeAPI(APIView):
 
 from django.db.models import Sum
 
+
 @method_decorator([authorization_required], name='dispatch')
 class MydronespartnerAPI(APIView):
     def get(self, request):
@@ -6130,7 +6147,7 @@ class MydronespartnerAPI(APIView):
         user = get_object_or_404(CustomUser, id=user_id)
 
         if user.role_id.role_name == 'Partner':
-            #itemfromorder = order obj
+            # itemfromorder = order obj
             drone_ownership = DroneOwnership.objects.filter(user=user)
             serialized_data = [{
                 'drone_id': ownership.drone.id,
@@ -6139,7 +6156,7 @@ class MydronespartnerAPI(APIView):
                 'details': {
                     'drone_category': ownership.drone.drone_category.category_name,
                     'market_price': ownership.drone.market_price,
-                    #ourprice mapped with order table amount
+                    # ourprice mapped with order table amount
                     'our_price': ownership.drone.our_price,
                     'hsn_number': ownership.drone.hsn_number,
                     'units': ownership.drone.units.units if ownership.drone.units else None,
@@ -6403,8 +6420,8 @@ class GetItemsByOwnerIdView(View):
             items = AddItem.objects.filter(owner_id=owner)
         else:
             items = AddItem.objects.filter(owner_id=owner)
-        #old oneeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
-        #items = items.exclude(invoice_status__invoice_status_name="Completed")
+        # old oneeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+        # items = items.exclude(invoice_status__invoice_status_name="Completed")
         """newwwwwwwwwwwwwww"""
         items = AddItem.objects.filter(owner_id=owner)
 
@@ -6609,6 +6626,7 @@ class GetItemsByOwnerIdView(View):
         item_list.sort(key=lambda x: x['updated_date_time'], reverse=True)
         return JsonResponse({"items": item_list}, status=200)
 
+
 @method_decorator([authorization_required], name='dispatch')
 class PartnerAddedItems(APIView):
     def get(self, request):
@@ -6798,6 +6816,7 @@ class PartnerAddedItems(APIView):
 from rest_framework.views import APIView
 import pycountry
 
+
 @method_decorator([authorization_required], name='dispatch')
 class StateCodeAPI(APIView):
     def get(self, request, *args, **kwargs):
@@ -6844,6 +6863,7 @@ class StateCodeAPI(APIView):
         # Return the state data in the response
         return Response({'state_data': states_data}, status=status.HTTP_200_OK)
 
+
 @method_decorator([authorization_required], name='dispatch')
 class InvoiceStatusAPI(APIView):
     def get(self, request, *args, **kwargs):
@@ -6880,7 +6900,6 @@ class InvoiceStatusAPI(APIView):
             new_status = InvoiceStatus.objects.create(invoice_status_name=invoice_status_name)
             return Response({'result': 'Invoice status name is created successfully!'}, status=status.HTTP_201_CREATED)
 
-
     def put(self, request, pk):
         data = request.data
         invoice_status_name = data.get('invoice_status_name')
@@ -6914,7 +6933,6 @@ class InvoiceStatusAPI(APIView):
 import os
 from .models import AuthToken  # Import your AuthToken model
 
-
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -6929,6 +6947,7 @@ import base64
 from Crypto.Cipher import AES
 from Crypto.Protocol.KDF import PBKDF2
 from collections import OrderedDict
+
 
 @method_decorator([authorization_required], name='dispatch')
 class MyApiView(APIView):
@@ -7100,7 +7119,6 @@ class MyApiView(APIView):
                                     decrypted_data = self.decrypt_data(encrypted_data, sek_key)
 
                                     if decrypted_data is not None:
-
                                         # Include decrypted data in the response
                                         api_response = {'DecryptedData': decrypted_data}
 
@@ -8071,12 +8089,15 @@ class InvoiceHistoy(APIView):
             items = base_query.filter(invoice_status__invoice_status_name="Completed")
 
         elif role_filter == 'partner':
-            if partner_id and owner_id and CustomUser.objects.filter(id=owner_id, role_id__role_name='Super_admin').exists():
+            if partner_id and owner_id and CustomUser.objects.filter(id=owner_id,
+                                                                     role_id__role_name='Super_admin').exists():
                 # Display all partners with status as completed based on the provided partner_id
-                items = base_query.filter(owner_id__role_id__role_name='Partner', owner_id=partner_id, invoice_status__invoice_status_name="Completed")
+                items = base_query.filter(owner_id__role_id__role_name='Partner', owner_id=partner_id,
+                                          invoice_status__invoice_status_name="Completed")
             else:
                 # Display all partners with status as completed
-                items = base_query.filter(owner_id__role_id__role_name='Partner', invoice_status__invoice_status_name="Completed")
+                items = base_query.filter(owner_id__role_id__role_name='Partner',
+                                          invoice_status__invoice_status_name="Completed")
 
         elif owner_id:
             try:
@@ -8288,12 +8309,15 @@ class InvoiceHistoy(APIView):
                 "transportation_details": item.transportation_details,
             }
 
-            e_invoice_data = EInvoice.objects.filter(invoice_number=item).values('api_response', 'data', 'e_waybill').first()
+            e_invoice_data = EInvoice.objects.filter(invoice_number=item).values('api_response', 'data',
+                                                                                 'e_waybill').first()
 
             if e_invoice_data:
-                api_response_data = json.loads(e_invoice_data['api_response']) if e_invoice_data and e_invoice_data['api_response'] else None
+                api_response_data = json.loads(e_invoice_data['api_response']) if e_invoice_data and e_invoice_data[
+                    'api_response'] else None
 
-                data_dict = ast.literal_eval(e_invoice_data['data']) if e_invoice_data and e_invoice_data['data'] else None
+                data_dict = ast.literal_eval(e_invoice_data['data']) if e_invoice_data and e_invoice_data[
+                    'data'] else None
 
                 item_data['e_invoice_data'] = {
                     'api_response': api_response_data,
@@ -8492,6 +8516,7 @@ class EwayBill(View):
         cleaned_payload = ''.join(char for char in payload if char.isprintable())
         return cleaned_payload
 
+
 @method_decorator([authorization_required], name='dispatch')
 class GstRateValuesAPI(APIView):
     def get(self, request):
@@ -8528,7 +8553,7 @@ class GstRateValuesAPI(APIView):
         else:
             return Response({'result': 'gstrates not found!!'})
 
-    def put(self,request,pk):
+    def put(self, request, pk):
         try:
             gst_rate_value = GstRateValues.objects.get(id=pk)
         except GstRateValues.DoesNotExist:
@@ -8550,6 +8575,7 @@ class GstRateValuesAPI(APIView):
 
 
 from decimal import Decimal, ROUND_HALF_UP
+
 
 @method_decorator([authorization_required], name='dispatch')
 class AddCustomItemAPI(APIView):
@@ -9211,7 +9237,6 @@ class AddCustomItemAPI(APIView):
                 serial_numbers = drone_detail.get('serial_numbers', [])
                 all_serial.extend(serial_numbers)
 
-
         if not check_unique_serial_numbers(new_items):
             return Response({'message': f"Serial numbers must be unique with all drone entry"},
                             status=status.HTTP_400_BAD_REQUEST)
@@ -9273,7 +9298,6 @@ class AddCustomItemAPI(APIView):
                                                         existing_item["price"])) + existing_item[
                                                        "igst_percentage"] + existing_item["cgst_percentage"] + \
                                                    existing_item["sgst_percentage"], 2)
-                    print(all_serial, "aaaaaaaaaaaaaaaaaaa")
                 else:
                     new_item_data = {
                         'item_name': new_item['item_name'],
@@ -9400,6 +9424,7 @@ class AddCustomItemAPI(APIView):
                 return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 @method_decorator([authorization_required], name='dispatch')
 class AddCustomInvoiceSignature(APIView):
@@ -9782,7 +9807,6 @@ class ExculdeInvoiceSuperAdmin(APIView):
             ).filter(owner_id__role_id__role_name='Super_admin').exclude(
                 Q(invoice_status__invoice_status_name='Completed') &
                 Q(customer_type_id__name="Organization"))
-            print(add_items,"aaaaaaaaaaaa")
 
             custom_invoices = CustomInvoice.objects.select_related(
                 'customer_id',
@@ -9898,6 +9922,7 @@ class ExculdeInvoiceSuperAdmin(APIView):
             }
         else:
             return {}
+
 
 @method_decorator([authorization_required], name='dispatch')
 class GetByInvoiceNumber(View):
@@ -10150,6 +10175,7 @@ class GetByInvoiceNumber(View):
         else:
             return {}
 
+
 @method_decorator([authorization_required], name='dispatch')
 class TransportationAPI(APIView):
     def post(self, request):
@@ -10296,6 +10322,7 @@ class TransportationAPI(APIView):
         else:
             return Response({'message': 'Please provide a valid primary key (pk)'}, status=status.HTTP_400_BAD_REQUEST)
 
+
 @method_decorator([authorization_required], name='dispatch')
 class UnitPriceListAPI(APIView):
     def post(self, request):
@@ -10352,6 +10379,7 @@ from io import BytesIO
 from django.core.files.base import ContentFile
 import base64
 
+
 @method_decorator([authorization_required], name='dispatch')
 class CompanydetailsSuperAdminAPIView(APIView):
     def get_state_code(self, state_name):
@@ -10404,11 +10432,8 @@ class CompanydetailsSuperAdminAPIView(APIView):
 
         if location:
             raw_data = location.raw
-            print(raw_data, "Raw Data")
 
             display_name = raw_data.get('display_name', '')
-            print(display_name, "Display Name")
-
             # Extracting information from display_name
             parts = display_name.split(', ')
             state = parts[-2]
@@ -10417,7 +10442,6 @@ class CompanydetailsSuperAdminAPIView(APIView):
 
             # Retrieve state code using the predefined mapping
             state_code = self.get_state_code(state)
-            print(state_code, "State Code")
 
             return {
                 'state': state,
@@ -10512,6 +10536,7 @@ class CompanydetailsSuperAdminAPIView(APIView):
 
 import qrcode
 from weasyprint import HTML
+
 
 class MyAPIView(APIView):
     def generate_qr_code(self, data):
@@ -11016,6 +11041,7 @@ class MyAPIView(APIView):
 
 from itertools import chain
 
+
 @method_decorator([authorization_required], name='dispatch')
 class FilterForSuperadmin(View):
     def get(self, request, *args, **kwargs):
@@ -11338,231 +11364,231 @@ class FilterForSuperadmin(View):
 
             if query_key == 'invoice':
                 add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin').exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                    Q(invoice_status__invoice_status_name='Completed') &
+                    Q(customer_type_id__name="Organization"))
                 custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin').exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                    Q(invoice_status__invoice_status_name='Completed') &
+                    Q(customer_type_id__name="Organization"))
 
             if response_type and query_key == 'invoice':
                 if response_type == 'drone':
                     add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin').exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                        Q(invoice_status__invoice_status_name='Completed') &
+                        Q(customer_type_id__name="Organization"))
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
                     custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin').exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                        Q(invoice_status__invoice_status_name='Completed') &
+                        Q(customer_type_id__name="Organization"))
 
             if customer_type_id and query_key == 'invoice':
                 add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                    customer_type_id=customer_type_id).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                    Q(invoice_status__invoice_status_name='Completed') &
+                    Q(customer_type_id__name="Organization"))
                 custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                customer_type_id=customer_type_id).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                    Q(invoice_status__invoice_status_name='Completed') &
+                    Q(customer_type_id__name="Organization"))
 
             if invoice_status and query_key == 'invoice':
                 add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                    invoice_status__in=invoice_status).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                    Q(invoice_status__invoice_status_name='Completed') &
+                    Q(customer_type_id__name="Organization"))
                 custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                invoice_status__in=invoice_status).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                    Q(invoice_status__invoice_status_name='Completed') &
+                    Q(customer_type_id__name="Organization"))
 
             if customer_ids and query_key == 'invoice':
                 add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                    customer_id__in=customer_ids).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                    Q(invoice_status__invoice_status_name='Completed') &
+                    Q(customer_type_id__name="Organization"))
                 custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                customer_id__in=customer_ids).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                    Q(invoice_status__invoice_status_name='Completed') &
+                    Q(customer_type_id__name="Organization"))
 
             if search_invoice_number and query_key == 'invoice':
                 add_items = AddItem.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                    owner_id__role_id__role_name='Super_admin').exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                    Q(invoice_status__invoice_status_name='Completed') &
+                    Q(customer_type_id__name="Organization"))
                 custom_invoices = CustomInvoice.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                                owner_id__role_id__role_name='Super_admin').exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                    Q(invoice_status__invoice_status_name='Completed') &
+                    Q(customer_type_id__name="Organization"))
             #######################2
             if response_type and customer_type_id and query_key == 'invoice':
                 if response_type == 'drone':
                     add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                        customer_type_id=customer_type_id).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                        Q(invoice_status__invoice_status_name='Completed') &
+                        Q(customer_type_id__name="Organization"))
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
                     custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                    customer_type_id=customer_type_id).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                        Q(invoice_status__invoice_status_name='Completed') &
+                        Q(customer_type_id__name="Organization"))
 
             if response_type and invoice_status and query_key == 'invoice':
                 if response_type == 'drone':
                     add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                        invoice_status__in=invoice_status).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                        Q(invoice_status__invoice_status_name='Completed') &
+                        Q(customer_type_id__name="Organization"))
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
                     custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                    invoice_status__in=invoice_status).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                        Q(invoice_status__invoice_status_name='Completed') &
+                        Q(customer_type_id__name="Organization"))
 
             if response_type and customer_ids and query_key == 'invoice':
                 if response_type == 'drone':
                     add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                        customer_id__in=customer_ids).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                        Q(invoice_status__invoice_status_name='Completed') &
+                        Q(customer_type_id__name="Organization"))
                     custom_invoices = []
                 elif response_type == 'custom' and query_key == 'invoice':
                     add_items = []
                     custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                    customer_id__in=customer_ids).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                        Q(invoice_status__invoice_status_name='Completed') &
+                        Q(customer_type_id__name="Organization"))
 
             if response_type and search_invoice_number and query_key == 'invoice':
                 if response_type == 'drone':
                     add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                        invoice_number__istartswith=search_invoice_number).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                        Q(invoice_status__invoice_status_name='Completed') &
+                        Q(customer_type_id__name="Organization"))
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
                     custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                    invoice_number__istartswith=search_invoice_number).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                        Q(invoice_status__invoice_status_name='Completed') &
+                        Q(customer_type_id__name="Organization"))
 
             if invoice_status and customer_type_id and query_key == 'invoice':
                 add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                    invoice_status__in=invoice_status,
                                                    customer_type_id=customer_type_id).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                    Q(invoice_status__invoice_status_name='Completed') &
+                    Q(customer_type_id__name="Organization"))
                 custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                invoice_status__in=invoice_status,
                                                                customer_type_id=customer_type_id).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                    Q(invoice_status__invoice_status_name='Completed') &
+                    Q(customer_type_id__name="Organization"))
 
             if customer_ids and customer_type_id and query_key == 'invoice':
                 add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                    customer_id__in=customer_ids,
                                                    customer_type_id=customer_type_id).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                    Q(invoice_status__invoice_status_name='Completed') &
+                    Q(customer_type_id__name="Organization"))
                 custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                customer_id__in=customer_ids,
                                                                customer_type_id=customer_type_id).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                    Q(invoice_status__invoice_status_name='Completed') &
+                    Q(customer_type_id__name="Organization"))
 
             if search_invoice_number and customer_type_id and query_key == 'invoice':
                 add_items = AddItem.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                    owner_id__role_id__role_name='Super_admin',
                                                    customer_type_id=customer_type_id).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                    Q(invoice_status__invoice_status_name='Completed') &
+                    Q(customer_type_id__name="Organization"))
                 custom_invoices = CustomInvoice.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                                owner_id__role_id__role_name='Super_admin',
                                                                customer_type_id=customer_type_id).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                    Q(invoice_status__invoice_status_name='Completed') &
+                    Q(customer_type_id__name="Organization"))
 
             if customer_ids and invoice_status and query_key == 'invoice':
                 add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                    customer_id__in=customer_ids,
                                                    invoice_status__in=invoice_status).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                    Q(invoice_status__invoice_status_name='Completed') &
+                    Q(customer_type_id__name="Organization"))
                 custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                customer_id__in=customer_ids,
                                                                invoice_status__in=invoice_status).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                    Q(invoice_status__invoice_status_name='Completed') &
+                    Q(customer_type_id__name="Organization"))
 
             if search_invoice_number and invoice_status and query_key == 'invoice':
                 add_items = AddItem.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                    owner_id__role_id__role_name='Super_admin',
                                                    invoice_status__in=invoice_status).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                    Q(invoice_status__invoice_status_name='Completed') &
+                    Q(customer_type_id__name="Organization"))
                 custom_invoices = CustomInvoice.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                                owner_id__role_id__role_name='Super_admin',
                                                                invoice_status__in=invoice_status).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                    Q(invoice_status__invoice_status_name='Completed') &
+                    Q(customer_type_id__name="Organization"))
 
             if search_invoice_number and customer_ids and query_key == 'invoice':
                 add_items = AddItem.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                    owner_id__role_id__role_name='Super_admin',
                                                    customer_id__in=customer_ids).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                    Q(invoice_status__invoice_status_name='Completed') &
+                    Q(customer_type_id__name="Organization"))
                 custom_invoices = CustomInvoice.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                                owner_id__role_id__role_name='Super_admin',
                                                                customer_id__in=customer_ids).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                    Q(invoice_status__invoice_status_name='Completed') &
+                    Q(customer_type_id__name="Organization"))
 
             if response_type and customer_type_id and invoice_status and query_key == 'invoice':
                 if response_type == 'drone':
                     add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                        customer_type_id=customer_type_id,
                                                        invoice_status__in=invoice_status).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                        Q(invoice_status__invoice_status_name='Completed') &
+                        Q(customer_type_id__name="Organization"))
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
                     custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                    customer_type_id=customer_type_id,
                                                                    invoice_status__in=invoice_status).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                        Q(invoice_status__invoice_status_name='Completed') &
+                        Q(customer_type_id__name="Organization"))
 
             if response_type and customer_type_id and customer_ids and query_key == 'invoice':
                 if response_type == 'drone':
                     add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                        customer_type_id=customer_type_id,
                                                        customer_id__in=customer_ids).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                        Q(invoice_status__invoice_status_name='Completed') &
+                        Q(customer_type_id__name="Organization"))
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
                     custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                    customer_type_id=customer_type_id,
                                                                    customer_id__in=customer_ids).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                        Q(invoice_status__invoice_status_name='Completed') &
+                        Q(customer_type_id__name="Organization"))
 
             if search_invoice_number and response_type and customer_type_id and query_key == 'invoice':
                 if response_type == 'drone':
                     add_items = AddItem.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                        owner_id__role_id__role_name='Super_admin',
                                                        customer_type_id=customer_type_id).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                        Q(invoice_status__invoice_status_name='Completed') &
+                        Q(customer_type_id__name="Organization"))
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
@@ -11570,118 +11596,118 @@ class FilterForSuperadmin(View):
                         invoice_number__istartswith=search_invoice_number,
                         owner_id__role_id__role_name='Super_admin',
                         customer_type_id=customer_type_id).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                        Q(invoice_status__invoice_status_name='Completed') &
+                        Q(customer_type_id__name="Organization"))
 
             if response_type and customer_ids and invoice_status and query_key == 'invoice':
                 if response_type == 'drone':
                     add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                        customer_id__in=customer_ids,
                                                        invoice_status__in=invoice_status).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                        Q(invoice_status__invoice_status_name='Completed') &
+                        Q(customer_type_id__name="Organization"))
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
                     custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                    customer_id__in=customer_ids,
                                                                    invoice_status__in=invoice_status).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                        Q(invoice_status__invoice_status_name='Completed') &
+                        Q(customer_type_id__name="Organization"))
 
             if response_type and search_invoice_number and invoice_status and query_key == 'invoice':
                 if response_type == 'drone':
                     add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                        invoice_number__istartswith=search_invoice_number,
                                                        invoice_status__in=invoice_status).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                        Q(invoice_status__invoice_status_name='Completed') &
+                        Q(customer_type_id__name="Organization"))
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
                     custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                    invoice_number__istartswith=search_invoice_number,
                                                                    invoice_status__in=invoice_status).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                        Q(invoice_status__invoice_status_name='Completed') &
+                        Q(customer_type_id__name="Organization"))
             if response_type and search_invoice_number and customer_ids and query_key == 'invoice':
                 if response_type == 'drone':
                     add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                        invoice_number__istartswith=search_invoice_number,
                                                        customer_id__in=customer_ids).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                        Q(invoice_status__invoice_status_name='Completed') &
+                        Q(customer_type_id__name="Organization"))
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
                     custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                    invoice_number__istartswith=search_invoice_number,
                                                                    customer_id__in=customer_ids).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                        Q(invoice_status__invoice_status_name='Completed') &
+                        Q(customer_type_id__name="Organization"))
             if customer_ids and invoice_status and customer_type_id and query_key == 'invoice':
                 add_items = AddItem.objects.filter(customer_id__in=customer_ids,
                                                    owner_id__role_id__role_name='Super_admin',
                                                    invoice_status__in=invoice_status,
                                                    customer_type_id=customer_type_id).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                    Q(invoice_status__invoice_status_name='Completed') &
+                    Q(customer_type_id__name="Organization"))
                 custom_invoices = CustomInvoice.objects.filter(customer_id__in=customer_ids,
                                                                owner_id__role_id__role_name='Super_admin',
                                                                invoice_status__in=invoice_status,
                                                                customer_type_id=customer_type_id).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                    Q(invoice_status__invoice_status_name='Completed') &
+                    Q(customer_type_id__name="Organization"))
 
             if search_invoice_number and invoice_status and customer_type_id and query_key == 'invoice':
                 add_items = AddItem.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                    owner_id__role_id__role_name='Super_admin',
                                                    invoice_status__in=invoice_status,
                                                    customer_type_id=customer_type_id).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                    Q(invoice_status__invoice_status_name='Completed') &
+                    Q(customer_type_id__name="Organization"))
                 custom_invoices = CustomInvoice.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                                owner_id__role_id__role_name='Super_admin',
                                                                invoice_status__in=invoice_status,
                                                                customer_type_id=customer_type_id).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                    Q(invoice_status__invoice_status_name='Completed') &
+                    Q(customer_type_id__name="Organization"))
 
             if search_invoice_number and invoice_status and customer_ids and query_key == 'invoice':
                 add_items = AddItem.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                    owner_id__role_id__role_name='Super_admin',
                                                    invoice_status__in=invoice_status,
                                                    customer_id__in=customer_ids).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                    Q(invoice_status__invoice_status_name='Completed') &
+                    Q(customer_type_id__name="Organization"))
                 custom_invoices = CustomInvoice.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                                owner_id__role_id__role_name='Super_admin',
                                                                invoice_status__in=invoice_status,
                                                                customer_id__in=customer_ids).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                    Q(invoice_status__invoice_status_name='Completed') &
+                    Q(customer_type_id__name="Organization"))
 
             if search_invoice_number and customer_type_id and customer_ids and query_key == 'invoice':
                 add_items = AddItem.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                    owner_id__role_id__role_name='Super_admin',
                                                    customer_type_id=customer_type_id,
                                                    customer_id__in=customer_ids).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                    Q(invoice_status__invoice_status_name='Completed') &
+                    Q(customer_type_id__name="Organization"))
                 custom_invoices = CustomInvoice.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                                owner_id__role_id__role_name='Super_admin',
                                                                customer_type_id=customer_type_id,
                                                                customer_id__in=customer_ids).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                    Q(invoice_status__invoice_status_name='Completed') &
+                    Q(customer_type_id__name="Organization"))
             if response_type and customer_type_id and customer_ids and invoice_status and query_key == 'invoice':
                 if response_type == 'drone':
                     add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                        invoice_status__in=invoice_status,
                                                        customer_type_id=customer_type_id,
                                                        customer_id__in=customer_ids).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                        Q(invoice_status__invoice_status_name='Completed') &
+                        Q(customer_type_id__name="Organization"))
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
@@ -11689,8 +11715,8 @@ class FilterForSuperadmin(View):
                                                                    invoice_status__in=invoice_status,
                                                                    customer_type_id=customer_type_id,
                                                                    customer_id__in=customer_ids).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                        Q(invoice_status__invoice_status_name='Completed') &
+                        Q(customer_type_id__name="Organization"))
 
             if response_type and customer_type_id and search_invoice_number and invoice_status and query_key == 'invoice':
                 if response_type == 'drone':
@@ -11698,8 +11724,8 @@ class FilterForSuperadmin(View):
                                                        invoice_number__istartswith=search_invoice_number,
                                                        invoice_status__in=invoice_status,
                                                        customer_type_id=customer_type_id).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                        Q(invoice_status__invoice_status_name='Completed') &
+                        Q(customer_type_id__name="Organization"))
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
@@ -11707,8 +11733,8 @@ class FilterForSuperadmin(View):
                                                                    invoice_number__istartswith=search_invoice_number,
                                                                    invoice_status__in=invoice_status,
                                                                    customer_type_id=customer_type_id).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                        Q(invoice_status__invoice_status_name='Completed') &
+                        Q(customer_type_id__name="Organization"))
 
             if response_type and customer_ids and search_invoice_number and invoice_status and query_key == 'invoice':
                 if response_type == 'drone':
@@ -11716,8 +11742,8 @@ class FilterForSuperadmin(View):
                                                        invoice_number__istartswith=search_invoice_number,
                                                        invoice_status__in=invoice_status,
                                                        customer_id__in=customer_ids).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                        Q(invoice_status__invoice_status_name='Completed') &
+                        Q(customer_type_id__name="Organization"))
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
@@ -11725,23 +11751,23 @@ class FilterForSuperadmin(View):
                                                                    invoice_number__istartswith=search_invoice_number,
                                                                    invoice_status__in=invoice_status,
                                                                    customer_id__in=customer_ids).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                        Q(invoice_status__invoice_status_name='Completed') &
+                        Q(customer_type_id__name="Organization"))
 
             if search_invoice_number and customer_type_id and invoice_status and customer_ids and query_key == 'invoice':
                 add_items = AddItem.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                    owner_id__role_id__role_name='Super_admin',
                                                    customer_type_id=customer_type_id, customer_id__in=customer_ids,
                                                    invoice_status__in=invoice_status).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                    Q(invoice_status__invoice_status_name='Completed') &
+                    Q(customer_type_id__name="Organization"))
                 custom_invoices = CustomInvoice.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                                owner_id__role_id__role_name='Super_admin',
                                                                customer_type_id=customer_type_id,
                                                                customer_id__in=customer_ids,
                                                                invoice_status__in=invoice_status).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                    Q(invoice_status__invoice_status_name='Completed') &
+                    Q(customer_type_id__name="Organization"))
 
             if response_type and customer_ids and customer_type_id and search_invoice_number and invoice_status and query_key == 'invoice':
                 if response_type == 'drone':
@@ -11750,8 +11776,8 @@ class FilterForSuperadmin(View):
                                                        invoice_status__in=invoice_status,
                                                        customer_id__in=customer_ids,
                                                        customer_type_id=customer_type_id).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                        Q(invoice_status__invoice_status_name='Completed') &
+                        Q(customer_type_id__name="Organization"))
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
@@ -11760,8 +11786,8 @@ class FilterForSuperadmin(View):
                                                                    invoice_status__in=invoice_status,
                                                                    customer_id__in=customer_ids,
                                                                    customer_type_id=customer_type_id).exclude(
-                Q(invoice_status__invoice_status_name='Completed') &
-                Q(customer_type_id__name="Organization"))
+                        Q(invoice_status__invoice_status_name='Completed') &
+                        Q(customer_type_id__name="Organization"))
 
             if query_key == 'einvoice':
                 add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
@@ -12481,6 +12507,7 @@ class FilterForSuperadmin(View):
         else:
             return {}
 
+
 @method_decorator([authorization_required], name='dispatch')
 class InvoiceHistoyFilter(APIView):
     def get(self, request, user_id=None, invoice_number=None):
@@ -12968,6 +12995,7 @@ class InvoiceHistoyFilter(APIView):
         }
         return JsonResponse(response_data, status=200)
 
+
 @method_decorator([authorization_required], name='dispatch')
 class SuperAdminGetAllViewwithoutpagination(APIView):
     def get(self, request, super_admin_id):
@@ -13029,6 +13057,7 @@ class SuperAdminGetAllViewwithoutpagination(APIView):
         except CustomUser.DoesNotExist:
             return Response({"message": "Super Admin user not found"}, status=status.HTTP_404_NOT_FOUND)
 
+
 @method_decorator([authorization_required], name='dispatch')
 class CustomerGet(APIView):
     def get(self, request, *args, **kwargs):
@@ -13059,6 +13088,7 @@ class CustomerGet(APIView):
         serialized_data = serializer.data
 
         return Response(serialized_data, status=status.HTTP_200_OK)
+
 
 @method_decorator([authorization_required], name='dispatch')
 class BatchSizeAPI(APIView):
@@ -13109,7 +13139,7 @@ class BatchSizeAPI(APIView):
                             status=status.HTTP_400_BAD_REQUEST)
 
         batch_type = Batchtype.objects.get(pk=batch_type_id) if batch_type_id else None
-        batch_size = Batchsize(minimum=minimum, maximum=maximum, description=description,batch_type=batch_type)
+        batch_size = Batchsize(minimum=minimum, maximum=maximum, description=description, batch_type=batch_type)
         batch_size.save()
         return Response({'message': 'BatchSize created successfully'}, status=status.HTTP_201_CREATED)
 
@@ -13152,6 +13182,7 @@ class BatchSizeAPI(APIView):
 
         batch_size.delete()
         return Response({'message': 'BatchSize deleted successfully'})
+
 
 @method_decorator([authorization_required], name='dispatch')
 class BatchTypeAPI(APIView):
@@ -13207,6 +13238,7 @@ class BatchTypeAPI(APIView):
             return Response({'message': 'Batch type deleted successfully'})
         except Batchtype.DoesNotExist:
             return Response({'message': 'Batch type does not exist'}, status=status.HTTP_404_NOT_FOUND)
+
 
 @method_decorator([authorization_required], name='dispatch')
 class SlotStatusAPI(APIView):
@@ -13265,6 +13297,7 @@ class SlotStatusAPI(APIView):
             return Response({'message': 'Slot status deleted successfully'})
         except SlotStatus.DoesNotExist:
             return Response({'message': 'Slot status does not exist'}, status=status.HTTP_404_NOT_FOUND)
+
 
 @method_decorator([authorization_required], name='dispatch')
 class SlotBookingPriceAPI(APIView):
@@ -13329,6 +13362,7 @@ class SlotBookingPriceAPI(APIView):
         except SlotBookingPrice.DoesNotExist:
             return Response({'message': 'Slot booking price does not exist'}, status=status.HTTP_404_NOT_FOUND)
 
+
 @method_decorator([authorization_required], name='dispatch')
 class GetAllTraningMaster(APIView):
     def get(self, request):
@@ -13337,9 +13371,10 @@ class GetAllTraningMaster(APIView):
         slot_statuses = SlotStatus.objects.all()
         slot_booking_prices = SlotBookingPrice.objects.all()
 
-        batch_size_data = [{'id': obj.id, 'minimum': obj.minimum, 'maximum': obj.maximum, 'description': obj.description,
-                            'created_date_time': obj.created_date_time, 'updated_date_time': obj.updated_date_time}
-                           for obj in batch_sizes]
+        batch_size_data = [
+            {'id': obj.id, 'minimum': obj.minimum, 'maximum': obj.maximum, 'description': obj.description,
+             'created_date_time': obj.created_date_time, 'updated_date_time': obj.updated_date_time}
+            for obj in batch_sizes]
 
         batch_type_data = [{'id': obj.id, 'name': obj.name, 'created_date_time': obj.created_date_time,
                             'updated_date_time': obj.updated_date_time} for obj in batch_types]
@@ -13348,9 +13383,10 @@ class GetAllTraningMaster(APIView):
                              'created_date_time': obj.created_date_time, 'updated_date_time': obj.updated_date_time}
                             for obj in slot_statuses]
 
-        slot_booking_price_data = [{'id': obj.id, 'slot_booking_price': obj.slot_booking_price, 'description': obj.description,
-                                    'created_date_time': obj.created_date_time, 'updated_date_time': obj.updated_date_time}
-                                   for obj in slot_booking_prices]
+        slot_booking_price_data = [
+            {'id': obj.id, 'slot_booking_price': obj.slot_booking_price, 'description': obj.description,
+             'created_date_time': obj.created_date_time, 'updated_date_time': obj.updated_date_time}
+            for obj in slot_booking_prices]
 
         return Response([{
             'batch_sizes': batch_size_data,
@@ -13358,6 +13394,7 @@ class GetAllTraningMaster(APIView):
             'slot_statuses': slot_status_data,
             'slot_booking_prices': slot_booking_price_data
         }])
+
 
 @csrf_exempt
 def initiate_payment(request):
@@ -13462,7 +13499,7 @@ def handle_payment_success(request):
             # Save payment-related details to the SlotOrder instance
             slot_order_instance.payment_id = payment_id
             slot_order_instance.razorpay_signature = razorpay_signature
-            #slot_order_instance.order_status = 'Success'  # Assuming this is your success status
+            # slot_order_instance.order_status = 'Success'  # Assuming this is your success status
             slot_order_instance.save()
 
             # If payment is successful, save slot booking details to the Slot table
@@ -13480,6 +13517,7 @@ def handle_payment_success(request):
             return JsonResponse({'message': 'Payment verification failed'}, status=status.HTTP_400_BAD_REQUEST)
 
     return JsonResponse({'message': 'Invalid request method'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
 
 @method_decorator([authorization_required], name='dispatch')
 class SlotListView(APIView):
@@ -13506,20 +13544,27 @@ class SlotListView(APIView):
         serializer = SlotSerializer(slots, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+
 from django.db.models import Min, Exists, OuterRef
+
+
 @method_decorator([authorization_required], name='dispatch')
 class UserSlotList(APIView):
     def get(self, request, user_id):
         # Query the minimum created_date_time for each unique slot_date
-        slots = Slot.objects.filter(user_id=user_id).values('slot_date').annotate(min_created_date=Min('created_date_time'))
+        slots = Slot.objects.filter(user_id=user_id).values('slot_date').annotate(
+            min_created_date=Min('created_date_time'))
 
         # Get the corresponding slot IDs for the minimum created_date_time for each slot_date
-        slot_ids = Slot.objects.filter(user_id=user_id, created_date_time__in=[slot['min_created_date'] for slot in slots]).values_list('id', flat=True)
+        slot_ids = Slot.objects.filter(user_id=user_id,
+                                       created_date_time__in=[slot['min_created_date'] for slot in slots]).values_list(
+            'id', flat=True)
 
         # Retrieve the full slot objects using the filtered slot IDs
         slot_data = Slot.objects.filter(id__in=slot_ids).values('id', 'slot_date', 'created_date_time')
 
         return Response(slot_data)
+
 
 # class SlotsWithStudents(APIView):
 #     def get(self, request, user_id):
@@ -13564,7 +13609,8 @@ class UserSlotList(APIView):
 class SlotsWithStudents(APIView):
     def get(self, request, user_id):
         # Query slot dates with associated students for the given user ID
-        slots_with_students = Slot.objects.filter(user_id=user_id).annotate(has_students=Exists(Student.objects.filter(slot_id=OuterRef('id')))).filter(has_students=True)
+        slots_with_students = Slot.objects.filter(user_id=user_id).annotate(
+            has_students=Exists(Student.objects.filter(slot_id=OuterRef('id')))).filter(has_students=True)
 
         # Check if 'payment' query parameter is passed and is 'True'
         payment_param = request.query_params.get('payment')
@@ -13584,7 +13630,8 @@ class SlotsWithStudents(APIView):
             slots_with_students = slots_with_students.exclude(id__in=slots_to_exclude)
 
         # Get the first created_date_time for each slot_date
-        slots_with_students = slots_with_students.values('slot_date').annotate(first_created_date=Min('created_date_time'), id=Min('id')).order_by('first_created_date')
+        slots_with_students = slots_with_students.values('slot_date').annotate(
+            first_created_date=Min('created_date_time'), id=Min('id')).order_by('first_created_date')
 
         # Extract unique slot dates with the first created slot date and id
         unique_slot_dates = {}
@@ -13617,14 +13664,17 @@ class SlotsWithStudents(APIView):
 
         return Response(response_data)
 
+
 @method_decorator([authorization_required], name='dispatch')
 class SlotsWithoutStudents(APIView):
     def get(self, request, user_id):
         # Query slot dates without associated students for the given user ID
-        slots_without_students = Slot.objects.filter(user_id=user_id).annotate(has_students=Exists(Student.objects.filter(slot_id=OuterRef('id')))).filter(has_students=False)
+        slots_without_students = Slot.objects.filter(user_id=user_id).annotate(
+            has_students=Exists(Student.objects.filter(slot_id=OuterRef('id')))).filter(has_students=False)
 
         # Get the minimum created_date_time and id for each slot_date
-        slots_without_students = slots_without_students.values('slot_date').annotate(min_created_date=Min('created_date_time'), id=Min('id')).order_by('min_created_date')
+        slots_without_students = slots_without_students.values('slot_date').annotate(
+            min_created_date=Min('created_date_time'), id=Min('id')).order_by('min_created_date')
 
         # Extract unique slot dates with the first created slot date and id
         unique_slot_dates = {}
@@ -13656,6 +13706,7 @@ class SlotsWithoutStudents(APIView):
             response_data.append(slot_info)
 
         return Response(response_data)
+
 
 @method_decorator([authorization_required], name='dispatch')
 class StudentCreateAPIView(APIView):
@@ -13703,7 +13754,8 @@ class StudentCreateAPIView(APIView):
 
             # Validate ID
             if student_id is not None and Student.objects.filter(id=student_id).exists():
-                return Response({'message': f'Duplicate student ID found: {student_id}'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'message': f'Duplicate student ID found: {student_id}'},
+                                status=status.HTTP_400_BAD_REQUEST)
 
         if duplicate_mobiles or duplicate_adhars or duplicate_emails:
             error_msg = ''
@@ -13765,7 +13817,8 @@ class StudentCreateAPIView(APIView):
             }
             response_data.append(student_info)
 
-        return Response({'message': 'Students added successfully', 'students': response_data}, status=status.HTTP_201_CREATED)
+        return Response({'message': 'Students added successfully', 'students': response_data},
+                        status=status.HTTP_201_CREATED)
 
     def put(self, request, *args, **kwargs):
         slot_id = request.data.get('slot_id')
@@ -13820,19 +13873,21 @@ class StudentCreateAPIView(APIView):
                     return Response({'message': 'Duplicate student details found for the same slot date'},
                                     status=status.HTTP_400_BAD_REQUEST)
             else:
-                if Student.objects.filter(student_adhar=student_adhar, slot_id__slot_date=slot_instance.slot_date).exclude(
+                if Student.objects.filter(student_adhar=student_adhar,
+                                          slot_id__slot_date=slot_instance.slot_date).exclude(
                         id=student_id).exists():
                     return Response({'message': 'Duplicate Aadhar number found for the same slot date'},
                                     status=status.HTTP_400_BAD_REQUEST)
 
-                if Student.objects.filter(student_email=student_email, slot_id__slot_date=slot_instance.slot_date).exclude(
+                if Student.objects.filter(student_email=student_email,
+                                          slot_id__slot_date=slot_instance.slot_date).exclude(
                         id=student_id).exists():
                     return Response({'message': 'Duplicate email found for the same slot date'},
                                     status=status.HTTP_400_BAD_REQUEST)
 
                 if Student.objects.filter(student_mobile=student_mobile,
                                           slot_id__slot_date=slot_instance.slot_date).exclude(
-                        id=student_id).exists():
+                    id=student_id).exists():
                     return Response({'message': 'Duplicate phone number found for the same slot date'},
                                     status=status.HTTP_400_BAD_REQUEST)
 
@@ -13885,9 +13940,7 @@ class StudentCreateAPIView(APIView):
     def delete(self, request):
         slot_id = request.query_params.get('slot_id')
         user_id = request.query_params.get('user_id')
-        print(user_id, "uuuuuuuuuuuuuu")
         student_ids_str = request.query_params.get('student_ids', "")
-        print(student_ids_str, "ssssssssssssss")
 
         try:
             # Retrieve the Slot instance
@@ -13930,6 +13983,7 @@ class StudentCreateAPIView(APIView):
 
         return Response({'message': 'Students deleted successfully'}, status=status.HTTP_200_OK)
 
+
 @method_decorator([authorization_required], name='dispatch')
 class SlotListStudents(APIView):
     def get(self, request, user_id):
@@ -13969,6 +14023,7 @@ class SlotListStudents(APIView):
 
         return Response(serializer.data)
 
+
 # @method_decorator([authorization_required], name='dispatch')
 class SlotDetailsAPIView(APIView):
     def get(self, request, slot_id):
@@ -14002,6 +14057,7 @@ class SlotDetailsAPIView(APIView):
 
         except Slot.DoesNotExist:
             return Response({'message': 'Slot not found'}, status=status.HTTP_404_NOT_FOUND)
+
 
 @method_decorator([authorization_required], name='dispatch')
 class SlotsWithSameBatchSizeAPIView(APIView):
@@ -14071,15 +14127,11 @@ class SlotSwapAPIView(APIView):
             for student_name, student_email in slot2_student_details:
                 if student_email in [email for _, email in slot1_student_details]:
                     return Response({
-                                        'message': f'{student_email} of {student_name} is already exists in {slot1.batch_name}'},
-                                    status=status.HTTP_400_BAD_REQUEST)
-
-            print("Students in slot 1 before swap:", students_slot1)
-            print("Students in slot 2 before swap:", students_slot2)
+                        'message': f'{student_email} of {student_name} is already exists in {slot1.batch_name}'},
+                        status=status.HTTP_400_BAD_REQUEST)
 
             # Create a dictionary to store old and new slot mappings for each student
             students_mapping = {}
-
 
             # Map students from slot 1 to slot 2 and vice versa
             for student in students_slot1:
@@ -14106,13 +14158,12 @@ class SlotSwapAPIView(APIView):
             # Check if the students have been swapped successfully
             students_slot1 = Student.objects.filter(slot_id=slot1)
             students_slot2 = Student.objects.filter(slot_id=slot2)
-            print("Students in slot 1 after swap:", students_slot1)
-            print("Students in slot 2 after swap:", students_slot2)
 
             return Response({'message': 'Students swapped successfully'}, status=status.HTTP_200_OK)
 
         except Slot.DoesNotExist:
             return Response({'message': 'One or both slots not found'}, status=status.HTTP_404_NOT_FOUND)
+
 
 @method_decorator([authorization_required], name='dispatch')
 class PayUrlAPI(APIView):
@@ -14202,6 +14253,7 @@ class PayUrlAPI(APIView):
         except PayUrl.DoesNotExist:
             return JsonResponse({'message': 'PayUrl not found'}, status=404)
 
+
 @method_decorator([authorization_required], name='dispatch')
 class MatchingSlotsAPIView(APIView):
     def get(self, request, slot_id):
@@ -14212,7 +14264,8 @@ class MatchingSlotsAPIView(APIView):
             current_date = timezone.now().date()
 
             # Retrieve matching slots with the same batch type
-            matching_slots = Slot.objects.filter(user_id=base_slot.user_id, batch_type=base_slot.batch_type).exclude(id=slot_id)
+            matching_slots = Slot.objects.filter(user_id=base_slot.user_id, batch_type=base_slot.batch_type).exclude(
+                id=slot_id)
 
             # Get the number of additional students from the query parameters
             student_len = int(request.query_params.get('student_len', 0))
@@ -14294,6 +14347,7 @@ class MoveStudentsAPIView(APIView):
         except Student.DoesNotExist:
             return Response({'message': 'One of the students does not exist'}, status=status.HTTP_404_NOT_FOUND)
 
+
 @method_decorator([authorization_required], name='dispatch')
 class PaymentLinkStatusAPI(APIView):
     def get(self, request, pk=None):
@@ -14347,6 +14401,7 @@ class PaymentLinkStatusAPI(APIView):
             return Response({'message': 'Payment status deleted successfully'})
         except PaymentLinkStatus.DoesNotExist:
             return Response({'message': 'Payment status does not exist'}, status=status.HTTP_404_NOT_FOUND)
+
 
 @api_view(['POST'])
 def generate_payment_links_view(request):
@@ -14451,9 +14506,12 @@ def payment_details_view(request, order_id):
             else:
                 amount = 0  # Set a default value or handle the case when PayUrl is not found
 
-            return JsonResponse({'order_id': order_id, 'student_name': student_name, 'amount': amount,"payment_status":stupayment_status,"student_id":student_id,"student_mobile":student_mobile,"student_email":student_email})
+            return JsonResponse({'order_id': order_id, 'student_name': student_name, 'amount': amount,
+                                 "payment_status": stupayment_status, "student_id": student_id,
+                                 "student_mobile": student_mobile, "student_email": student_email})
         else:
-            return JsonResponse({'message': 'Student not found for the given order ID'}, status=status.HTTP_404_NOT_FOUND)
+            return JsonResponse({'message': 'Student not found for the given order ID'},
+                                status=status.HTTP_404_NOT_FOUND)
 
     except Exception as e:
         return JsonResponse({'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -14498,6 +14556,8 @@ class CheckPaymentStatusView(APIView):
 
 
 from dateutil import parser as date_parser
+
+
 @method_decorator([authorization_required], name='dispatch')
 class FilterData(APIView):
     def get(self, request, user_id):
@@ -14542,7 +14602,7 @@ class FilterData(APIView):
                                 'stupayment_status': student.stupayment_status,
                                 'paylinkdate': student.paylinkdate,
                                 'payment_link_price': payment_link_price,
-                                'razorpay_payment_id':student.razorpay_payment_id,
+                                'razorpay_payment_id': student.razorpay_payment_id,
                             })
 
                         if student_details:
@@ -14566,7 +14626,8 @@ class FilterData(APIView):
                     return Response({'slots': slot_data})
 
                 elif partner_id and slot_date and batchtype_id and batch_name:
-                    slots = slots.filter(user_id=partner_id, slot_date=date_parser.parse(slot_date).date(), batch_type_id=batchtype_id,batch_name=batch_name)
+                    slots = slots.filter(user_id=partner_id, slot_date=date_parser.parse(slot_date).date(),
+                                         batch_type_id=batchtype_id, batch_name=batch_name)
 
                     slots = slots.exclude(slotstudentrelation__isnull=True)
                     slot_data = []
@@ -14575,7 +14636,7 @@ class FilterData(APIView):
                         payment_link_price = pay_url.payment_link_price if pay_url else None
                         students = Student.objects.filter(slot_id=slot)
                         student_details = [{
-                            'id':student.id,
+                            'id': student.id,
                             'student_name': student.student_name,
                             'student_age': student.student_age,
                             'student_mobile': student.student_mobile,
@@ -14588,8 +14649,8 @@ class FilterData(APIView):
                             'razorpay_signature': student.razorpay_signature,
                             'stupayment_status': student.stupayment_status,
                             'paylinkdate': student.paylinkdate,
-                            'payment_link_price':payment_link_price,
-                            'razorpay_payment_id':student.razorpay_payment_id,
+                            'payment_link_price': payment_link_price,
+                            'razorpay_payment_id': student.razorpay_payment_id,
                         } for student in students]
                         batch_type_name = slot.batch_type.name
                         userid = slot.user_id.first_name
@@ -14597,13 +14658,13 @@ class FilterData(APIView):
                         slot_data.append({
                             'slot_id': slot.id,
                             'slot_name': slot.batch_name,
-                            'slot_date':slot.slot_date,
-                            'batch_size':slot.batch_size,
-                            'batch_type':batch_type_name,
-                            'user_id':userid,
-                            'created_date_time':slot.created_date_time,
-                            'updated_date_time':slot.updated_date_time,
-                            'slot_status':slot.slot_status,
+                            'slot_date': slot.slot_date,
+                            'batch_size': slot.batch_size,
+                            'batch_type': batch_type_name,
+                            'user_id': userid,
+                            'created_date_time': slot.created_date_time,
+                            'updated_date_time': slot.updated_date_time,
+                            'slot_status': slot.slot_status,
                             'students': student_details
                         })
 
@@ -14612,7 +14673,8 @@ class FilterData(APIView):
                 # If partner_id, slot_date, and batchtype_id are provided
                 elif partner_id and slot_date and batchtype_id:
                     # Filter slots by partner_id, slot_date, and batchtype_id
-                    slots = slots.filter(user_id=partner_id, slot_date=date_parser.parse(slot_date).date(), batch_type_id=batchtype_id)
+                    slots = slots.filter(user_id=partner_id, slot_date=date_parser.parse(slot_date).date(),
+                                         batch_type_id=batchtype_id)
                     slots = slots.exclude(slotstudentrelation__isnull=True)
 
                     # Get distinct batch names related to the provided parameters
@@ -14686,8 +14748,8 @@ class FilterData(APIView):
                                 'razorpay_signature': student.razorpay_signature,
                                 'stupayment_status': student.stupayment_status,
                                 'paylinkdate': student.paylinkdate,
-                                'payment_link_price':payment_link_price,
-                                'razorpay_payment_id':student.razorpay_payment_id,
+                                'payment_link_price': payment_link_price,
+                                'razorpay_payment_id': student.razorpay_payment_id,
                             })
 
                         if student_details:
@@ -14716,7 +14778,7 @@ class FilterData(APIView):
                         payment_link_price = pay_url.payment_link_price if pay_url else None
                         students = Student.objects.filter(slot_id=slot)
                         student_details = [{
-                            'id':student.id,
+                            'id': student.id,
                             'student_name': student.student_name,
                             'student_age': student.student_age,
                             'student_mobile': student.student_mobile,
@@ -14729,8 +14791,8 @@ class FilterData(APIView):
                             'razorpay_signature': student.razorpay_signature,
                             'stupayment_status': student.stupayment_status,
                             'paylinkdate': student.paylinkdate,
-                            'payment_link_price':payment_link_price,
-                            'razorpay_payment_id':student.razorpay_payment_id,
+                            'payment_link_price': payment_link_price,
+                            'razorpay_payment_id': student.razorpay_payment_id,
                         } for student in students]
                         batch_type_name = slot.batch_type.name
                         userid = slot.user_id.first_name
@@ -14780,10 +14842,13 @@ class FilterData(APIView):
         except Exception as e:
             return Response({'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
 from django.db.models.functions import ExtractMonth
 from calendar import monthrange
 import calendar
 import datetime
+
+
 @method_decorator([authorization_required], name='dispatch')
 class getcalendarAPI(APIView):
     def get(self, request):
@@ -14810,18 +14875,22 @@ class getcalendarAPI(APIView):
                     # Check if any slots are found
                     if slots.exists():
                         # Prepare the response data with full details
-                        slot_values = slots.values('id', 'batch_name', 'batch_size', 'batch_type_id', 'batch_type__name', 'slot_date', 'user_id')
+                        slot_values = slots.values('id', 'batch_name', 'batch_size', 'batch_type_id',
+                                                   'batch_type__name', 'slot_date', 'user_id')
                         return JsonResponse(list(slot_values), safe=False)
                     else:
                         return JsonResponse({'error': 'No data found for the given date and user ID'}, status=404)
 
                 else:
                     # Filter slots based on user_id and get the count per date
-                    slots_count_per_date = Slot.objects.filter(user_id=user_id).values('slot_date').annotate(total=Count('id'))
+                    slots_count_per_date = Slot.objects.filter(user_id=user_id).values('slot_date').annotate(
+                        total=Count('id'))
 
                     # Filter slots where title is greater than 1
-                    response_data = [{'title': str(slot_count['total']), 'date': slot_count['slot_date'].strftime("%Y-%m-%d")} for slot_count in slots_count_per_date if slot_count['total'] > 1]
-                    print('response_data--------------->>>>>>>>>>>>',response_data)
+                    response_data = [
+                        {'title': str(slot_count['total']), 'date': slot_count['slot_date'].strftime("%Y-%m-%d")} for
+                        slot_count in slots_count_per_date if slot_count['total'] > 1]
+                    print('response_data--------------->>>>>>>>>>>>', response_data)
                     return JsonResponse(response_data, safe=False)
             else:
                 # User does not have the role 'Partner', return slots with limited details
@@ -14832,8 +14901,9 @@ class getcalendarAPI(APIView):
                     slots_count_per_date = Slot.objects.all().values('slot_date').annotate(total=models.Count('id'))
 
                     # Create the response_data list using list comprehension
-                    response_data = [{'title': str(slot_count['total']), 'date': slot_count['slot_date'].strftime("%Y-%m-%d")}
-                                    for slot_count in slots_count_per_date]
+                    response_data = [
+                        {'title': str(slot_count['total']), 'date': slot_count['slot_date'].strftime("%Y-%m-%d")}
+                        for slot_count in slots_count_per_date]
 
                     return JsonResponse(response_data, safe=False)
                 if date_param:
@@ -14843,96 +14913,17 @@ class getcalendarAPI(APIView):
                     # Check if any slots are found
                     if slots.exists():
                         # Prepare the response data with full details
-                        slot_values = slots.values('id', 'batch_name', 'batch_size', 'batch_type_id', 'batch_type__name', 'slot_date', 'user_id')
+                        slot_values = slots.values('id', 'batch_name', 'batch_size', 'batch_type_id',
+                                                   'batch_type__name', 'slot_date', 'user_id')
                         return JsonResponse(list(slot_values), safe=False)
                 else:
-                    slots_count_per_date = Slot.objects.filter(user_id=user_id).values('slot_date').annotate(total=Count('id'))
+                    slots_count_per_date = Slot.objects.filter(user_id=user_id).values('slot_date').annotate(
+                        total=Count('id'))
                     return JsonResponse(list(slot_values), safe=False)
 
         else:
             return JsonResponse({'error': 'User ID parameter is required'}, status=400)
 
-# class FilterData(APIView):
-#     def get(self, request, user_id):
-#         try:
-#             # Fetch user object
-#             user = get_object_or_404(CustomUser, id=user_id)
-#
-#             # Validate user role
-#             if user.role_id.role_name == 'Super_admin':
-#                 # Fetch query parameters for superadmin
-#                 batchtype_id = request.query_params.get('batchtype_id')
-#                 partner_id = request.query_params.get('partner_id')
-#                 slot_date = request.query_params.get('slot_date')
-#                 batch_name = request.query_params.get('batch_name')
-#
-#                 # Initialize slot queryset
-#                 slots = Slot.objects.all()
-#
-#                 # Filter based on batchtype_id
-#                 if batchtype_id:
-#                     batchtype = get_object_or_404(Batchtype, id=batchtype_id)
-#                     slots = slots.filter(batch_type=batchtype)
-#
-#                 # Filter based on partner_id
-#                 if partner_id:
-#                     slots = slots.filter(user_id=partner_id)
-#
-#                 # Filter based on slot_date
-#                 if slot_date:
-#                     slots = slots.filter(slot_date=datetime.strptime(slot_date, '%Y-%m-%d'))
-#
-#                 # Filter based on batch_name
-#                 if batch_name:
-#                     slots = slots.filter(batch_name=batch_name)
-#
-#             elif user.role_id.role_name == 'Partner':
-#                 slot_date = request.query_params.get('slot_date')
-#                 batch_name = request.query_params.get('batch_name')
-#
-#                 if slot_date and batch_name:
-#                     slots = Slot.objects.filter(batch_name=batch_name, slot_date=slot_date, user_id=user_id)
-#                 elif slot_date:
-#                     slots = Slot.objects.filter(slot_date=slot_date, user_id=user_id)
-#                 elif batch_name:
-#                     slots = Slot.objects.filter(batch_name=batch_name, user_id=user_id)
-#                 else:
-#                     raise Http404("Missing query parameters")
-#
-#             else:
-#                 return Response({'message': 'Invalid user role'}, status=status.HTTP_400_BAD_REQUEST)
-#
-#             # Serialize the slot queryset and include student details
-#             slot_data = []
-#             for slot in slots:
-#                 students = Student.objects.filter(slot_id=slot)
-#                 student_details = [{
-#                     'student_name': student.student_name,
-#                     'student_age': student.student_age,
-#                     'student_mobile': student.student_mobile,
-#                     'student_email': student.student_email,
-#                     'student_adhar': student.student_adhar,
-#                     'created_date_time': student.created_date_time,
-#                     'updated_date_time': student.updated_date_time,
-#                     'payment_url': student.payment_url,
-#                     # 'payment_status': student.payment_status,
-#                     'order_id': student.order_id,
-#                     'razorpay_payment_id': student.razorpay_payment_id,
-#                     'razorpay_signature': student.razorpay_signature,
-#                     'stupayment_status': student.stupayment_status,
-#                     'paylinkdate': student.paylinkdate,
-#                 } for student in students]
-#
-#                 slot_data.append({
-#                     'slot_id': slot.id,
-#                     'slot_name': slot.batch_name,
-#                     'students': student_details
-#                 })
-#
-#             return Response({'slots': slot_data})
-#
-#         except Exception as e:
-#             return Response({'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @method_decorator([authorization_required], name='dispatch')
 class UpdateInvoiceStatusView(APIView):
@@ -14974,6 +14965,7 @@ class UpdateInvoiceStatusView(APIView):
         return JsonResponse({'error': 'Invoice not found or customer_type is not Individual.'},
                             status=status.HTTP_404_NOT_FOUND)
 
+
 @method_decorator([authorization_required], name='dispatch')
 class GetdashbordAPI(APIView):
     def get(self, request):
@@ -15014,8 +15006,8 @@ class GetdashbordAPI(APIView):
                 ).annotate(count=Count('id'))
 
                 total_count = \
-                queryset.filter(drone_id__drone_category__id__in=drone_model_ids).aggregate(total=Sum('count'))[
-                    'total'] or 0
+                    queryset.filter(drone_id__drone_category__id__in=drone_model_ids).aggregate(total=Sum('count'))[
+                        'total'] or 0
 
                 # Calculate total billing
                 total_billing_queryset = AddItem.objects.filter(
@@ -15570,6 +15562,7 @@ class GetdashbordAPI(APIView):
         else:
             return Response({'error': 'Invalid parameters'})
 
+
 @method_decorator([authorization_required], name='dispatch')
 class DeleteInvoice(APIView):
     def delete(self, request, invoice_number):
@@ -15581,7 +15574,8 @@ class DeleteInvoice(APIView):
         if add_item:
             # Check if the owner_id matches
             if str(add_item.owner_id.id) != str(owner_id):
-                return Response({'message': 'Only the owner have the access to delete this invoice.'}, status=status.HTTP_403_FORBIDDEN)
+                return Response({'message': 'Only the owner have the access to delete this invoice.'},
+                                status=status.HTTP_403_FORBIDDEN)
 
             # Check if the invoice status is "Completed"
             if add_item.invoice_status and add_item.invoice_status.invoice_status_name == "Completed":
@@ -15598,7 +15592,7 @@ class DeleteInvoice(APIView):
                     drone_ownership = DroneOwnership.objects.filter(user=add_item.owner_id, drone_id=drone_id).first()
                     if drone_ownership:
                         if add_item.owner_id.role_id.role_name != "Super_admin":
-                        # Update the quantity of drones in the ownership record
+                            # Update the quantity of drones in the ownership record
                             drone_ownership.quantity = F('quantity') + quantity
                             drone_ownership.save()
             add_item.delete()
@@ -15610,7 +15604,8 @@ class DeleteInvoice(APIView):
         if custom_invoice:
             # Check if the owner_id matches
             if str(custom_invoice.owner_id.id) != str(owner_id):
-                return Response({'message': 'Only the owner can delete this invoice.'}, status=status.HTTP_403_FORBIDDEN)
+                return Response({'message': 'Only the owner can delete this invoice.'},
+                                status=status.HTTP_403_FORBIDDEN)
 
             # Check if the invoice status is "Completed"
             if custom_invoice.invoice_status and custom_invoice.invoice_status.invoice_status_name == "Completed":
@@ -15625,6 +15620,8 @@ class DeleteInvoice(APIView):
 
 from datetime import datetime
 from django.utils.dateparse import parse_date
+
+
 @method_decorator([authorization_required], name='dispatch')
 class GetDroneOrdersGraph(APIView):
     def get(self, request):
@@ -15686,7 +15683,9 @@ class GetDroneOrdersGraph(APIView):
                 }
             }
 
-            counts_by_model = {drone_model_id: {start_time + timedelta(days=i): 0 for i in range((end_time - start_time).days + 1)} for drone_model_id in drone_model_ids}
+            counts_by_model = {
+                drone_model_id: {start_time + timedelta(days=i): 0 for i in range((end_time - start_time).days + 1)} for
+                drone_model_id in drone_model_ids}
 
             for entry in data:
                 model_id = entry['drone_id_drone_category_id']
@@ -15697,7 +15696,8 @@ class GetDroneOrdersGraph(APIView):
 
             for drone_model_id in drone_model_ids:
                 purchased_drones_entry = {
-                    'label': DroneCategory.objects.get(id=drone_model_id).category_name if drone_model_id else 'Unknown',
+                    'label': DroneCategory.objects.get(
+                        id=drone_model_id).category_name if drone_model_id else 'Unknown',
                     'Purchased_drones': [],
                     'drone_model': None,
                     'drone_model_id': None,
@@ -15720,7 +15720,8 @@ class GetDroneOrdersGraph(APIView):
 
                 purchased_drones_entry['Purchased_drones'] = [
                     {'month': (start_time + timedelta(days=i)).strftime('%Y-%m-%d'),
-                    'count': counts_by_model[drone_model_id].get(start_time + timedelta(days=i), 0)} for i in range((end_time - start_time).days + 1)
+                     'count': counts_by_model[drone_model_id].get(start_time + timedelta(days=i), 0)} for i in
+                    range((end_time - start_time).days + 1)
                 ]
 
                 result['result']['data']['Purchased_drones_Graph'].append(purchased_drones_entry)
@@ -15764,7 +15765,8 @@ class GetDroneOrdersGraph(APIView):
                 }
             }
 
-            counts_by_model = {drone_model_id: {month: 0 for month in range(1, 13)} for drone_model_id in drone_model_ids}
+            counts_by_model = {drone_model_id: {month: 0 for month in range(1, 13)} for drone_model_id in
+                               drone_model_ids}
 
             for entry in data:
                 model_id = entry['drone_id_drone_category_id']
@@ -15775,7 +15777,8 @@ class GetDroneOrdersGraph(APIView):
 
             for drone_model_id in drone_model_ids:
                 purchased_drones_entry = {
-                    'label': DroneCategory.objects.get(id=drone_model_id).category_name if drone_model_id else 'Unknown',
+                    'label': DroneCategory.objects.get(
+                        id=drone_model_id).category_name if drone_model_id else 'Unknown',
                     'Purchased_drones': [],
                     'drone_model': None,
                     'drone_model_id': None,
@@ -15798,7 +15801,7 @@ class GetDroneOrdersGraph(APIView):
 
                 purchased_drones_entry['Purchased_drones'] = [
                     {'month': timezone.datetime(2022, month_number, 1).strftime('%B'),
-                    'count': counts_by_model[drone_model_id].get(month_number, 0)} for month_number in
+                     'count': counts_by_model[drone_model_id].get(month_number, 0)} for month_number in
                     range(1, 13)]
 
                 result['result']['data']['Purchased_drones_Graph'].append(purchased_drones_entry)
@@ -15810,9 +15813,11 @@ class GetDroneOrdersGraph(APIView):
             except CustomUser.DoesNotExist:
                 return Response({'error': 'User not found'}, status=404)
 
-            inventory_count = DroneOwnership.objects.filter(user_id=user_id).aggregate(Sum('quantity'))['quantity__sum'] or 0
+            inventory_count = DroneOwnership.objects.filter(user_id=user_id).aggregate(Sum('quantity'))[
+                                  'quantity__sum'] or 0
             total_billings = AddItem.objects.filter(owner_id__id=user_id).count()
-            total_billing_completed = AddItem.objects.filter(owner_id_id=user_id, invoice_status_invoice_status_name='completed').count()
+            total_billing_completed = AddItem.objects.filter(owner_id_id=user_id,
+                                                             invoice_status_invoice_status_name='completed').count()
 
             if user.role_id.role_name == 'Partner':
                 label = 'Purchased Drones'
@@ -15850,7 +15855,8 @@ class GetDroneOrdersGraph(APIView):
                         overall_count_dict[month_name_loop] += entry['count']
 
                     months_data[month_number]['count'] = overall_count_dict[month_name_loop]
-                    months_data[month_number]['drone_category_name'].append(entry['drone_id_drone_category_category_name'])
+                    months_data[month_number]['drone_category_name'].append(
+                        entry['drone_id_drone_category_category_name'])
 
                     drone_models.add(entry['drone_id_drone_category_category_name'])
 
@@ -15874,4 +15880,105 @@ class GetDroneOrdersGraph(APIView):
         else:
             return Response({'error': 'Missing required parameters'}, status=400)
 
+@method_decorator([authorization_required], name='dispatch')
+class SlotFilterAPIView(APIView):
+    def get(self, request):
+        role = request.query_params.get('role')
+        user_id = request.query_params.get('user_id')
+        start_date_str = request.query_params.get('start_date')
+        end_date_str = request.query_params.get('end_date')
+        partner_id = request.query_params.get('partner_id')
 
+        if not role or not user_id:
+            return Response({'message': 'Role and user_id are required'}, status=400)
+
+        try:
+            user_id = int(user_id)
+        except ValueError:
+            return Response({'message': 'Invalid user_id format'}, status=400)
+
+        # Check if the user exists
+        try:
+            user = CustomUser.objects.get(id=user_id)
+        except CustomUser.DoesNotExist:
+            return Response({'message': 'User does not exist'}, status=404)
+
+        # Parse the start_date and end_date if provided, otherwise use default range
+        current_date = timezone.now().date()
+        if start_date_str and end_date_str:
+            try:
+                start_date = datetime.strptime(start_date_str, "%d-%m-%Y").date()
+                end_date = datetime.strptime(end_date_str, "%d-%m-%Y").date()
+            except ValueError:
+                return Response({'message': 'Invalid date format. Use DD-MM-YYYY'}, status=400)
+        else:
+            start_date = current_date - timedelta(days=9)
+            end_date = current_date
+
+        if role == 'Partner' and user.role_id.role_name == 'Super_admin' and partner_id:
+            try:
+                partner_id = int(partner_id)
+            except ValueError:
+                return Response({'message': 'Invalid partner_id format'}, status=400)
+
+            # Filter slots by partner_id and date range
+            slots = Slot.objects.filter(
+                user_id=partner_id,
+                slot_date__range=[start_date, end_date]
+            )
+
+        elif role == 'Partner':
+            # Filter slots by user_id and date range for Partner role
+            slots = Slot.objects.filter(
+                user_id=user_id,
+                slot_date__range=[start_date, end_date]
+            )
+
+        elif role == 'Super_admin':
+            # Check if the user is actually a Super Admin
+            if user.role_id.role_name != 'Super_admin':
+                return Response({'message': 'User is not a Super_admin'}, status=403)
+
+            # Get the Role object for Partner
+            try:
+                partner_role = Role.objects.get(role_name='Partner')
+            except Role.DoesNotExist:
+                return Response({'message': 'Partner role does not exist'}, status=404)
+
+            # Get all partner users
+            partners = CustomUser.objects.filter(role_id=partner_role)
+
+            # Filter slots by date range for all partners
+            slots = Slot.objects.filter(
+                user_id__in=partners,
+                slot_date__range=[start_date, end_date]
+            )
+
+        else:
+            return Response({'message': 'Invalid role'}, status=400)
+
+        # Annotate and group by slot_date
+        slot_counts = slots.values('slot_date').annotate(count=Count('slot_date')).order_by('-slot_date')
+
+        # Create a dictionary with dates and their counts
+        slot_dict = {slot['slot_date']: slot['count'] for slot in slot_counts}
+
+        # Generate the list of dates within the specified range
+        all_dates = [start_date + timedelta(days=i) for i in range((end_date - start_date).days + 1)]
+
+        # Format the response including dates with zero count
+        slots_data = [
+            {
+                'month': date.strftime("%d-%m-%Y"),
+                'count': slot_dict.get(date, 0)
+            }
+            for date in all_dates
+        ]
+
+        response_data = {
+            'student_training': {
+                'slots': slots_data,
+                'label': 'count label'
+            }
+        }
+        return Response(response_data)
