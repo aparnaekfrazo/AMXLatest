@@ -15976,9 +15976,11 @@ class SlotFilterAPIView(APIView):
         ]
 
         response_data = {
-            'student_training': {
-                'slots': slots_data,
-                'label': 'count label'
-            }
+            'student_training': [
+                {
+                    'slots': slots_data,
+                    'label': 'count label'
+                }
+            ]
         }
         return Response(response_data)
