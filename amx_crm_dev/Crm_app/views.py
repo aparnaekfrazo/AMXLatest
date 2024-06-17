@@ -15883,10 +15883,10 @@ class GetDroneOrdersGraph(APIView):
 @method_decorator([authorization_required], name='dispatch')
 class SlotFilterAPIView(APIView):
     def get(self, request):
-        role = request.query_params.get('role')
+        role = request.query_params.get('role_name')
         user_id = request.query_params.get('user_id')
-        start_date_str = request.query_params.get('start_date')
-        end_date_str = request.query_params.get('end_date')
+        start_date_str = request.query_params.get('start_time')
+        end_date_str = request.query_params.get('end_time')
         partner_id = request.query_params.get('partner_id')
 
         if not role or not user_id:
