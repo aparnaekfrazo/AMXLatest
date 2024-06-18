@@ -15992,11 +15992,11 @@ class SlotFilterAPIView(APIView):
         response_data = {
             'student_training': [
                 {
-                    'slot': individual_slots_data,
+                    'slots': individual_slots_data,
                     'label': 'Individual Slots'
                 },
                 {
-                    'slot': group_slots_data,
+                    'slots': group_slots_data,
                     'label': 'Group Slots'
                 }
             ]
