@@ -15957,20 +15957,34 @@ class SlotFilterAPIView(APIView):
         else:
             return Response({'message': 'Invalid role'}, status=400)
 
-        # Annotate and group by slot_date
-        slot_counts = slots.values('slot_date').annotate(count=Count('slot_date')).order_by('-slot_date')
+        # Separate slots by batch types
+        individual_slots = slots.filter(batch_type__name='Individual')
+        group_slots = slots.filter(batch_type__name='Group')
 
-        # Create a dictionary with dates and their counts
-        slot_dict = {slot['slot_date']: slot['count'] for slot in slot_counts}
+        # Annotate and group by slot_date
+        individual_slot_counts = individual_slots.values('slot_date').annotate(count=Count('slot_date')).order_by('-slot_date')
+        group_slot_counts = group_slots.values('slot_date').annotate(count=Count('slot_date')).order_by('-slot_date')
+
+        # Create dictionaries with dates and their counts
+        individual_slot_dict = {slot['slot_date']: slot['count'] for slot in individual_slot_counts}
+        group_slot_dict = {slot['slot_date']: slot['count'] for slot in group_slot_counts}
 
         # Generate the list of dates within the specified range
         all_dates = [start_date + timedelta(days=i) for i in range((end_date - start_date).days + 1)]
 
-        # Format the response including dates with zero count
-        slots_data = [
+        # Format the response including dates with zero count for both batch types
+        individual_slots_data = [
             {
                 'month': date.strftime("%d-%m-%Y"),
-                'count': slot_dict.get(date, 0)
+                'count': individual_slot_dict.get(date, 0)
+            }
+            for date in all_dates
+        ]
+
+        group_slots_data = [
+            {
+                'month': date.strftime("%d-%m-%Y"),
+                'count': group_slot_dict.get(date, 0)
             }
             for date in all_dates
         ]
@@ -15978,8 +15992,12 @@ class SlotFilterAPIView(APIView):
         response_data = {
             'student_training': [
                 {
-                    'slots': slots_data,
-                    'label': 'count label'
+                    'slot': individual_slots_data,
+                    'label': 'Individual Slots'
+                },
+                {
+                    'slot': group_slots_data,
+                    'label': 'Group Slots'
                 }
             ]
         }
