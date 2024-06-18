@@ -275,7 +275,7 @@ class PartnerAPIView(APIView):
             subject = 'AMX CRM Credentials'
             message = f'Please note down your credentials.\nUsername: {username}\nPassword: {password}'
             message += f'\nLogin through the {title}: {domain}'
-            from_email = 'amxdrone123@gmail.com'
+            from_email = 'aparna@ekfrazo.in'
             recipient_list = [email]
 
             send_mail(subject, message, from_email, recipient_list)
@@ -1348,7 +1348,7 @@ class CompanydetailsAPIView(APIView):
                     send_mail(
                         'Partner Update Request',
                         strip_tags(email_content),
-                        'amxdrone123@gmail.com',
+                        'aparna@ekfrazo.in',
                         [super_admin_email],
                         fail_silently=False,
                         html_message=email_content,
@@ -1544,7 +1544,7 @@ def approveRequest(request, id):
 
         subject = "Your Update Request has been Approved"
         message = "Your update request has been approved by the admin."
-        from_email = "amxdrone123@gmail.com"
+        from_email = "aparna@ekfrazo.in"
         recipient_list = [profile.email]
 
         send_mail(subject, message, from_email, recipient_list, fail_silently=False)
@@ -1563,7 +1563,7 @@ def RejectRequest(request, id):
         partner.save()
         subject = "Your Update Request has been Rejected"
         message = "Your update request has been rejected by the admin."
-        from_email = "amxdrone123@gmail.com"
+        from_email = "aparna@ekfrazo.in"
         recipient_list = [profile.email]
         send_mail(subject, message, from_email, recipient_list, fail_silently=False)
         return HttpResponse({'Status rejected successfully'})
@@ -2731,7 +2731,7 @@ class OrderStatusView(APIView):
                                 [f"{order.drone_id.drone_name} (Item ID: {order.id})" for order in user_order_list])
                             subject = 'Your order has been shipped'
                             message = f'Dear {user.username},\n\nYour order containing the following drones has been shipped: {drone_info}\n\nThank you for shopping with us!'
-                            from_email = 'amxdrone123@gmail.com'
+                            from_email = 'aparna@ekfrazo.in'
                             to_email = user.email
                             send_mail(subject, message, from_email, [to_email])
 
@@ -3645,7 +3645,7 @@ class CompanyAndPartnerDetailsAPIView(APIView):
                     send_mail(
                         'Partner Update Request',
                         strip_tags(email_content),
-                        'amxdrone123@gmail.com',
+                        'aparna@ekfrazo.in',
                         [super_admin_email],
                         fail_silently=False,
                         html_message=email_content,
