@@ -15912,8 +15912,8 @@ class SlotFilterAPIView(APIView):
             except ValueError:
                 return Response({'message': 'Invalid date format. Use DD-MM-YYYY'}, status=400)
         else:
-            start_date = current_date - timedelta(days=9)
-            end_date = current_date
+            start_date = current_date + timedelta(days=0)
+            end_date = current_date + timedelta(days=9)
 
         if role == 'Partner' and user.role_id.role_name == 'Super_admin' and partner_id:
             try:
