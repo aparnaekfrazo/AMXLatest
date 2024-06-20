@@ -16089,19 +16089,49 @@ class GetDroneOrdersGraph(APIView):
                 for date in date_range
             ]
             billing_graph.append({'labels': labels, 'Billing_Invoice_Graph': billing_graph_data})
-
-        # Calculate overall_inventory_count based on the filtered date range
         if role_name == "Super_admin" and partner_ids:
-            overall_inventory_count = DroneOwnership.objects.filter(user_id_in=partner_ids, created_date_time__date__range=(start_time, end_time)).aggregate(Sum('quantity'))['quantity_sum'] or 0
+            overall_inventory_count = DroneOwnership.objects.filter(user_id__in=partner_ids,
+                                                                    created_date_time__date__range=(
+                                                                    start_time, end_time)).aggregate(Sum('quantity'))[
+                                          'quantity__sum'] or 0
+            additems = AddItem.objects.filter(Q(owner_id_id__in=partner_ids if partner_ids else [user_id]) & (
+                        Q(invoice_status__invoice_status_name='Inprogress') | Q(
+                    invoice_status__invoice_status_name='Draft') | Q(
+                    invoice_status__invoice_status_name='Pending'))).count()
+            print('additems-----------1111111111111---->>>>>>>>>>>>>>>>>>>>', additems)
+            total_count = overall_inventory_count + additems
+            print('Total Count-------1111111111111-------------------:', total_count)
         elif role_name == "Super_admin" and not partner_ids:
-            overall_inventory_count = DroneOwnership.objects.filter(created_date_time__date__range=(start_time, end_time)).aggregate(Sum('quantity'))['quantity__sum'] or 0
+            overall_inventory_count = \
+            DroneOwnership.objects.filter(created_date_time__date__range=(start_time, end_time)).aggregate(
+                Sum('quantity'))['quantity__sum'] or 0
+            additems = AddItem.objects.filter(Q(invoice_status__invoice_status_name='Inprogress') | Q(
+                invoice_status__invoice_status_name='Draft') | Q(invoice_status__invoice_status_name='Pending')).count()
+            print('additems----------22222222222222----->>>>>>>>>>>>>>>>>>>>', additems)
+            total_count = overall_inventory_count + additems
+            print('Total Count-----------2222222222---------------:', total_count)
         else:
-            overall_inventory_count = DroneOwnership.objects.filter(user_id=user_id, created_date_time__date__range=(start_time, end_time)).aggregate(Sum('quantity'))['quantity__sum'] or 0
+            overall_inventory_count = DroneOwnership.objects.filter(user_id=user_id, created_date_time__date__range=(
+            start_time, end_time)).aggregate(Sum('quantity'))['quantity__sum'] or 0
+            additems = AddItem.objects.filter(Q(owner_id_id__in=partner_ids if partner_ids else [user_id]) & (
+                        Q(invoice_status__invoice_status_name='Inprogress') | Q(
+                    invoice_status__invoice_status_name='Draft') | Q(
+                    invoice_status__invoice_status_name='Pending'))).count()
+            print('additems-------333333333333-------->>>>>>>>>>>>>>>>>>>>', additems)
+            total_count = overall_inventory_count + additems
+            print('Total Count-----------3333333333333333---------------:', total_count)
+        # Calculate overall_inventory_count based on the filtered date range
+        # if role_name == "Super_admin" and partner_ids:
+        #     overall_inventory_count = DroneOwnership.objects.filter(user_id_in=partner_ids, created_date_time__date__range=(start_time, end_time)).aggregate(Sum('quantity'))['quantity_sum'] or 0
+        # elif role_name == "Super_admin" and not partner_ids:
+        #     overall_inventory_count = DroneOwnership.objects.filter(created_date_time__date__range=(start_time, end_time)).aggregate(Sum('quantity'))['quantity__sum'] or 0
+        # else:
+        #     overall_inventory_count = DroneOwnership.objects.filter(user_id=user_id, created_date_time__date__range=(start_time, end_time)).aggregate(Sum('quantity'))['quantity__sum'] or 0
 
         response_data = {
             'result': {
                 'data': {
-                    'inventory_count': overall_inventory_count,
+                    'inventory_count': total_count,
                     'total_billing': sum(item['count'] for date_data in billing_graph for item in date_data['Billing_Invoice_Graph']),
                     'Purchased_drones_Graph': purchased_drones_graph,
                     'Billing_graph': billing_graph
