@@ -16085,7 +16085,7 @@ class GetDroneOrdersGraph(APIView):
                 model_filters = filters
 
             billing_graph_data = [
-                {'date': date, 'count': AddItem.objects.filter(owner_id_id_in=partner_ids if partner_ids else [user_id], invoice_status__invoice_status_name='completed', created_date_time__date=datetime.strptime(date, '%d-%m-%Y').date()).count()}
+                {'date': date, 'count': AddItem.objects.filter(owner_id_id__in=partner_ids if partner_ids else [user_id], invoice_status__invoice_status_name='completed', created_date_time__date=datetime.strptime(date, '%d-%m-%Y').date()).count()}
                 for date in date_range
             ]
             billing_graph.append({'labels': labels, 'Billing_Invoice_Graph': billing_graph_data})
