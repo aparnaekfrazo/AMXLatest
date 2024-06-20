@@ -16057,20 +16057,20 @@ class GetDroneOrdersGraph(APIView):
                 drone_category = DroneCategory.objects.get(id=model_id)
                 label = drone_category.category_name
                 labels = drone_category.category_name
-                model_filters = filters & Q(drone_id_drone_category_id=model_id)
+                model_filters = filters & Q(drone_id__drone_category__id=model_id)
             else:
                 model_filters = filters
 
             daily_orders_agg = (
                 DroneOwnership.objects
-                .filter(model_filters, created_date_time_date_range=(start_time, end_time))
+                .filter(model_filters, created_date_time__date__range=(start_time, end_time))
                 .annotate(date=TruncDate('created_date_time'))
                 .values('date')
                 .annotate(count=Count('id'))
                 .order_by('date')
             )
             graph_data = [
-                {'date': date, 'count': Order.objects.filter(model_filters, created_date_time_date=datetime.strptime(date, '%d-%m-%Y').date(), order_status_status_name='shipped').aggregate(total_quantity=Sum('quantity'))['total_quantity'] or 0}
+                {'date': date, 'count': Order.objects.filter(model_filters, created_date_time__date=datetime.strptime(date, '%d-%m-%Y').date(), order_status__status_name='shipped').aggregate(total_quantity=Sum('quantity'))['total_quantity'] or 0}
                 for date in date_range
             ]
             purchased_drones_graph.append({'label': label, 'Purchased_drones': graph_data})
@@ -16080,23 +16080,23 @@ class GetDroneOrdersGraph(APIView):
             if model_id:
                 drone_category = DroneCategory.objects.get(id=model_id)
                 labels = drone_category.category_name
-                model_filters = filters & Q(drone_id_drone_category_id=model_id)
+                model_filters = filters & Q(drone_id_d_rone_category__id=model_id)
             else:
                 model_filters = filters
 
             billing_graph_data = [
-                {'date': date, 'count': AddItem.objects.filter(owner_id_id_in=partner_ids if partner_ids else [user_id], invoice_statusinvoice_status_name='completed', created_date_time_date=datetime.strptime(date, '%d-%m-%Y').date()).count()}
+                {'date': date, 'count': AddItem.objects.filter(owner_id_id_in=partner_ids if partner_ids else [user_id], invoice_status__invoice_status_name='completed', created_date_time__date=datetime.strptime(date, '%d-%m-%Y').date()).count()}
                 for date in date_range
             ]
             billing_graph.append({'labels': labels, 'Billing_Invoice_Graph': billing_graph_data})
 
         # Calculate overall_inventory_count based on the filtered date range
         if role_name == "Super_admin" and partner_ids:
-            overall_inventory_count = DroneOwnership.objects.filter(user_id_in=partner_ids, created_date_timedaterange=(start_time, end_time)).aggregate(Sum('quantity'))['quantity_sum'] or 0
+            overall_inventory_count = DroneOwnership.objects.filter(user_id_in=partner_ids, created_date_time__date__range=(start_time, end_time)).aggregate(Sum('quantity'))['quantity_sum'] or 0
         elif role_name == "Super_admin" and not partner_ids:
-            overall_inventory_count = DroneOwnership.objects.filter(created_date_time_daterange=(start_time, end_time)).aggregate(Sum('quantity'))['quantity_sum'] or 0
+            overall_inventory_count = DroneOwnership.objects.filter(created_date_time__date__range=(start_time, end_time)).aggregate(Sum('quantity'))['quantity_sum'] or 0
         else:
-            overall_inventory_count = DroneOwnership.objects.filter(user_id=user_id, created_date_time_daterange=(start_time, end_time)).aggregate(Sum('quantity'))['quantity_sum'] or 0
+            overall_inventory_count = DroneOwnership.objects.filter(user_id=user_id, created_date_time__date__range=(start_time, end_time)).aggregate(Sum('quantity'))['quantity_sum'] or 0
 
         response_data = {
             'result': {
