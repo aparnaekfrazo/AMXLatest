@@ -16094,7 +16094,7 @@ class GetDroneOrdersGraph(APIView):
         if role_name == "Super_admin" and partner_ids:
             overall_inventory_count = DroneOwnership.objects.filter(user_id_in=partner_ids, created_date_time__date__range=(start_time, end_time)).aggregate(Sum('quantity'))['quantity_sum'] or 0
         elif role_name == "Super_admin" and not partner_ids:
-            overall_inventory_count = DroneOwnership.objects.filter(created_date_time__date__range=(start_time, end_time)).aggregate(Sum('quantity'))['quantity_sum'] or 0
+            overall_inventory_count = DroneOwnership.objects.filter(created_date_time__date__range=(start_time, end_time)).aggregate(Sum('quantity'))['quantity__sum'] or 0
         else:
             overall_inventory_count = DroneOwnership.objects.filter(user_id=user_id, created_date_time__date__range=(start_time, end_time)).aggregate(Sum('quantity'))['quantity__sum'] or 0
 
