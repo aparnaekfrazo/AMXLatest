@@ -154,6 +154,7 @@ urlpatterns = [
     path('delete-invoice/<path:invoice_number>/', DeleteInvoice.as_view(), name='delete-invoice'),
     path('drone-orders-graph/', GetDroneOrdersGraph.as_view()),
     path('slot-graph/', SlotFilterAPIView.as_view(), name='slot-filter'),
+    path('drone-orders-graph/', GetDroneOrdersGraph.as_view(), name='drone-filter'),
 
 ]
 
