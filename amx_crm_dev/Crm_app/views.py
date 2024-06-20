@@ -16032,7 +16032,7 @@ class GetDroneOrdersGraph(APIView):
             end_time = datetime.now().date()
             start_time = end_time - timedelta(days=9)
 
-        filters &= Q(created_date_time_dategte=start_time, created_date_timedate_lte=end_time)
+        filters &= Q(created_date_time_date_gte=start_time, created_date_timedate_lte=end_time)
 
         if partner_ids_str:
             partner_ids = [int(partner_id) for partner_id in partner_ids_str.split(',')]  # Split and convert to list of integers
