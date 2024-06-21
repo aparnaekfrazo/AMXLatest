@@ -15964,7 +15964,7 @@ class GetDroneOrdersGraph(APIView):
             end_time = datetime.now().date()
             start_time = end_time - timedelta(days=9)
 
-        filters &= Q(created_date_time_dategte=start_time, created_date_timedate_lte=end_time)
+        filters &= Q(created_date_time__date__gte=start_time, created_date_time__date__lte=end_time)
 
         if partner_ids_str:
             partner_ids = [int(partner_id) for partner_id in partner_ids_str.split(',')]
@@ -15989,7 +15989,7 @@ class GetDroneOrdersGraph(APIView):
                 drone_category = DroneCategory.objects.get(id=model_id)
                 label = drone_category.category_name
                 labels = drone_category.category_name
-                model_filters = filters & Q(drone_id_drone_category_id=model_id)
+                model_filters = filters & Q(drone_id__drone_category__id=model_id)
             else:
                 model_filters = filters
 
@@ -15998,7 +15998,7 @@ class GetDroneOrdersGraph(APIView):
 
             daily_orders_agg = (
                 DroneOwnership.objects
-                .filter(model_filters, created_date_time_date_range=(start_time, end_time))
+                .filter(model_filters, created_date_time__date__range=(start_time, end_time))
                 .annotate(date=TruncDate('created_date_time'))
                 .values('date')
                 .annotate(count=Count('id'))
@@ -16009,7 +16009,7 @@ class GetDroneOrdersGraph(APIView):
 
             graph_data = []
             for date in date_range:
-                order_filter = model_filters & Q(created_date_time_date=datetime.strptime(date, '%d-%m-%Y').date(), order_status_status_name='shipped')
+                order_filter = model_filters & Q(created_date_time__date=datetime.strptime(date, '%d-%m-%Y').date(), order_status__status_name='shipped')
                 count = Order.objects.filter(order_filter).aggregate(total_quantity=Sum('quantity'))['total_quantity'] or 0
                 graph_data.append({'date': date, 'count': count})
 
@@ -16024,32 +16024,32 @@ class GetDroneOrdersGraph(APIView):
             if model_id:
                 drone_category = DroneCategory.objects.get(id=model_id)
                 labels = drone_category.category_name
-                model_filters = filters & Q(drone_id_drone_category_id=model_id)
+                model_filters = filters & Q(drone_id__drone_category__id=model_id)
             else:
                 model_filters = filters
 
             billing_graph_data = [
-                {'date': date, 'count': AddItem.objects.filter(owner_id_id_in=partner_ids if partner_ids else [user_id], invoice_statusinvoice_status_name='completed', created_date_time_date=datetime.strptime(date, '%d-%m-%Y').date()).count()}
+                {'date': date, 'count': AddItem.objects.filter(owner_id__id__in=partner_ids if partner_ids else [user_id], invoice_status__invoice_status_name='completed', created_date_time__date=datetime.strptime(date, '%d-%m-%Y').date()).count()}
                 for date in date_range
             ]
             billing_graph.append({'labels': labels, 'Billing_Invoice_Graph': billing_graph_data})
 
         # Calculate overall_inventory_count based on the filtered date range
         if role_name == "Partner" and partner_ids and user_id:
-            overall_inventory_count = DroneOwnership.objects.filter(user_id_in=partner_ids, created_date_timedaterange=(start_time, end_time)).aggregate(Sum('quantity'))['quantity_sum'] or 0
-            additems = AddItem.objects.filter(Q(owner_id_id_in=partner_ids if partner_ids else [user_id]) & (Q(invoice_statusinvoice_status_name='Inprogress') | Q(invoice_statusinvoice_status_name='Draft') | Q(invoice_status_invoice_status_name='Pending'))).count()
+            overall_inventory_count = DroneOwnership.objects.filter(user_id__in=partner_ids, created_date_time__date__range=(start_time, end_time)).aggregate(Sum('quantity'))['quantity__sum'] or 0
+            additems = AddItem.objects.filter(Q(owner_id__id__in=partner_ids if partner_ids else [user_id]) & (Q(invoice_status__invoice_status_name='Inprogress') | Q(invoice_status__invoice_status_name='Draft') | Q(invoice_status__invoice_status_name='Pending'))).count()
             print('additems-----------1111111111111---->>>>>>>>>>>>>>>>>>>>', additems)
             total_count = overall_inventory_count + additems
             print('Total Count-------1111111111111-------------------:', total_count)
         elif role_name == "Super_admin" and partner_ids:
-            overall_inventory_count = DroneOwnership.objects.filter(user_id_in=partner_ids, created_date_timedaterange=(start_time, end_time)).aggregate(Sum('quantity'))['quantity_sum'] or 0
-            additems = AddItem.objects.filter(Q(owner_id_id_in=partner_ids) & (Q(invoice_statusinvoice_status_name='Inprogress') | Q(invoice_statusinvoice_status_name='Draft') | Q(invoice_status_invoice_status_name='Pending'))).count()
+            overall_inventory_count = DroneOwnership.objects.filter(user_id__in=partner_ids, created_date_time__date__range=(start_time, end_time)).aggregate(Sum('quantity'))['quantity__sum'] or 0
+            additems = AddItem.objects.filter(Q(owner_id__id__in=partner_ids) & (Q(invoice_status__invoice_status_name='Inprogress') | Q(invoice_status__invoice_status_name='Draft') | Q(invoice_status__invoice_status_name='Pending'))).count()
             print('additems----------22222222222222----->>>>>>>>>>>>>>>>>>>>', additems)
             total_count = overall_inventory_count + additems
             print('Total Count-----------2222222222---------------:', total_count)
         else:
-            overall_inventory_count = DroneOwnership.objects.filter(user_id=user_id, created_date_time_daterange=(start_time, end_time)).aggregate(Sum('quantity'))['quantity_sum'] or 0
-            additems = AddItem.objects.filter(Q(owner_id_id_in=partner_ids if partner_ids else [user_id]) & (Q(invoice_statusinvoice_status_name='Inprogress') | Q(invoice_statusinvoice_status_name='Draft') | Q(invoice_status_invoice_status_name='Pending'))).count()
+            overall_inventory_count = DroneOwnership.objects.filter(user_id=user_id, created_date_time__dater__ange=(start_time, end_time)).aggregate(Sum('quantity'))['quantity__sum'] or 0
+            additems = AddItem.objects.filter(Q(owner_id__id__in=partner_ids if partner_ids else [user_id]) & (Q(invoice_status__invoice_status_name='Inprogress') | Q(invoice_status__invoice_status_name='Draft') | Q(invoice_status__invoice_status_name='Pending'))).count()
             print('additems-------333333333333-------->>>>>>>>>>>>>>>>>>>>', additems)
             total_count = overall_inventory_count + additems
             print('Total Count-----------3333333333333333---------------:', total_count)
