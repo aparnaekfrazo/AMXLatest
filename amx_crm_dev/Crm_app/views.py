@@ -645,6 +645,191 @@ class DroneCategoryAPIView(APIView):
             return Response({"message": "Drone category not found"}, status=status.HTTP_404_NOT_FOUND)
 
 
+# @method_decorator([authorization_required], name='dispatch')
+# class DroneAPIView(APIView):
+#     def get(self, request, pk=None):
+#         # Retrieve query parameters
+#         page_number = request.query_params.get('page_number')
+#         data_per_page = request.query_params.get('data_per_page')
+#         search_param = request.query_params.get('search', '')
+#         drone_category_param = request.query_params.get('drone_category', '')
+#         drone_category = drone_category_param.split(',') if drone_category_param else []
+#         sales_status = request.query_params.get('sales_status', '')
+#
+#         if page_number and data_per_page:
+#
+#             # Paginated response
+#             drones = Drone.objects.all()
+#
+#             if search_param:
+#                 drones = drones.filter(
+#                     Q(drone_name__icontains=search_param) |
+#                     Q(drone_category_name__icontains=search_param) |
+#                     Q(market_price__icontains=search_param) |
+#                     Q(our_price__icontains=search_param) |
+#                     Q(drone_specification__icontains=search_param) |
+#                     Q(sales_status__icontains=search_param) |
+#                     Q(created_date_time__icontains=search_param) |
+#                     Q(updated_date_time__icontains=search_param)
+#                 )
+#             if drone_category:
+#                 drone_category_ids = [int(category_id) for category_id in drone_category]
+#                 drones = drones.filter(drone_category__id__in=drone_category_ids).order_by('-id')
+#
+#             if sales_status:
+#                 drones = drones.filter(sales_status=sales_status)
+#
+#             if search_param and drone_category and sales_status:
+#                 drone_category_ids = [int(category_id) for category_id in drone_category]
+#                 drones = drones.filter(
+#                     Q(sales_status=sales_status) &
+#                     Q(drone_name__icontains=search_param) &
+#                     Q(drone_category__id__in=drone_category_ids)
+#                 )
+#
+#             if search_param and drone_category:
+#                 drone_category_ids = [int(category_id) for category_id in drone_category]
+#                 drones = drones.filter(
+#                     Q(drone_name__icontains=search_param) &
+#                     Q(drone_category__id__in=drone_category_ids)
+#                 )
+#
+#             if search_param and sales_status:
+#                 drones = drones.filter(
+#                     Q(sales_status=sales_status) &
+#                     Q(drone_name__icontains=search_param)
+#                 )
+#
+#             if drone_category and sales_status:
+#                 drone_category_ids = [int(category_id) for category_id in drone_category]
+#                 drones = drones.filter(
+#                     Q(sales_status=sales_status) &
+#                     Q(drone_category__id__in=drone_category_ids)
+#                 )
+#
+#             # Use Django Paginator for pagination
+#             paginator = Paginator(drones, data_per_page)
+#             try:
+#                 paginated_drones = paginator.page(page_number)
+#             except PageNotAnInteger:
+#                 paginated_drones = paginator.page(1)
+#             except EmptyPage:
+#                 paginated_drones = paginator.page(paginator.num_pages)
+#
+#             # Serialize the paginated data
+#             serializer = DroneSerializer(paginated_drones, many=True)  # Replace with your serializer
+#             serialized_data = serializer.data
+#             for drone_data in serialized_data:
+#                 drone_data['thumbnail_image'] = drone_data['thumbnail_image'].replace('/media', '')
+#             len_of_data = paginator.count
+#
+#             return Response({
+#                 'result': {
+#                     'status': 'GET ALL with pagination',
+#                     'pagination': {
+#                         'current_page': paginated_drones.number,
+#                         'number_of_pages': paginator.num_pages,
+#                         'next_url': self.get_next_url(request, paginated_drones),
+#                         'previous_url': self.get_previous_url(request, paginated_drones),
+#                         'has_next': paginated_drones.has_next(),
+#                         'has_previous': paginated_drones.has_previous(),
+#                         'has_other_pages': paginated_drones.has_other_pages(),
+#                         'len_of_data': len_of_data,
+#                     },
+#                     'data': serialized_data,
+#                 },
+#             })
+#         else:
+#             # Non-paginated response
+#             try:
+#                 if pk:
+#                     # Get drone by ID
+#                     drone = Drone.objects.get(pk=pk)
+#                     serializer = DroneSerializer(drone)
+#
+#                     # Modify the thumbnail_image field to remove the "/media" prefix
+#                     serialized_data = serializer.data
+#                     serialized_data['thumbnail_image'] = serialized_data['thumbnail_image'].replace('/media', '')
+#
+#                     return Response({
+#                         'result': {
+#                             'status': 'GET by ID',
+#                             'data': [serialized_data],
+#                         },
+#                     })
+#                 else:
+#                     # Get all drones without pagination
+#                     drones = Drone.objects.all()
+#
+#                     if search_param:
+#                         drones = drones.filter(
+#                             Q(drone_name__icontains=search_param) |
+#                             Q(drone_category_name__icontains=search_param) |
+#                             Q(market_price__icontains=search_param) |
+#                             Q(our_price__icontains=search_param) |
+#                             Q(drone_specification__icontains=search_param) |
+#                             Q(sales_status__icontains=search_param) |
+#                             Q(created_date_time__icontains=search_param) |
+#                             Q(updated_date_time__icontains=search_param)
+#                         )
+#
+#                     serialized_drones = DroneSerializer(drones, many=True).data
+#                     for drone_data in serialized_drones:
+#                         drone_data['thumbnail_image'] = drone_data['thumbnail_image'].replace('/media', '')
+#                     len_of_data = len(drones)
+#
+#                     return Response({
+#                         'result': {
+#                             'status': 'GET ALL without pagination',
+#                             'len_of_data': len_of_data,
+#                             'data': serialized_drones,
+#                         },
+#                     })
+#             except ObjectDoesNotExist:
+#                 return Response({"message": "Drone not found"}, status=404)
+#
+#     def get_next_url(self, request, paginated_drones):
+#         if paginated_drones.has_next():
+#             return request.build_absolute_uri(
+#                 f"?page_number={paginated_drones.next_page_number}&data_per_page={paginated_drones.paginator.per_page}")
+#         return None
+#
+#     def get_previous_url(self, request, paginated_drones):
+#         if paginated_drones.has_previous():
+#             return request.build_absolute_uri(
+#                 f"?page_number={paginated_drones.previous_page_number}&data_per_page={paginated_drones.paginator.per_page}")
+#         return None
+#
+#     def paginate_response(self, data, page_number, data_per_page):
+#         if page_number is None and data_per_page is None:
+#             return Response({'result': {'data': data}})
+#         else:
+#             len_of_data = len(data)
+#             # Initialize MyPagination without passing data
+#             data_pagination = MyPagination()
+#             # Use paginate_queryset method to paginate the data
+#             paginated_data = data_pagination.paginate_queryset(data, self.request)
+#             # Convert the paginated data to a list
+#             paginated_data_list = list(paginated_data)
+#             return Response({
+#                 'result': {
+#                     'status': 'GET ALL',
+#                     'pagination': {
+#                         'current_page': data_pagination.page.number,
+#                         'number_of_pages': data_pagination.page.paginator.num_pages,
+#                         'next_url': data_pagination.get_next_link(),
+#                         'previous_url': data_pagination.get_previous_link(),
+#                         'has_next': data_pagination.page.has_next(),
+#                         'has_previous': data_pagination.page.has_previous(),
+#                         'has_other_pages': data_pagination.page.has_other_pages(),
+#                         'len_of_data': len_of_data,
+#                     },
+#                     'data': paginated_data_list,
+#                 },
+#             })
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from rest_framework.exceptions import NotFound
+
 @method_decorator([authorization_required], name='dispatch')
 class DroneAPIView(APIView):
     def get(self, request, pk=None):
@@ -656,58 +841,31 @@ class DroneAPIView(APIView):
         drone_category = drone_category_param.split(',') if drone_category_param else []
         sales_status = request.query_params.get('sales_status', '')
 
+        # Base queryset
+        drones = Drone.objects.all()
+
+        # Apply filters
+        if search_param:
+            drones = drones.filter(
+                Q(drone_name__icontains=search_param) |
+                Q(drone_category__name__icontains=search_param) |  # Assuming drone_category has a 'name' field
+                Q(market_price__icontains=search_param) |
+                Q(our_price__icontains=search_param) |
+                Q(drone_specification__icontains=search_param) |
+                Q(sales_status__icontains=search_param) |
+                Q(created_date_time__icontains=search_param) |
+                Q(updated_date_time__icontains=search_param)
+            )
+
+        if drone_category:
+            drone_category_ids = [int(category_id) for category_id in drone_category]
+            drones = drones.filter(drone_category__id__in=drone_category_ids)
+
+        if sales_status:
+            drones = drones.filter(sales_status=sales_status)
+
+        # Handle pagination
         if page_number and data_per_page:
-
-            # Paginated response
-            drones = Drone.objects.all()
-
-            if search_param:
-                drones = drones.filter(
-                    Q(drone_name__icontains=search_param) |
-                    Q(drone_category_name__icontains=search_param) |
-                    Q(market_price__icontains=search_param) |
-                    Q(our_price__icontains=search_param) |
-                    Q(drone_specification__icontains=search_param) |
-                    Q(sales_status__icontains=search_param) |
-                    Q(created_date_time__icontains=search_param) |
-                    Q(updated_date_time__icontains=search_param)
-                )
-            if drone_category:
-                drone_category_ids = [int(category_id) for category_id in drone_category]
-                drones = drones.filter(drone_category__id__in=drone_category_ids).order_by('-id')
-
-            if sales_status:
-                drones = drones.filter(sales_status=sales_status)
-
-            if search_param and drone_category and sales_status:
-                drone_category_ids = [int(category_id) for category_id in drone_category]
-                drones = drones.filter(
-                    Q(sales_status=sales_status) &
-                    Q(drone_name__icontains=search_param) &
-                    Q(drone_category__id__in=drone_category_ids)
-                )
-
-            if search_param and drone_category:
-                drone_category_ids = [int(category_id) for category_id in drone_category]
-                drones = drones.filter(
-                    Q(drone_name__icontains=search_param) &
-                    Q(drone_category__id__in=drone_category_ids)
-                )
-
-            if search_param and sales_status:
-                drones = drones.filter(
-                    Q(sales_status=sales_status) &
-                    Q(drone_name__icontains=search_param)
-                )
-
-            if drone_category and sales_status:
-                drone_category_ids = [int(category_id) for category_id in drone_category]
-                drones = drones.filter(
-                    Q(sales_status=sales_status) &
-                    Q(drone_category__id__in=drone_category_ids)
-                )
-
-            # Use Django Paginator for pagination
             paginator = Paginator(drones, data_per_page)
             try:
                 paginated_drones = paginator.page(page_number)
@@ -717,10 +875,11 @@ class DroneAPIView(APIView):
                 paginated_drones = paginator.page(paginator.num_pages)
 
             # Serialize the paginated data
-            serializer = DroneSerializer(paginated_drones, many=True)  # Replace with your serializer
+            serializer = DroneSerializer(paginated_drones, many=True)
             serialized_data = serializer.data
             for drone_data in serialized_data:
                 drone_data['thumbnail_image'] = drone_data['thumbnail_image'].replace('/media', '')
+
             len_of_data = paginator.count
 
             return Response({
@@ -739,94 +898,48 @@ class DroneAPIView(APIView):
                     'data': serialized_data,
                 },
             })
-        else:
-            # Non-paginated response
+
+        # Non-paginated response
+        if pk:
             try:
-                if pk:
-                    # Get drone by ID
-                    drone = Drone.objects.get(pk=pk)
-                    serializer = DroneSerializer(drone)
+                drone = Drone.objects.get(pk=pk)
+                serializer = DroneSerializer(drone)
+                serialized_data = serializer.data
+                serialized_data['thumbnail_image'] = serialized_data['thumbnail_image'].replace('/media', '')
 
-                    # Modify the thumbnail_image field to remove the "/media" prefix
-                    serialized_data = serializer.data
-                    serialized_data['thumbnail_image'] = serialized_data['thumbnail_image'].replace('/media', '')
+                return Response({
+                    'result': {
+                        'status': 'GET by ID',
+                        'data': [serialized_data],
+                    },
+                })
+            except Drone.DoesNotExist:
+                raise NotFound("Drone not found")
+        else:
+            serialized_drones = DroneSerializer(drones, many=True).data
+            for drone_data in serialized_drones:
+                drone_data['thumbnail_image'] = drone_data['thumbnail_image'].replace('/media', '')
+            len_of_data = len(drones)
 
-                    return Response({
-                        'result': {
-                            'status': 'GET by ID',
-                            'data': [serialized_data],
-                        },
-                    })
-                else:
-                    # Get all drones without pagination
-                    drones = Drone.objects.all()
-
-                    if search_param:
-                        drones = drones.filter(
-                            Q(drone_name__icontains=search_param) |
-                            Q(drone_category_name__icontains=search_param) |
-                            Q(market_price__icontains=search_param) |
-                            Q(our_price__icontains=search_param) |
-                            Q(drone_specification__icontains=search_param) |
-                            Q(sales_status__icontains=search_param) |
-                            Q(created_date_time__icontains=search_param) |
-                            Q(updated_date_time__icontains=search_param)
-                        )
-
-                    serialized_drones = DroneSerializer(drones, many=True).data
-                    for drone_data in serialized_drones:
-                        drone_data['thumbnail_image'] = drone_data['thumbnail_image'].replace('/media', '')
-                    len_of_data = len(drones)
-
-                    return Response({
-                        'result': {
-                            'status': 'GET ALL without pagination',
-                            'len_of_data': len_of_data,
-                            'data': serialized_drones,
-                        },
-                    })
-            except ObjectDoesNotExist:
-                return Response({"message": "Drone not found"}, status=404)
+            return Response({
+                'result': {
+                    'status': 'GET ALL without pagination',
+                    'len_of_data': len_of_data,
+                    'data': serialized_drones,
+                },
+            })
 
     def get_next_url(self, request, paginated_drones):
         if paginated_drones.has_next():
             return request.build_absolute_uri(
-                f"?page_number={paginated_drones.next_page_number}&data_per_page={paginated_drones.paginator.per_page}")
+                f"?page_number={paginated_drones.next_page_number()}&data_per_page={paginated_drones.paginator.per_page}")
         return None
 
     def get_previous_url(self, request, paginated_drones):
         if paginated_drones.has_previous():
             return request.build_absolute_uri(
-                f"?page_number={paginated_drones.previous_page_number}&data_per_page={paginated_drones.paginator.per_page}")
+                f"?page_number={paginated_drones.previous_page_number()}&data_per_page={paginated_drones.paginator.per_page}")
         return None
-
-    def paginate_response(self, data, page_number, data_per_page):
-        if page_number is None and data_per_page is None:
-            return Response({'result': {'data': data}})
-        else:
-            len_of_data = len(data)
-            # Initialize MyPagination without passing data
-            data_pagination = MyPagination()
-            # Use paginate_queryset method to paginate the data
-            paginated_data = data_pagination.paginate_queryset(data, self.request)
-            # Convert the paginated data to a list
-            paginated_data_list = list(paginated_data)
-            return Response({
-                'result': {
-                    'status': 'GET ALL',
-                    'pagination': {
-                        'current_page': data_pagination.page.number,
-                        'number_of_pages': data_pagination.page.paginator.num_pages,
-                        'next_url': data_pagination.get_next_link(),
-                        'previous_url': data_pagination.get_previous_link(),
-                        'has_next': data_pagination.page.has_next(),
-                        'has_previous': data_pagination.page.has_previous(),
-                        'has_other_pages': data_pagination.page.has_other_pages(),
-                        'len_of_data': len_of_data,
-                    },
-                    'data': paginated_data_list,
-                },
-            })
 
     def post(self, request):
         data = request.data
