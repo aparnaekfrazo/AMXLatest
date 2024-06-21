@@ -16048,7 +16048,7 @@ class GetDroneOrdersGraph(APIView):
             total_count = overall_inventory_count + additems
             print('Total Count-----------2222222222---------------:', total_count)
         else:
-            overall_inventory_count = DroneOwnership.objects.filter(user_id=user_id, created_date_time__dater__ange=(start_time, end_time)).aggregate(Sum('quantity'))['quantity__sum'] or 0
+            overall_inventory_count = DroneOwnership.objects.filter(user_id=user_id, created_date_time__date__range=(start_time, end_time)).aggregate(Sum('quantity'))['quantity__sum'] or 0
             additems = AddItem.objects.filter(Q(owner_id__id__in=partner_ids if partner_ids else [user_id]) & (Q(invoice_status__invoice_status_name='Inprogress') | Q(invoice_status__invoice_status_name='Draft') | Q(invoice_status__invoice_status_name='Pending'))).count()
             print('additems-------333333333333-------->>>>>>>>>>>>>>>>>>>>', additems)
             total_count = overall_inventory_count + additems
