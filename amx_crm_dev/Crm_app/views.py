@@ -140,8 +140,10 @@ class PartnerAPIView(APIView):
 
         if page_number and data_per_page:
             # Paginated response
+            # users = CustomUser.objects.filter(
+            #     Q(role_id__role_name="Partner") | Q(role_id__role_name="Super_admin")).order_by('-id')
             users = CustomUser.objects.filter(
-                Q(role_id__role_name="Partner") | Q(role_id__role_name="Super_admin")).order_by('-id')
+                Q(role_id__role_name="Partner")).order_by('-id')
 
             if search_param:
                 users = users.filter(
@@ -196,8 +198,10 @@ class PartnerAPIView(APIView):
 
                 else:
                     # Get all partners without pagination
+                    # users = CustomUser.objects.filter(
+                    #     Q(role_id__role_name="Partner") | Q(role_id__role_name="Super_admin")).order_by('-id')
                     users = CustomUser.objects.filter(
-                        Q(role_id__role_name="Partner") | Q(role_id__role_name="Super_admin")).order_by('-id')
+                        Q(role_id__role_name="Partner")).order_by('-id')
 
                     if search_param:
                         users = users.filter(
@@ -14024,7 +14028,7 @@ class SlotListStudents(APIView):
         return Response(serializer.data)
 
 
-# @method_decorator([authorization_required], name='dispatch')
+@method_decorator([authorization_required], name='dispatch')
 class SlotDetailsAPIView(APIView):
     def get(self, request, slot_id):
         try:
