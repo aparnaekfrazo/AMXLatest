@@ -859,7 +859,7 @@ class DroneAPIView(APIView):
                 )
             if drone_category:
                 drone_category_ids = [int(category_id) for category_id in drone_category]
-                drones = drones.filter(drone_category_id_in=drone_category_ids).order_by('-id')
+                drones = drones.filter(drone_category__id__in=drone_category_ids).order_by('-id')
 
             if sales_status:
                 drones = drones.filter(sales_status=sales_status)
@@ -869,14 +869,14 @@ class DroneAPIView(APIView):
                 drones = drones.filter(
                     Q(sales_status=sales_status) &
                     Q(drone_name__icontains=search_param) &
-                    Q(drone_category_id_in=drone_category_ids)
+                    Q(drone_category__id__in=drone_category_ids)
                 )
 
             if search_param and drone_category:
                 drone_category_ids = [int(category_id) for category_id in drone_category]
                 drones = drones.filter(
                     Q(drone_name__icontains=search_param) &
-                    Q(drone_category_id_in=drone_category_ids)
+                    Q(drone_category__id__in=drone_category_ids)
                 )
 
             if search_param and sales_status:
@@ -889,7 +889,7 @@ class DroneAPIView(APIView):
                 drone_category_ids = [int(category_id) for category_id in drone_category]
                 drones = drones.filter(
                     Q(sales_status=sales_status) &
-                    Q(drone_category_id_in=drone_category_ids)
+                    Q(drone_category__id__in=drone_category_ids)
                 )
 
             # Use Django Paginator for pagination
