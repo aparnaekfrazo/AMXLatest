@@ -13928,7 +13928,7 @@ class StudentPagination(PageNumberPagination):
     page_size_query_param = 'student_page_size'
     max_page_size = 100
 
-# @method_decorator([authorization_required], name='dispatch')
+@method_decorator([authorization_required], name='dispatch')
 class SlotListStudents(APIView):
     def get(self, request, user_id):
         # Check if the user is a Super_admin
