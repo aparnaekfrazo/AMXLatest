@@ -13919,6 +13919,12 @@ class StudentCreateAPIView(APIView):
         return Response({'message': 'Students deleted successfully'}, status=status.HTTP_200_OK)
 
 
+class StudentPagination(PageNumberPagination):
+    page_size = 2  # Number of students per page
+    page_size_query_param = 'student_page_size'
+    max_page_size = 100
+
+
 @method_decorator([authorization_required], name='dispatch')
 class SlotListStudents(APIView):
     def get(self, request, user_id):
@@ -13936,6 +13942,8 @@ class SlotListStudents(APIView):
         slot_date = request.query_params.get('slot_date')
         batch_name = request.query_params.get('batch_name')
         payment = request.query_params.get('payment')
+        page_no = request.query_params.get('page')
+        page_size = request.query_params.get('page_size')
 
         if slot_date:
             slots = slots.filter(slot_date=slot_date)
@@ -13955,11 +13963,19 @@ class SlotListStudents(APIView):
 
         # Serialize the queryset
         serializer = SlotStudentSerializer(slots_with_students, many=True)
+        for slot in serializer.data:
+            students = slot['student_lists']
+            paginator = Paginator(students, page_size)
+            paginated_students = paginator.get_page(page_no)
+            paginated_students = [i for i in paginated_students]
+            json_data = [dict(ordered_dict) for ordered_dict in paginated_students]
+            final_data = json.dumps(json_data)
+            slot['student_lists'] = json.loads(final_data.replace('\\', ''))
 
         return Response(serializer.data)
 
 
-# @method_decorator([authorization_required], name='dispatch')
+@method_decorator([authorization_required], name='dispatch')
 class SlotDetailsAPIView(APIView):
     def get(self, request, slot_id):
         try:
