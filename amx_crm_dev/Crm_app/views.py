@@ -267,7 +267,8 @@ class PartnerAPIView(APIView):
             serializer.validated_data['created_by'] = super_admin
             username = serializer.validated_data.get("username")
             email = serializer.validated_data.get("email")
-            domain = 'https://amx-crm-dev.thestorywallcafe.com/'
+            # domain = 'https://amx-crm-dev.thestorywallcafe.com/'
+            domain = settings.CRM_PORTAL_DOMAIN
             title = 'AMX CRM Portal'
 
             password = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
@@ -1031,7 +1032,8 @@ class ForgotPasswordAPIView(APIView):
         if user:
             subject = 'Password Reset'
             uid = user.id
-            reset_link = f'https://amx-crm-dev.thestorywallcafe.com/#/reset-password/{uid}/'
+            # reset_link = f'https://amx-crm-dev.thestorywallcafe.com/#/reset-password/{uid}/'
+            reset_link = f'{settings.CRM_PORTAL_DOMAIN}/#/reset-password/{uid}/'  # Changed line
 
             message = f'To reset your password, please click on the following link: {reset_link}\nBest regards,\nAMX-CRM Team'
             sender_email = 'from@example.com'
@@ -1171,7 +1173,8 @@ class CompanydetailsAPIView(APIView):
         return None
 
     def post(self, request, pk):
-        server_address = "https://amx-crm-dev.thestorywallcafe.com/"
+        # server_address = "https://amx-crm-dev.thestorywallcafe.com/"
+        server_address = settings.CRM_PORTAL_DOMAIN  # Changed line
         data = request.data
         media_url = settings.MEDIA_URL
 
@@ -3514,7 +3517,8 @@ class CompanyAndPartnerDetailsAPIView(APIView):
         return None
 
     def put(self, request, pk):
-        server_address = "https://amx-crm-dev.thestorywallcafe.com/"
+        # server_address = "https://amx-crm-dev.thestorywallcafe.com/"
+        server_address = settings.CRM_PORTAL_DOMAIN  # Changed line
         data = request.data
         try:
             partner = CustomUser.objects.get(pk=pk)
@@ -13925,7 +13929,7 @@ class StudentPagination(PageNumberPagination):
     max_page_size = 100
 
 
-@method_decorator([authorization_required], name='dispatch')
+# @method_decorator([authorization_required], name='dispatch')
 class SlotListStudents(APIView):
     def get(self, request, user_id):
         # Check if the user is a Super_admin
@@ -13963,16 +13967,32 @@ class SlotListStudents(APIView):
 
         # Serialize the queryset
         serializer = SlotStudentSerializer(slots_with_students, many=True)
-        for slot in serializer.data:
-            students = slot['student_lists']
+
+        # Prepare paginated response with student count
+        paginated_slots = []
+        for slot_data in serializer.data:
+            students = slot_data['student_lists']
             paginator = Paginator(students, page_size)
             paginated_students = paginator.get_page(page_no)
-            paginated_students = [i for i in paginated_students]
-            json_data = [dict(ordered_dict) for ordered_dict in paginated_students]
-            final_data = json.dumps(json_data)
-            slot['student_lists'] = json.loads(final_data.replace('\\', ''))
 
-        return Response(serializer.data)
+            # Prepare paginated student list
+            paginated_student_list = [student for student in paginated_students]
+
+            # Count of all students
+            total_students_count = len(students)
+
+            # Prepare final data for the slot
+            paginated_slot_data = {
+                'id': slot_data['id'],
+                'slot_date': slot_data['slot_date'],
+                'batch_name': slot_data['batch_name'],
+                'student_lists': paginated_student_list,
+                'total_students_count': total_students_count  # Include total count in response
+            }
+
+            paginated_slots.append(paginated_slot_data)
+
+        return Response(paginated_slots)
 
 
 @method_decorator([authorization_required], name='dispatch')
@@ -14404,7 +14424,8 @@ def generate_payment_links_view(request):
                     student.order_id = order['id']
 
                     # Generate new payment link
-                    payment_link = f' https://amx-crm-dev.thestorywallcafe.com/#/payment-link?order_id={order["id"]}'
+                    # payment_link = f' https://amx-crm-dev.thestorywallcafe.com/#/payment-link?order_id={order["id"]}'
+                    payment_link = f'{settings.CRM_PORTAL_DOMAIN}/#/payment-link?order_id={order["id"]}'  # Changed line
 
                     # Save the new payment link and other details
                     student.payment_url = payment_link
