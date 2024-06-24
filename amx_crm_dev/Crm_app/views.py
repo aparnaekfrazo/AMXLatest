@@ -10508,7 +10508,8 @@ class MyAPIView(APIView):
     def get(self, request, invoice_number=None, *args, **kwargs):
         # Your HTML template path
         html_template_path = '/amx-crm-dev/django/amx_crm_dev/Crm_app/templates/email/pdf.html'
-        base_url = 'https://amx-crm-dev.thestorywallcafe.com'
+        # base_url = 'https://amx-crm-dev.thestorywallcafe.com'
+        base_url = settings.CRM_PORTAL_DOMAIN
         invoice_data = {}
         EwbNo = None  # Initialize EwbNo
         EwbDt = None  # Initialize EwbDt
@@ -10619,7 +10620,8 @@ class MyAPIView(APIView):
                 # Check if owner_company_logo is not None
                 if owner_company_logo:
                     # Base URL
-                    base_url = "https://amx-crm-dev.thestorywallcafe.com"
+                    # base_url = "https://amx-crm-dev.thestorywallcafe.com"
+                    base_url = settings.CRM_PORTAL_DOMAIN
 
                     # Concatenate the base URL with the owner_company_logo path
                     full_url = base_url + owner_company_logo
