@@ -3455,7 +3455,7 @@ class GetCompanyDetailAPI(APIView):
             return Response({"message": f"Error: {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-@method_decorator([authorization_required], name='dispatch')
+# @method_decorator([authorization_required], name='dispatch')
 class CompanyAndPartnerDetailsAPIView(APIView):
     ENDPOINT = "https://api.postalpincode.in/pincode/"
     def get_state_code(self, state_name):
