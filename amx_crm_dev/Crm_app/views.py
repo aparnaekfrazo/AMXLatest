@@ -10490,18 +10490,29 @@ class CompanydetailsSuperAdminAPIView(APIView):
                 partner.billing_state_country = billing_location_details['country']
                 partner.billing_state_code = billing_location_details['state_code']
 
+            # if "company_logo" in request.data:
+            #     company_logo_base64 = request.data["company_logo"]
+            #     converted_company_logo_base64 = convertBase64(company_logo_base64, 'companylogo', partner.username,
+            #                                                   'company_logos')
+            #
+            #     if converted_company_logo_base64:
+            #         converted_company_logo_base64 = converted_company_logo_base64.strip('"')
+            #
+            #         file_path = f"/company_logos/{partner.username}companylogo.png"
+            #         partner.company_logo.save(f"{partner.username}companylogo.png",
+            #                                   ContentFile(converted_company_logo_base64), save=True)
+            #         partner.company_logo.name = file_path
+
             if "company_logo" in request.data:
-                company_logo_base64 = request.data["company_logo"]
-                converted_company_logo_base64 = convertBase64(company_logo_base64, 'companylogo', partner.username,
-                                                              'company_logos')
-
-                if converted_company_logo_base64:
-                    converted_company_logo_base64 = converted_company_logo_base64.strip('"')
-
-                    file_path = f"/company_logos/{partner.username}companylogo.png"
-                    partner.company_logo.save(f"{partner.username}companylogo.png",
-                                              ContentFile(converted_company_logo_base64), save=True)
-                    partner.company_logo.name = file_path
+                try:
+                    company_logo_base64 = request.data["company_logo"]
+                    format, imgstr = company_logo_base64.split(';base64,')
+                    ext = format.split('/')[-1]
+                    company_logo_name = f'companylogo_{uuid.uuid4()}.{ext}'
+                    company_logo_data = ContentFile(base64.b64decode(imgstr), name=company_logo_name)
+                    partner.company_logo.save(company_logo_name, company_logo_data, save=True)
+                except Exception as e:
+                    print(f"Error saving company logo image: {e}")
 
             if signature_data:
                 try:
