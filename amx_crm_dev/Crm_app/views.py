@@ -5351,6 +5351,7 @@ from geopy.geocoders import Nominatim
 
 @method_decorator([authorization_required], name='dispatch')
 class CustomerCreateOrginizationAPIView(APIView):
+    ENDPOINT = "https://api.postalpincode.in/pincode/"
     def get_state_code(self, state_name):
         # Define a dictionary mapping state names to their codes
         state_code_mapping = {
@@ -5396,28 +5397,56 @@ class CustomerCreateOrginizationAPIView(APIView):
         return state_code_mapping.get(state_name, '')
 
     def get_location_details(self, pin_code):
-        geolocator = Nominatim(user_agent="amxcrm")
         try:
-            location = geolocator.geocode(pin_code)
-            if location:
-                raw_data = location.raw
-                display_name = raw_data.get('display_name', '')
-                # Extracting information from display_name
-                parts = display_name.split(', ')
-                state = parts[-2]
-                city = parts[-3]
-                country = parts[-1]
-                # Retrieve state code using the predefined mapping
-                state_code = self.get_state_code(state)
-                return {
-                    'state': state,
-                    'state_code': state_code,
-                    'city': city,
-                    'country': country
-                }
+            # Fetch pincode information from the API
+            response = requests.get(self.ENDPOINT + pin_code)
+            pincode_information = response.json()
+
+            # Extract necessary information
+            necessary_information = pincode_information[0]['PostOffice'][0]
+
+            city = necessary_information.get('Block', '')  # Assuming 'Block' as city
+            state = necessary_information.get('State', '')
+            country = necessary_information.get('Country', 'India')  # Default to India
+
+            # Retrieve state code using the predefined mapping
+            state_code = self.get_state_code(state)
+
+            return {
+                'state': state,
+                'state_code': state_code,
+                'city': city,
+                'country': country
+            }
+
         except Exception as e:
-            print("Error occurred while geocoding:", e)
+            print("Error occurred while fetching location details:", e)
+
         return None
+
+    # def get_location_details(self, pin_code):
+    #     geolocator = Nominatim(user_agent="amxcrm")
+    #     try:
+    #         location = geolocator.geocode(pin_code)
+    #         if location:
+    #             raw_data = location.raw
+    #             display_name = raw_data.get('display_name', '')
+    #             # Extracting information from display_name
+    #             parts = display_name.split(', ')
+    #             state = parts[-2]
+    #             city = parts[-3]
+    #             country = parts[-1]
+    #             # Retrieve state code using the predefined mapping
+    #             state_code = self.get_state_code(state)
+    #             return {
+    #                 'state': state,
+    #                 'state_code': state_code,
+    #                 'city': city,
+    #                 'country': country
+    #             }
+    #     except Exception as e:
+    #         print("Error occurred while geocoding:", e)
+    #     return None
 
     def post(self, request, *args, **kwargs):
         data = request.data
