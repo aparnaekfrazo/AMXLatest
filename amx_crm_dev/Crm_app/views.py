@@ -3549,7 +3549,7 @@ class CompanyAndPartnerDetailsAPIView(APIView):
                     requested_changes = {}
 
                     fields_to_check = ["company_name", "company_email", "shipping_address", "billing_address",
-                                       "profile_pic"
+                                       "profile_pic",
                                        "company_phn_number", "company_gst_num", "company_cin_num", "pan_number",
                                        "email_altr", "address", "pin_code",
                                        "reason", "shipping_pincode", "billing_pincode"]
