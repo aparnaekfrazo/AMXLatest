@@ -1104,6 +1104,7 @@ logger = setup_logger()
 
 @method_decorator([authorization_required], name='dispatch')
 class CompanydetailsAPIView(APIView):
+    ENDPOINT = "https://api.postalpincode.in/pincode/"
     def get_state_code(self, state_name):
         # Define a dictionary mapping state names to their codes
         state_code_mapping = {
@@ -1149,31 +1150,35 @@ class CompanydetailsAPIView(APIView):
         return state_code_mapping.get(state_name, '')
 
     def get_location_details(self, pin_code):
-        geolocator = Nominatim(user_agent="amxcrm")
         try:
-            location = geolocator.geocode(pin_code)
-            if location:
-                raw_data = location.raw
-                display_name = raw_data.get('display_name', '')
-                # Extracting information from display_name
-                parts = display_name.split(', ')
-                state = parts[-2]
-                city = parts[-3]
-                country = parts[-1]
-                # Retrieve state code using the predefined mapping
-                state_code = self.get_state_code(state)
-                return {
-                    'state': state,
-                    'state_code': state_code,
-                    'city': city,
-                    'country': country
-                }
+            # Fetch pincode information from the API
+            response = requests.get(self.ENDPOINT + pin_code)
+            pincode_information = response.json()
+
+            # Extract necessary information
+            necessary_information = pincode_information[0]['PostOffice'][0]
+
+            city = necessary_information.get('Block', '')  # Assuming 'Block' as city
+            state = necessary_information.get('State', '')
+            country = necessary_information.get('Country', 'India')  # Default to India
+
+            # Retrieve state code using the predefined mapping
+            state_code = self.get_state_code(state)
+
+            return {
+                'state': state,
+                'state_code': state_code,
+                'city': city,
+                'country': country
+            }
+
         except Exception as e:
-            print("Error occurred while geocoding:", e)
+            print("Error occurred while fetching location details:", e)
+
         return None
 
     def post(self, request, pk):
-        # server_address = "https://amx-crm-dev.thestorywallcafe.com/"
+        # server_address = "http://127.0.0.1:8000/"
         server_address = settings.CRM_PORTAL_DOMAIN  # Changed line
         data = request.data
         media_url = settings.MEDIA_URL
@@ -1368,7 +1373,7 @@ class CompanydetailsAPIView(APIView):
         except CustomUser.DoesNotExist:
             return Response({"message": "Partner not found"}, status=status.HTTP_404_NOT_FOUND)
 
-
+ENDPOINT = "https://api.postalpincode.in/pincode/"
 def get_state_code(state_name):
     # Define a dictionary mapping state names to their codes
     state_code_mapping = {
@@ -1415,25 +1420,31 @@ def get_state_code(state_name):
 
 
 def get_location_details(pin_code):
-    geolocator = Nominatim(user_agent="amxcrm")
     try:
-        location = geolocator.geocode(pin_code)
-        if location:
-            raw_data = location.raw
-            display_name = raw_data.get('display_name', '')
-            parts = display_name.split(', ')
-            state = parts[-2]
-            city = parts[-3]
-            country = parts[-1]
-            state_code = get_state_code(state)
-            return {
-                'state': state,
-                'state_code': state_code,
-                'city': city,
-                'country': country
-            }
+        # Fetch pincode information from the API
+        response = requests.get(ENDPOINT + pin_code)
+        pincode_information = response.json()
+
+        # Extract necessary information
+        necessary_information = pincode_information[0]['PostOffice'][0]
+
+        city = necessary_information.get('Block', '')  # Assuming 'Block' as city
+        state = necessary_information.get('State', '')
+        country = necessary_information.get('Country', 'India')  # Default to India
+
+        # Retrieve state code using the predefined mapping
+        state_code = get_state_code(state)
+
+        return {
+            'state': state,
+            'state_code': state_code,
+            'city': city,
+            'country': country
+        }
+
     except Exception as e:
-        print("Error occurred while geocoding:", e)
+        print("Error occurred while fetching location details:", e)
+
     return None
 
 
@@ -3446,6 +3457,7 @@ class GetCompanyDetailAPI(APIView):
 
 @method_decorator([authorization_required], name='dispatch')
 class CompanyAndPartnerDetailsAPIView(APIView):
+    ENDPOINT = "https://api.postalpincode.in/pincode/"
     def get_state_code(self, state_name):
         # Define a dictionary mapping state names to their codes
         state_code_mapping = {
@@ -3491,28 +3503,30 @@ class CompanyAndPartnerDetailsAPIView(APIView):
         return state_code_mapping.get(state_name, '')
 
     def get_location_details(self, pin_code):
-        geolocator = Nominatim(user_agent="amxcrm")
-        location = geolocator.geocode(pin_code)
+        try:
+            # Fetch pincode information from the API
+            response = requests.get(self.ENDPOINT + pin_code)
+            pincode_information = response.json()
 
-        if location:
-            raw_data = location.raw
+            # Extract necessary information
+            necessary_information = pincode_information[0]['PostOffice'][0]
 
-            display_name = raw_data.get('display_name', '')
-
-            # Extracting information from display_name
-            parts = display_name.split(', ')
-            state = parts[-2]
-            city = parts[-3]
-            country = parts[-1]
+            city = necessary_information.get('Block', '')  # Assuming 'Block' as city
+            state = necessary_information.get('State', '')
+            country = necessary_information.get('Country', 'India')  # Default to India
 
             # Retrieve state code using the predefined mapping
             state_code = self.get_state_code(state)
+
             return {
                 'state': state,
                 'state_code': state_code,
                 'city': city,
                 'country': country
             }
+
+        except Exception as e:
+            print("Error occurred while fetching location details:", e)
 
         return None
 
@@ -5653,6 +5667,7 @@ class CustomerCreateOrginizationAPIView(APIView):
 
 @method_decorator([authorization_required], name='dispatch')
 class CustomerCreateIndividualAPIView(APIView):
+    ENDPOINT = "https://api.postalpincode.in/pincode/"
 
     def get_state_code(self, state_name):
         # Define a dictionary mapping state names to their codes
@@ -5699,27 +5714,31 @@ class CustomerCreateIndividualAPIView(APIView):
         return state_code_mapping.get(state_name, '')
 
     def get_location_details(self, pin_code):
-        geolocator = Nominatim(user_agent="amxcrm")
         try:
-            location = geolocator.geocode(pin_code)
-            if location:
-                raw_data = location.raw
-                display_name = raw_data.get('display_name', '')
-                # Extracting information from display_name
-                parts = display_name.split(', ')
-                state = parts[-2]
-                city = parts[-3]
-                country = parts[-1]
-                # Retrieve state code using the predefined mapping
-                state_code = self.get_state_code(state)
-                return {
-                    'state': state,
-                    'state_code': state_code,
-                    'city': city,
-                    'country': country
-                }
+            # Fetch pincode information from the API
+            response = requests.get(self.ENDPOINT + pin_code)
+            pincode_information = response.json()
+
+            # Extract necessary information
+            necessary_information = pincode_information[0]['PostOffice'][0]
+
+            city = necessary_information.get('Block', '')  # Assuming 'Block' as city
+            state = necessary_information.get('State', '')
+            country = necessary_information.get('Country', 'India')  # Default to India
+
+            # Retrieve state code using the predefined mapping
+            state_code = self.get_state_code(state)
+
+            return {
+                'state': state,
+                'state_code': state_code,
+                'city': city,
+                'country': country
+            }
+
         except Exception as e:
-            print("Error occurred while geocoding:", e)
+            print("Error occurred while fetching location details:", e)
+
         return None
 
     def post(self, request, *args, **kwargs):
@@ -10350,6 +10369,7 @@ import base64
 
 @method_decorator([authorization_required], name='dispatch')
 class CompanydetailsSuperAdminAPIView(APIView):
+    ENDPOINT = "https://api.postalpincode.in/pincode/"
     def get_state_code(self, state_name):
         # Define a dictionary mapping state names to their codes
         state_code_mapping = {
@@ -10395,18 +10415,17 @@ class CompanydetailsSuperAdminAPIView(APIView):
         return state_code_mapping.get(state_name, '')
 
     def get_location_details(self, pin_code):
-        geolocator = Nominatim(user_agent="amxcrm")
-        location = geolocator.geocode(pin_code)
+        try:
+            # Fetch pincode information from the API
+            response = requests.get(self.ENDPOINT + pin_code)
+            pincode_information = response.json()
 
-        if location:
-            raw_data = location.raw
+            # Extract necessary information
+            necessary_information = pincode_information[0]['PostOffice'][0]
 
-            display_name = raw_data.get('display_name', '')
-            # Extracting information from display_name
-            parts = display_name.split(', ')
-            state = parts[-2]
-            city = parts[-3]
-            country = parts[-1]
+            city = necessary_information.get('Block', '')  # Assuming 'Block' as city
+            state = necessary_information.get('State', '')
+            country = necessary_information.get('Country', 'India')  # Default to India
 
             # Retrieve state code using the predefined mapping
             state_code = self.get_state_code(state)
@@ -10417,6 +10436,9 @@ class CompanydetailsSuperAdminAPIView(APIView):
                 'city': city,
                 'country': country
             }
+
+        except Exception as e:
+            print("Error occurred while fetching location details:", e)
 
         return None
 
