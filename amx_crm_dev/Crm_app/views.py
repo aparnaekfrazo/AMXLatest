@@ -15391,13 +15391,21 @@ class getcalendarAPI(APIView):
 
                 else:
                     # Filter slots based on user_id and get the count per date
+                    # slots_count_per_date = Slot.objects.filter(user_id=user_id).values('slot_date').annotate(
+                    #     total=Count('id'))
+                    #
+                    # # Filter slots where title is greater than 1
+                    # response_data = [
+                    #     {'title': str(slot_count['total']), 'date': slot_count['slot_date'].strftime("%Y-%m-%d")} for
+                    #     slot_count in slots_count_per_date if slot_count['total'] > 1]
+                    # return JsonResponse(response_data, safe=False)
                     slots_count_per_date = Slot.objects.filter(user_id=user_id).values('slot_date').annotate(
                         total=Count('id'))
 
-                    # Filter slots where title is greater than 1
+                    # Create the response_data list using list comprehension
                     response_data = [
-                        {'title': str(slot_count['total']), 'date': slot_count['slot_date'].strftime("%Y-%m-%d")} for
-                        slot_count in slots_count_per_date if slot_count['total'] > 1]
+                        {'title': str(slot_count['total']), 'date': slot_count['slot_date'].strftime("%Y-%m-%d")}
+                        for slot_count in slots_count_per_date]
                     return JsonResponse(response_data, safe=False)
             else:
                 # User does not have the role 'Partner', return slots with limited details
