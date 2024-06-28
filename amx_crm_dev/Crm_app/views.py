@@ -15361,7 +15361,6 @@ class getcalendarAPI(APIView):
             # Fetch the user's role ID based on the user ID
             try:
                 role_id = CustomUser.objects.get(id=user_id).role_id_id
-                print('role_id--------------,,,,.,.', role_id)
             except CustomUser.DoesNotExist:
                 return JsonResponse({'error': 'User not found'}, status=404)
 
@@ -15377,7 +15376,16 @@ class getcalendarAPI(APIView):
                         # Prepare the response data with full details
                         slot_values = slots.values('id', 'batch_name', 'batch_size', 'batch_type_id',
                                                    'batch_type__name', 'slot_date', 'user_id')
-                        return JsonResponse(list(slot_values), safe=False)
+
+                        # Add 'pay' key to each slot
+                        slot_values_with_pay = []
+                        for slot in slot_values:
+                            students = Student.objects.filter(slot_id=slot['id'])
+                            pay_status = students.filter(stupayment_status='Success').exists()
+                            slot_with_pay = dict(slot, pay=pay_status)
+                            slot_values_with_pay.append(slot_with_pay)
+
+                        return JsonResponse(slot_values_with_pay, safe=False)
                     else:
                         return JsonResponse({'error': 'No data found for the given date and user ID'}, status=404)
 
@@ -15390,7 +15398,6 @@ class getcalendarAPI(APIView):
                     response_data = [
                         {'title': str(slot_count['total']), 'date': slot_count['slot_date'].strftime("%Y-%m-%d")} for
                         slot_count in slots_count_per_date if slot_count['total'] > 1]
-                    print('response_data--------------->>>>>>>>>>>>', response_data)
                     return JsonResponse(response_data, safe=False)
             else:
                 # User does not have the role 'Partner', return slots with limited details
@@ -15407,7 +15414,7 @@ class getcalendarAPI(APIView):
 
                     return JsonResponse(response_data, safe=False)
                 if date_param:
-                    # Filter slots based on date and user_id
+                    # Filter slots based on date
                     slots = Slot.objects.filter(slot_date=date_param)
 
                     # Check if any slots are found
@@ -15415,14 +15422,94 @@ class getcalendarAPI(APIView):
                         # Prepare the response data with full details
                         slot_values = slots.values('id', 'batch_name', 'batch_size', 'batch_type_id',
                                                    'batch_type__name', 'slot_date', 'user_id')
-                        return JsonResponse(list(slot_values), safe=False)
-                else:
-                    slots_count_per_date = Slot.objects.filter(user_id=user_id).values('slot_date').annotate(
-                        total=Count('id'))
-                    return JsonResponse(list(slot_values), safe=False)
+
+                        # Add 'pay' key to each slot
+                        slot_values_with_pay = []
+                        for slot in slot_values:
+                            students = Student.objects.filter(slot_id=slot['id'])
+                            pay_status = students.filter(stupayment_status='Success').exists()
+                            slot_with_pay = dict(slot, pay=pay_status)
+                            slot_values_with_pay.append(slot_with_pay)
+
+                        return JsonResponse(slot_values_with_pay, safe=False)
+                    else:
+                        return JsonResponse({'error': 'No data found for the given date'}, status=404)
 
         else:
             return JsonResponse({'error': 'User ID parameter is required'}, status=400)
+# class getcalendarAPI(APIView):
+#     def get(self, request):
+#         # Get the user_id and date from query parameters
+#         user_id = request.query_params.get('user_id')
+#         date_param = request.query_params.get('date')
+#
+#         # Check if user_id is provided
+#         if user_id:
+#             # Fetch the user's role ID based on the user ID
+#             try:
+#                 role_id = CustomUser.objects.get(id=user_id).role_id_id
+#                 print('role_id--------------,,,,.,.', role_id)
+#             except CustomUser.DoesNotExist:
+#                 return JsonResponse({'error': 'User not found'}, status=404)
+#
+#             # Check if the user has the role 'Partner'
+#             if role_id and Role.objects.filter(id=role_id, role_name='Partner').exists():
+#                 # Check if date is also provided
+#                 if date_param:
+#                     # Filter slots based on date and user_id
+#                     slots = Slot.objects.filter(slot_date=date_param, user_id=user_id)
+#
+#                     # Check if any slots are found
+#                     if slots.exists():
+#                         # Prepare the response data with full details
+#                         slot_values = slots.values('id', 'batch_name', 'batch_size', 'batch_type_id',
+#                                                    'batch_type__name', 'slot_date', 'user_id')
+#                         return JsonResponse(list(slot_values), safe=False)
+#                     else:
+#                         return JsonResponse({'error': 'No data found for the given date and user ID'}, status=404)
+#
+#                 else:
+#                     # Filter slots based on user_id and get the count per date
+#                     slots_count_per_date = Slot.objects.filter(user_id=user_id).values('slot_date').annotate(
+#                         total=Count('id'))
+#
+#                     # Filter slots where title is greater than 1
+#                     response_data = [
+#                         {'title': str(slot_count['total']), 'date': slot_count['slot_date'].strftime("%Y-%m-%d")} for
+#                         slot_count in slots_count_per_date if slot_count['total'] > 1]
+#                     print('response_data--------------->>>>>>>>>>>>', response_data)
+#                     return JsonResponse(response_data, safe=False)
+#             else:
+#                 # User does not have the role 'Partner', return slots with limited details
+#                 if not date_param:
+#                     slots = Slot.objects.all()
+#
+#                     # Calculate the total count per date
+#                     slots_count_per_date = Slot.objects.all().values('slot_date').annotate(total=models.Count('id'))
+#
+#                     # Create the response_data list using list comprehension
+#                     response_data = [
+#                         {'title': str(slot_count['total']), 'date': slot_count['slot_date'].strftime("%Y-%m-%d")}
+#                         for slot_count in slots_count_per_date]
+#
+#                     return JsonResponse(response_data, safe=False)
+#                 if date_param:
+#                     # Filter slots based on date and user_id
+#                     slots = Slot.objects.filter(slot_date=date_param)
+#
+#                     # Check if any slots are found
+#                     if slots.exists():
+#                         # Prepare the response data with full details
+#                         slot_values = slots.values('id', 'batch_name', 'batch_size', 'batch_type_id',
+#                                                    'batch_type__name', 'slot_date', 'user_id')
+#                         return JsonResponse(list(slot_values), safe=False)
+#                 else:
+#                     slots_count_per_date = Slot.objects.filter(user_id=user_id).values('slot_date').annotate(
+#                         total=Count('id'))
+#                     return JsonResponse(list(slot_values), safe=False)
+#
+#         else:
+#             return JsonResponse({'error': 'User ID parameter is required'}, status=400)
 
 
 @method_decorator([authorization_required], name='dispatch')
