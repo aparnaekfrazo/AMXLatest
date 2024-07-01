@@ -16293,7 +16293,8 @@ class GetDroneOrdersGraph(APIView):
         else:
             owners = [user_id]
 
-        add_items = AddItem.objects.filter(invoice_status=completed_status)
+        add_items = AddItem.objects.filter(invoice_status=completed_status, created_date_time__date__gte=start_time,
+                                           created_date_time__date__lte=end_time)
         if owners is not None:
             add_items = add_items.filter(owner_id__in=owners)
 
@@ -16334,6 +16335,7 @@ class GetDroneOrdersGraph(APIView):
         ownership_filters = Q(drone_id__drone_category__id__in=drone_model_ids) if drone_model_ids else Q()
         if owners is not None:
             ownership_filters &= Q(user_id__in=owners)
+        ownership_filters &= Q(created_date_time__date__gte=start_time, created_date_time__date__lte=end_time)
 
         overall_inventory_count = DroneOwnership.objects.filter(ownership_filters).aggregate(Sum('quantity'))[
                                       'quantity__sum'] or 0
@@ -16344,6 +16346,7 @@ class GetDroneOrdersGraph(APIView):
             additems_filters &= Q(dronedetails__drone_category__id__in=drone_model_ids)
         if owners is not None:
             additems_filters &= Q(owner_id__in=owners)
+        additems_filters &= Q(created_date_time__date__gte=start_time, created_date_time__date__lte=end_time)
 
         additems_count = AddItem.objects.filter(additems_filters).count()
 
