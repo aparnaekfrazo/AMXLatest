@@ -115,20 +115,33 @@ class RoleAPIView(APIView):
             return Response({"message": "Role not found"}, status=status.HTTP_404_NOT_FOUND)
 
 
+# def convertBase64(image, image_name, username, folder_name):
+#     if image is None:
+#         return None
+#
+#     split_base_url_data = image.split(';base64,')[1]
+#     imgdata1 = base64.b64decode(split_base_url_data)
+#     filename1 = "/amx-crm-dev/site/public/media/" + str(folder_name) + "/" + str(username) + image_name + '.png'
+#     fname1 = '/' + str(folder_name) + '/' + str(username) + image_name + '.png'
+#     ss = open(filename1, 'wb')
+#     ss.write(imgdata1)
+#     ss.close()
+#
+#     return fname1
+
 def convertBase64(image, image_name, username, folder_name):
     if image is None:
         return None
 
     split_base_url_data = image.split(';base64,')[1]
     imgdata1 = base64.b64decode(split_base_url_data)
-    filename1 = "/amx-crm-dev/site/public/media/" + str(folder_name) + "/" + str(username) + image_name + '.png'
+    base_directory = settings.modamx  # Get the base directory from settings
+    filename1 = base_directory + "site/public/media/" + str(folder_name) + "/" + str(username) + image_name + '.png'
     fname1 = '/' + str(folder_name) + '/' + str(username) + image_name + '.png'
-    ss = open(filename1, 'wb')
-    ss.write(imgdata1)
-    ss.close()
+    with open(filename1, 'wb') as ss:
+        ss.write(imgdata1)
 
     return fname1
-
 
 @method_decorator([authorization_required], name='dispatch')
 class PartnerAPIView(APIView):
@@ -916,7 +929,32 @@ class DroneAPIView(APIView):
 
         return Response({"message": "Drone updated successfully!"}, status=status.HTTP_200_OK)
 
+    # def save_image(self, drone, image_data, folder_name, image_name):
+    #     if image_data.startswith(('http:', 'https:')):
+    #         image_response = requests.get(image_data)
+    #         if image_response.status_code == 200:
+    #             content_type = image_response.headers['content-type']
+    #             extension = content_type.split('/')[-1]
+    #             image_filename = f"{image_name}.{extension}"
+    #             image_path = os.path.join(folder_name, image_filename)
+    #             save_path = os.path.join("amx-crm-dev/site/public/media", image_path)
+    #             with open(save_path, 'wb') as f:
+    #                 f.write(image_response.content)
+    #         else:
+    #             raise ValueError(f"Failed to fetch {folder_name} image from the provided URL.")
+    #     else:  # Assume it's base64-encoded data
+    #         image_filename = f"{image_name}.png"
+    #         image_path = os.path.join(folder_name, image_filename)
+    #         save_path = os.path.join("amx-crm-dev/site/public/media", image_path)
+    #         image_data = base64.b64decode(image_data.split(';base64,')[1])
+    #         with open(save_path, 'wb') as f:
+    #             f.write(image_data)
+    #
+    #     return f'/{image_path}'
+
     def save_image(self, drone, image_data, folder_name, image_name):
+        base_directory = settings.modamx  # Get the base directory from settings
+
         if image_data.startswith(('http:', 'https:')):
             image_response = requests.get(image_data)
             if image_response.status_code == 200:
@@ -924,7 +962,7 @@ class DroneAPIView(APIView):
                 extension = content_type.split('/')[-1]
                 image_filename = f"{image_name}.{extension}"
                 image_path = os.path.join(folder_name, image_filename)
-                save_path = os.path.join("amx-crm-dev/site/public/media", image_path)
+                save_path = os.path.join(base_directory, "site/public/media", image_path)
                 with open(save_path, 'wb') as f:
                     f.write(image_response.content)
             else:
@@ -932,7 +970,7 @@ class DroneAPIView(APIView):
         else:  # Assume it's base64-encoded data
             image_filename = f"{image_name}.png"
             image_path = os.path.join(folder_name, image_filename)
-            save_path = os.path.join("amx-crm-dev/site/public/media", image_path)
+            save_path = os.path.join(base_directory, "site/public/media", image_path)
             image_data = base64.b64decode(image_data.split(';base64,')[1])
             with open(save_path, 'wb') as f:
                 f.write(image_data)
@@ -10545,6 +10583,7 @@ from weasyprint import HTML
 
 class MyAPIView(APIView):
     def generate_qr_code(self, data):
+        base_directory = settings.modamx
         qr = qrcode.QRCode(
             version=1,
             error_correction=qrcode.constants.ERROR_CORRECT_L,
@@ -10557,7 +10596,9 @@ class MyAPIView(APIView):
         img = qr.make_image(fill_color="black", back_color="white")
 
         # Define the directory to save the QR code image
-        save_dir = '/amx-crm-dev/site/public/media/qrcode'
+        # save_dir = '/amx-crm-dev/site/public/media/qrcode'
+        save_dir = base_directory + "site/public/media/qrcode"
+
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
@@ -10566,14 +10607,19 @@ class MyAPIView(APIView):
         img.save(qr_code_path)
 
         # Adjust the path to start from '/media/qrcode'
-        relative_path = os.path.relpath(qr_code_path, '/amx-crm-dev/site/public/media')
+        # relative_path = os.path.relpath(qr_code_path, '/amx-crm-dev/site/public/media')
+        relative_path = os.path.relpath(qr_code_path, base_directory + "site/public/media")
+
         qr_code_url = '/media/' + relative_path
 
         return qr_code_url
 
     def get(self, request, invoice_number=None, *args, **kwargs):
+        base_directory = settings.modamx
+
         # Your HTML template path
-        html_template_path = '/amx-crm-dev/django/amx_crm_dev/Crm_app/templates/email/pdf.html'
+        html_template_path = base_directory + 'django/amx_crm_dev/Crm_app/templates/email/pdf.html'
+        # html_template_path = '/amx-crm-dev/django/amx_crm_dev/Crm_app/templates/email/pdf.html'
         # base_url = 'https://amx-crm-dev.thestorywallcafe.com'
         base_url = settings.CRM_PORTAL_DOMAIN
         invoice_data = {}
