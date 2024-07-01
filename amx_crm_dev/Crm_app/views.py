@@ -16216,264 +16216,147 @@ class DeleteInvoice(APIView):
 from datetime import datetime
 from django.utils.dateparse import parse_date
 
+from django.db.models.functions import TruncDate
+from django.db.models import Count, Sum
+import datetime
+from datetime import datetime
+from django.utils.dateparse import parse_date
+
 
 @method_decorator([authorization_required], name='dispatch')
 class GetDroneOrdersGraph(APIView):
     def get(self, request):
-        user_id = request.query_params.get('user_id')
-        role_name = request.query_params.get('role_name')
-        drone_model = request.query_params.get('drone_model')
-        start_time_str = request.query_params.get('start_time')
-        end_time_str = request.query_params.get('end_time')
+        query_params = request.query_params
+        filters = Q()
 
-        if user_id and role_name and start_time_str and end_time_str and drone_model:
+        user_id = query_params.get('user_id')
+        role_name = query_params.get('role_name')
+        drone_model_str = query_params.get('drone_model')
+        start_time_str = query_params.get('start_time')
+        end_time_str = query_params.get('end_time')
+        partner_id = query_params.get('partner_id')
 
-            try:
-                user = CustomUser.objects.get(id=user_id)
-            except CustomUser.DoesNotExist:
-                return Response({'error': 'User not found'}, status=404)
-
-            drone_model_ids = [int(model_id) for model_id in drone_model.split(',')]
-
-            # Parse the start and end dates manually
-            try:
-                start_time = datetime.strptime(start_time_str, '%d-%m-%Y').date()
-                end_time = datetime.strptime(end_time_str, '%d-%m-%Y').date()
-                # Make the dates timezone-aware
-                start_time = timezone.make_aware(datetime.combine(start_time, datetime.min.time()))
-                end_time = timezone.make_aware(datetime.combine(end_time, datetime.min.time()))
-            except ValueError:
-                return Response({'error': 'Invalid date format'}, status=400)
-
-            if user.role_id.role_name == 'Partner':
-                queryset = Order.objects.filter(
-                    user_id=user_id,
-                    order_status__status_name='Shipped',
-                    drone_id_drone_categoryid_in=drone_model_ids,
-                    created_date_time__range=[start_time, end_time]
-                ).order_by('id')
-            else:
-                queryset = Order.objects.filter(
-                    order_status__status_name='Shipped',
-                    drone_id_drone_categoryid_in=drone_model_ids,
-                    created_date_time__range=[start_time, end_time]
-                ).order_by('id')
-
-            data = queryset.values(
-                'drone_id_drone_category_category_name',
-                'drone_id_drone_category_id',
-                'created_date_time__date'
-            ).annotate(count=Count('id'))
-
-            inventory_count = queryset.aggregate(Sum('quantity'))['quantity__sum'] or 0
-            total_billing = queryset.aggregate(Sum('amount'))['amount__sum'] or 0
-
-            result = {
-                'result': {
-                    'data': {
-                        'inventory_count': inventory_count,
-                        'total_billing': total_billing,
-                        'Purchased_drones_Graph': [],
-                    }
-                }
-            }
-
-            counts_by_model = {
-                drone_model_id: {start_time + timedelta(days=i): 0 for i in range((end_time - start_time).days + 1)} for
-                drone_model_id in drone_model_ids}
-
-            for entry in data:
-                model_id = entry['drone_id_drone_category_id']
-                date = entry['created_date_time__date']
-                if model_id in counts_by_model:
-                    if date in counts_by_model[model_id]:
-                        counts_by_model[model_id][date] += entry['count']
-
-            for drone_model_id in drone_model_ids:
-                purchased_drones_entry = {
-                    'label': DroneCategory.objects.get(
-                        id=drone_model_id).category_name if drone_model_id else 'Unknown',
-                    'Purchased_drones': [],
-                    'drone_model': None,
-                    'drone_model_id': None,
-                }
-
-                model_data = next((item for item in data if item['drone_id_drone_category_id'] == drone_model_id), None)
-
-                if model_data:
-                    drone_model_name = model_data['drone_id_drone_category_category_name']
-                    purchased_drones_entry['drone_model'] = drone_model_name
-                    purchased_drones_entry['drone_model_id'] = drone_model_id
-                else:
-                    default_model = DroneCategory.objects.filter(id=drone_model_id).first()
-                    if default_model:
-                        purchased_drones_entry['drone_model'] = default_model.category_name
-                        purchased_drones_entry['drone_model_id'] = drone_model_id
-                    else:
-                        purchased_drones_entry['drone_model'] = 'Unknown'
-                        purchased_drones_entry['drone_model_id'] = 'Unknown'
-
-                purchased_drones_entry['Purchased_drones'] = [
-                    {'month': (start_time + timedelta(days=i)).strftime('%Y-%m-%d'),
-                     'count': counts_by_model[drone_model_id].get(start_time + timedelta(days=i), 0)} for i in
-                    range((end_time - start_time).days + 1)
-                ]
-
-                result['result']['data']['Purchased_drones_Graph'].append(purchased_drones_entry)
-
-            return Response(result)
-
-        if user_id and role_name and drone_model:
-
-            try:
-                user = CustomUser.objects.get(id=user_id)
-            except CustomUser.DoesNotExist:
-                return Response({'error': 'User not found'}, status=404)
-
-            drone_model_ids = [int(model_id) for model_id in drone_model.split(',')]
-
-            queryset = Order.objects.filter(
-                user_id=user_id,
-                order_status__status_name='Shipped',
-                drone_id_drone_categoryid_in=drone_model_ids
-            ).order_by('id') if user.role_id.role_name == 'Partner' else Order.objects.filter(
-                order_status__status_name='Shipped',
-                drone_id_drone_categoryid_in=drone_model_ids
-            ).order_by('id')
-
-            data = queryset.values(
-                'drone_id_drone_category_category_name',
-                'drone_id_drone_category_id',
-                'created_date_time__month'
-            ).annotate(count=Count('id'))
-
-            inventory_count = queryset.aggregate(Sum('quantity'))['quantity__sum'] or 0
-            total_billing = queryset.aggregate(Sum('amount'))['amount__sum'] or 0
-
-            result = {
-                'result': {
-                    'data': {
-                        'inventory_count': inventory_count,
-                        'total_billing': total_billing,
-                        'Purchased_drones_Graph': [],
-                    }
-                }
-            }
-
-            counts_by_model = {drone_model_id: {month: 0 for month in range(1, 13)} for drone_model_id in
-                               drone_model_ids}
-
-            for entry in data:
-                model_id = entry['drone_id_drone_category_id']
-                month = entry['created_date_time__month']
-                count = entry['count']
-                if model_id in counts_by_model:
-                    counts_by_model[model_id][month] += count
-
-            for drone_model_id in drone_model_ids:
-                purchased_drones_entry = {
-                    'label': DroneCategory.objects.get(
-                        id=drone_model_id).category_name if drone_model_id else 'Unknown',
-                    'Purchased_drones': [],
-                    'drone_model': None,
-                    'drone_model_id': None,
-                }
-
-                model_data = data.filter(drone_id_drone_category_id=drone_model_id).first()
-
-                if model_data:
-                    drone_model_name = model_data['drone_id_drone_category_category_name']
-                    purchased_drones_entry['drone_model'] = drone_model_name
-                    purchased_drones_entry['drone_model_id'] = drone_model_id
-                else:
-                    default_model = DroneCategory.objects.filter(id=drone_model_id).first()
-                    if default_model:
-                        purchased_drones_entry['drone_model'] = default_model.category_name
-                        purchased_drones_entry['drone_model_id'] = drone_model_id
-                    else:
-                        purchased_drones_entry['drone_model'] = 'Unknown'
-                        purchased_drones_entry['drone_model_id'] = 'Unknown'
-
-                purchased_drones_entry['Purchased_drones'] = [
-                    {'month': timezone.datetime(2022, month_number, 1).strftime('%B'),
-                     'count': counts_by_model[drone_model_id].get(month_number, 0)} for month_number in
-                    range(1, 13)]
-
-                result['result']['data']['Purchased_drones_Graph'].append(purchased_drones_entry)
-
-            return Response(result)
-        if user_id and role_name:
-            try:
-                user = CustomUser.objects.get(id=user_id, role_id__role_name=role_name)
-            except CustomUser.DoesNotExist:
-                return Response({'error': 'User not found'}, status=404)
-
-            inventory_count = DroneOwnership.objects.filter(user_id=user_id).aggregate(Sum('quantity'))[
-                                  'quantity__sum'] or 0
-            total_billings = AddItem.objects.filter(owner_id__id=user_id).count()
-            total_billing_completed = AddItem.objects.filter(owner_id_id=user_id,
-                                                             invoice_status_invoice_status_name='completed').count()
-
-            if user.role_id.role_name == 'Partner':
-                label = 'Purchased Drones'
-                queryset = Order.objects.filter(order_status__status_name='Shipped', user_id=user_id)
-            else:
-                label = 'Sales Drones'
-                queryset = Order.objects.filter(order_status__status_name='Shipped')
-
-            data = queryset.values(
-                'created_date_time__month',
-                'drone_id_drone_category_category_name'
-            ).annotate(count=Count('id'))
-
-            result = {
-                'data': {
-                    'inventory_count': inventory_count,
-                    'total_billing': total_billings,
-                    'total_billing_completed': total_billing_completed,
-                    'Purchased_drones_Graph': [],  # Initialize purchased_drones_Graph here
-                }
-            }
-
-            overall_count_dict = {}
-            months_data = {month: {'count': 0, 'drone_category_name': []} for month in range(1, 13)}
-            drone_models = set()
-
-            for entry in data:
-                month_number = entry['created_date_time__month']
-                if month_number is not None:
-                    month_name_loop = timezone.datetime(2022, month_number, 1).strftime('%B')
-
-                    if month_name_loop not in overall_count_dict:
-                        overall_count_dict[month_name_loop] = entry['count']
-                    else:
-                        overall_count_dict[month_name_loop] += entry['count']
-
-                    months_data[month_number]['count'] = overall_count_dict[month_name_loop]
-                    months_data[month_number]['drone_category_name'].append(
-                        entry['drone_id_drone_category_category_name'])
-
-                    drone_models.add(entry['drone_id_drone_category_category_name'])
-
-            drone_sales_data = []
-
-            for month_number, month_data in months_data.items():
-                month_name = timezone.datetime(2022, month_number, 1).strftime('%B')
-                drone_sales_data.append({
-                    'month': month_name,
-                    'count': month_data['count'],
-                })
-
-            drone_entry = {
-                'label': label,
-                'Purchased_drones': drone_sales_data,
-            }
-
-            result['data']['Purchased_drones_Graph'].append(drone_entry)
-
-            return Response({'result': result})
+        if start_time_str and end_time_str:
+            start_time = datetime.strptime(start_time_str, '%d-%m-%Y').date()
+            end_time = datetime.strptime(end_time_str, '%d-%m-%Y').date()
         else:
-            return Response({'error': 'Missing required parameters'}, status=400)
+            end_time = datetime.now().date()
+            start_time = end_time - timedelta(days=9)
+
+        filters &= Q(created_date_time__date__gte=start_time, created_date_time__date__lte=end_time)
+
+        if role_name == "Partner" and partner_id:
+            filters &= Q(user_id=partner_id)
+        elif role_name != "Super_admin":
+            filters &= Q(user_id=user_id)
+
+        date_range = [(start_time + timedelta(days=i)).strftime('%d-%m-%Y') for i in
+                      range((end_time - start_time).days + 1)]
+
+        purchased_drones_graph = []
+        billing_graph = []
+
+        drone_model_ids = [int(model_id) for model_id in drone_model_str.split(',')] if drone_model_str else []
+
+        for model_id in drone_model_ids or [None]:
+            label = "Purchased Drones"
+            labels = 'Invoice Billing Count'
+            if model_id:
+                drone_category = DroneCategory.objects.get(id=model_id)
+                label = drone_category.category_name
+                labels = drone_category.category_name
+                model_filters = filters & Q(drone_id__drone_category__id=model_id)
+            else:
+                model_filters = filters
+
+            graph_data = []
+            for date in date_range:
+                order_filter = model_filters & Q(created_date_time__date=datetime.strptime(date, '%d-%m-%Y').date(),
+                                                 order_status__status_name='shipped')
+                count = Order.objects.filter(order_filter).aggregate(total_quantity=Sum('quantity'))[
+                            'total_quantity'] or 0
+                graph_data.append({'date': date, 'count': count})
+
+            purchased_drones_graph.append({'label': label, 'Purchased_drones': graph_data})
+
+        completed_status = InvoiceStatus.objects.get(invoice_status_name='Completed')
+
+        # Determine the correct owner(s) to filter by based on role and partner_ids
+        if role_name == "Partner" and partner_id:
+            owners = [partner_id]
+        elif role_name == "Super_admin":
+            owners = None  # Include all users
+        else:
+            owners = [user_id]
+
+        add_items = AddItem.objects.filter(invoice_status=completed_status)
+        if owners is not None:
+            add_items = add_items.filter(owner_id__in=owners)
+
+        date_wise_billing_quantities = {model_id: {date: 0 for date in date_range} for model_id in
+                                        drone_model_ids or [None]}
+
+        drone_count = defaultdict(int)
+        for item in add_items:
+            item_date = item.created_date_time.strftime('%d-%m-%Y')
+            for drone in item.dronedetails:
+                if drone.get('drone_id'):
+                    drone_id = drone['drone_id']
+                    quantity = drone.get('quantity', 0)
+                    if drone_model_ids:
+                        for model_id in drone_model_ids:
+                            if Drone.objects.filter(id=drone_id, drone_category_id=model_id).exists():
+                                drone_count[model_id] += quantity
+                                if item_date in date_wise_billing_quantities[model_id]:
+                                    date_wise_billing_quantities[model_id][item_date] += quantity
+                    else:
+                        drone_count[None] += quantity
+                        if item_date in date_wise_billing_quantities[None]:
+                            date_wise_billing_quantities[None][item_date] += quantity
+
+        for model_id in drone_model_ids or [None]:
+            labels = 'Invoice Billing Count'
+            if model_id:
+                drone_category = DroneCategory.objects.get(id=model_id)
+                labels = drone_category.category_name
+            billing_graph_data = []
+            for date in date_range:
+                count = date_wise_billing_quantities[model_id][date]
+                billing_graph_data.append({'date': date, 'count': count})
+
+            billing_graph.append({'labels': labels, 'Billing_Invoice_Graph': billing_graph_data})
+
+        # Calculate overall inventory count based on drone_model and ownerships
+        ownership_filters = Q(drone_id__drone_category__id__in=drone_model_ids) if drone_model_ids else Q()
+        if owners is not None:
+            ownership_filters &= Q(user_id__in=owners)
+
+        overall_inventory_count = DroneOwnership.objects.filter(ownership_filters).aggregate(Sum('quantity'))[
+                                      'quantity__sum'] or 0
+
+        # Additems count for in-progress, draft, pending statuses
+        additems_filters = Q(invoice_status__invoice_status_name__in=['Inprogress', 'Draft', 'Pending'])
+        if drone_model_ids:
+            additems_filters &= Q(dronedetails__drone_category__id__in=drone_model_ids)
+        if owners is not None:
+            additems_filters &= Q(owner_id__in=owners)
+
+        additems_count = AddItem.objects.filter(additems_filters).count()
+
+        total_count = overall_inventory_count + additems_count
+
+        response_data = {
+            'result': {
+                'data': {
+                    'inventory_count': total_count,
+                    'total_billing': sum(drone_count.values()),  # Sum of completed quantities
+                    'Purchased_drones_Graph': purchased_drones_graph,
+                    'Billing_graph': billing_graph,
+                }
+            }
+        }
+
+        return Response(response_data)
 
 @method_decorator([authorization_required], name='dispatch')
 class SlotFilterAPIView(APIView):
