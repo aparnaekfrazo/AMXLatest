@@ -929,32 +929,7 @@ class DroneAPIView(APIView):
 
         return Response({"message": "Drone updated successfully!"}, status=status.HTTP_200_OK)
 
-    # def save_image(self, drone, image_data, folder_name, image_name):
-    #     if image_data.startswith(('http:', 'https:')):
-    #         image_response = requests.get(image_data)
-    #         if image_response.status_code == 200:
-    #             content_type = image_response.headers['content-type']
-    #             extension = content_type.split('/')[-1]
-    #             image_filename = f"{image_name}.{extension}"
-    #             image_path = os.path.join(folder_name, image_filename)
-    #             save_path = os.path.join("amx-crm-dev/site/public/media", image_path)
-    #             with open(save_path, 'wb') as f:
-    #                 f.write(image_response.content)
-    #         else:
-    #             raise ValueError(f"Failed to fetch {folder_name} image from the provided URL.")
-    #     else:  # Assume it's base64-encoded data
-    #         image_filename = f"{image_name}.png"
-    #         image_path = os.path.join(folder_name, image_filename)
-    #         save_path = os.path.join("amx-crm-dev/site/public/media", image_path)
-    #         image_data = base64.b64decode(image_data.split(';base64,')[1])
-    #         with open(save_path, 'wb') as f:
-    #             f.write(image_data)
-    #
-    #     return f'/{image_path}'
-
     def save_image(self, drone, image_data, folder_name, image_name):
-        base_directory = settings.modamx  # Get the base directory from settings
-
         if image_data.startswith(('http:', 'https:')):
             image_response = requests.get(image_data)
             if image_response.status_code == 200:
@@ -962,7 +937,7 @@ class DroneAPIView(APIView):
                 extension = content_type.split('/')[-1]
                 image_filename = f"{image_name}.{extension}"
                 image_path = os.path.join(folder_name, image_filename)
-                save_path = os.path.join(base_directory, "site/public/media", image_path)
+                save_path = os.path.join("amx-crm-dev/site/public/media", image_path)
                 with open(save_path, 'wb') as f:
                     f.write(image_response.content)
             else:
@@ -970,12 +945,37 @@ class DroneAPIView(APIView):
         else:  # Assume it's base64-encoded data
             image_filename = f"{image_name}.png"
             image_path = os.path.join(folder_name, image_filename)
-            save_path = os.path.join(base_directory, "site/public/media", image_path)
+            save_path = os.path.join("amx-crm-dev/site/public/media", image_path)
             image_data = base64.b64decode(image_data.split(';base64,')[1])
             with open(save_path, 'wb') as f:
                 f.write(image_data)
 
         return f'/{image_path}'
+
+    # def save_image(self, drone, image_data, folder_name, image_name):
+    #     base_directory = settings.modamx  # Get the base directory from settings
+    #
+    #     if image_data.startswith(('http:', 'https:')):
+    #         image_response = requests.get(image_data)
+    #         if image_response.status_code == 200:
+    #             content_type = image_response.headers['content-type']
+    #             extension = content_type.split('/')[-1]
+    #             image_filename = f"{image_name}.{extension}"
+    #             image_path = os.path.join(folder_name, image_filename)
+    #             save_path = os.path.join(base_directory, "site/public/media", image_path)
+    #             with open(save_path, 'wb') as f:
+    #                 f.write(image_response.content)
+    #         else:
+    #             raise ValueError(f"Failed to fetch {folder_name} image from the provided URL.")
+    #     else:  # Assume it's base64-encoded data
+    #         image_filename = f"{image_name}.png"
+    #         image_path = os.path.join(folder_name, image_filename)
+    #         save_path = os.path.join(base_directory, "site/public/media", image_path)
+    #         image_data = base64.b64decode(image_data.split(';base64,')[1])
+    #         with open(save_path, 'wb') as f:
+    #             f.write(image_data)
+    #
+    #     return f'/{image_path}'
 
     def delete(self, request, pk=None):
         if pk is None:
