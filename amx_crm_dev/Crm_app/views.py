@@ -1186,6 +1186,8 @@ class CompanydetailsAPIView(APIView):
         try:
             partner = CustomUser.objects.get(pk=pk)
             if partner.status is True:
+                partner_full_name = f"{partner.first_name} {partner.last_name}"  # New line
+                partner_email = partner.email  # New line
                 super_admin_role = Role.objects.filter(role_name="Super_admin").first()
                 if super_admin_role:
                     super_admin = super_admin_role.customuser_set.first()
@@ -1277,7 +1279,9 @@ class CompanydetailsAPIView(APIView):
                         'requested_changes': requested_changes,
                         'approve_url': approve_url,
                         'reject_url': reject_url,
-                        'user_id': change.id
+                        'user_id': change.id,
+                        'partner_full_name': partner_full_name,
+                        'partner_email': partner_email
                     }
 
                     # Only add user_signature and company_logo to the email context if they exist in requested_changes
