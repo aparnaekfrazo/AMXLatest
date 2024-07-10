@@ -147,6 +147,7 @@ class PartnerAPIView(APIView):
 
             if search_param:
                 users = users.filter(
+                    Q(username__icontains=search_param) |
                     Q(first_name__icontains=search_param) |
                     Q(last_name__icontains=search_param) |
                     Q(email__icontains=search_param) |
@@ -14256,6 +14257,35 @@ class SlotSwapAPIView(APIView):
                         'message': f'{student_email} of {student_name} is already exists in {slot1.batch_name}'},
                         status=status.HTTP_400_BAD_REQUEST)
 
+            # New email validation logic
+            # Gather emails of students being swapped
+            emails_slot1 = students_slot1.values_list('student_email', flat=True)
+            emails_slot2 = students_slot2.values_list('student_email', flat=True)
+
+            # Check for duplicate emails in slot1 (excluding students being swapped)
+            existing_emails_slot1 = Student.objects.filter(slot_id=slot1).exclude(
+                id__in=students_slot1_ids).values_list('student_email', flat=True)
+            duplicates_in_slot1 = set(emails_slot2).intersection(existing_emails_slot1)
+            # duplicates_in_slot1=list(duplicates_in_slot1)
+            print(duplicates_in_slot1,"kkkkkk")
+
+            if duplicates_in_slot1:
+                duplicate_emails_str = ','.join(duplicates_in_slot1)
+                return Response({
+                    'message': f'Student email is already exist in the {slot1.batch_name}, {duplicate_emails_str}'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Check for duplicate emails in slot2 (excluding students being swapped)
+            existing_emails_slot2 = Student.objects.filter(slot_id=slot2).exclude(
+                id__in=students_slot2_ids).values_list('student_email', flat=True)
+            duplicates_in_slot2 = set(emails_slot1).intersection(existing_emails_slot2)
+
+            if duplicates_in_slot2:
+                duplicate_emails_str = ','.join(duplicates_in_slot2)
+                return Response({
+                    'message': f'Student email is already exist in the {slot2.batch_name}, {duplicate_emails_str}'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
             # Create a dictionary to store old and new slot mappings for each student
             students_mapping = {}
 
@@ -14440,6 +14470,16 @@ class MoveStudentsAPIView(APIView):
             slot_from = Slot.objects.get(id=slot_from_id)
             slot_to = Slot.objects.get(id=slot_to_id)
             students_to_move = Student.objects.filter(id__in=student_ids_to_move)
+
+            # Check for duplicate emails in the destination slot
+            student_emails_to_move = students_to_move.values_list('student_email', flat=True)
+            duplicate_emails = Student.objects.filter(slot_id=slot_to, student_email__in=student_emails_to_move)
+            if duplicate_emails.exists():
+                duplicate_emails_list = duplicate_emails.values_list('student_email', flat=True)
+                duplicate_emails_str = '","'.join(duplicate_emails_list)
+                return Response({
+                    'message': f'Student email is already exist in the {slot_to.batch_name},{duplicate_emails_str},'
+                }, status=status.HTTP_400_BAD_REQUEST)
 
             if slot_to.batch_size is not None:
                 total_students_in_slot_to = Student.objects.filter(slot_id=slot_to).count()
