@@ -10558,7 +10558,7 @@ class MyAPIView(APIView):
         img = qr.make_image(fill_color="black", back_color="white")
 
         # Define the directory to save the QR code image
-        save_dir = '/amx-crm-dev/site/public/media/qrcode'
+        save_dir = '/amx-crm/site/public/media/qrcode'
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
@@ -10567,20 +10567,24 @@ class MyAPIView(APIView):
         img.save(qr_code_path)
 
         # Adjust the path to start from '/media/qrcode'
-        relative_path = os.path.relpath(qr_code_path, '/amx-crm-dev/site/public/media')
+        relative_path = os.path.relpath(qr_code_path, '/amx-crm/site/public/media')
         qr_code_url = '/media/' + relative_path
 
         return qr_code_url
 
     def get(self, request, invoice_number=None, *args, **kwargs):
         # Your HTML template path
-        html_template_path = '/amx-crm-dev/django/amx_crm_dev/Crm_app/templates/email/pdf.html'
-        # base_url = 'https://amx-crm-dev.thestorywallcafe.com'
+        html_template_path = '/amx-crm/django/amx_crm/Crm_app/templates/email/pdf.html'
+        #base_url = 'https://amx-crm.thestorywallcafe.com'
         base_url = settings.CRM_PORTAL_DOMAIN
         invoice_data = {}
         EwbNo = None  # Initialize EwbNo
         EwbDt = None  # Initialize EwbDt
         EwbValidTill = None
+        ack_no = None  # Initialize ack_no
+        ack_dt = None  # Initialize ack_dt
+        irn = None
+        qr_code_path=None
         # Check if invoice_number is provided
         if invoice_number:
             try:
@@ -10588,7 +10592,7 @@ class MyAPIView(APIView):
                 add_item = AddItem.objects.get(invoice_number=invoice_number)
                 drone = add_item.dronedetails
 
-                # Assuming `dronedetails` is a list of dictionaries
+                # Assuming dronedetails is a list of dictionaries
                 if drone:
                     for drone_detail in drone:
                         invoice_data.update({
@@ -10631,7 +10635,6 @@ class MyAPIView(APIView):
                             'drone_name': drone_name,
                             'drone_category': drone_category
                         })
-                        print('Updated invoice_data:', invoice_data)
 
                 einvoice = add_item.einvoice_set.first()
                 print('einvoice--------------------', einvoice)
@@ -10644,17 +10647,11 @@ class MyAPIView(APIView):
                     if einvoice.e_waybill:
                         e_waybill = json.loads(einvoice.e_waybill)
 
-                    ack_no = api_response.get('DecryptedData', {}).get('AckNo')
-                    ack_dt = api_response.get('DecryptedData', {}).get('AckDt')
-                    irn = api_response.get('DecryptedData', {}).get('Irn')
-                    ewb_no = e_waybill.get('EwbNo')
-                    ewb_dt = e_waybill.get('EwbDt')
-                    ewb_valid_till = e_waybill.get('EwbValidTill')
-
-                    api_response_str = einvoice.api_response
-                    if api_response_str:
-                        api_response = json.loads(api_response_str)
-                        decrypted_data = api_response.get('DecryptedData', {})
+                    if 'DecryptedData' in api_response:
+                        decrypted_data = api_response['DecryptedData']
+                        ack_no = decrypted_data.get('AckNo')
+                        ack_dt = decrypted_data.get('AckDt')
+                        irn = decrypted_data.get('Irn')
                         signed_qr_code = decrypted_data.get('SignedQRCode', '')
 
                         # Generate QR code
@@ -10670,24 +10667,19 @@ class MyAPIView(APIView):
                         # Add QR code path to invoice_data
                         invoice_data['qr_code_path'] = qr_code_path
 
-                        e_waybill_str = einvoice.e_waybill
-                        if e_waybill_str:
-                            e_waybill = json.loads(e_waybill_str)
-                            if e_waybill:
-                                EwbNo = e_waybill.get('EwbNo')
-                                EwbDt = e_waybill.get('EwbDt')
-                                EwbValidTill = e_waybill.get('EwbValidTill')
-                            else:
-                                EwbNo = None
-                                EwbDt = None
-                                EwbValidTill = None
+                        if 'EwbNo' in e_waybill:
+                            EwbNo = e_waybill['EwbNo']
+                        if 'EwbDt' in e_waybill:
+                            EwbDt = e_waybill['EwbDt']
+                        if 'EwbValidTill' in e_waybill:
+                            EwbValidTill = e_waybill['EwbValidTill']
 
                 owner_company_logo = add_item.owner_id.company_logo.url if add_item.owner_id.company_logo else None
 
                 # Check if owner_company_logo is not None
                 if owner_company_logo:
                     # Base URL
-                    # base_url = "https://amx-crm-dev.thestorywallcafe.com"
+                    #base_url = "https://amx-crm.thestorywallcafe.com"
                     base_url = settings.CRM_PORTAL_DOMAIN
 
                     # Concatenate the base URL with the owner_company_logo path
@@ -10695,6 +10687,7 @@ class MyAPIView(APIView):
 
                 else:
                     print("Owner Company Logo not available")
+
                 invoice_data.update({
                     'invoice_id': add_item.id,
                     'customer_type_id': add_item.customer_type_id,
@@ -10808,20 +10801,15 @@ class MyAPIView(APIView):
                     'customer_billing_state_city': add_item.customer_id.billing_state_city,
                     'customer_billing_state_country': add_item.customer_id.billing_state_country,
                     'owner_user_signature': add_item.owner_id.user_signature.url if add_item.owner_id.user_signature else None,
-                    'AckNo': api_response['DecryptedData']['AckNo'],
-                    'AckDt': api_response['DecryptedData']['AckDt'],
-                    'Irn': api_response['DecryptedData']['Irn'],
+                    'AckNo': ack_no,
+                    'AckDt': ack_dt,
+                    'Irn': irn,
                     'qr_code_path': qr_code_path,
                     'EwbNo': EwbNo,
                     'EwbDt': EwbDt,
                     'EwbValidTill': EwbValidTill,
-
                 })
-                # owner_company_logo = invoice_data.get('owner_company_logo')
-                # print('owner_company_logo--------------',owner_company_logo)
-                # print(invoice_data['owner_company_logo'])
-                # print(invoice_data['owner_first_name'])
-                # print('invoice_data--------------------------:', invoice_data)
+
 
 
             except AddItem.DoesNotExist:
@@ -10831,9 +10819,9 @@ class MyAPIView(APIView):
 
                     einvoice = custom_invoice.einvoice_set.first()
 
-                    # Initialize empty dictionaries for api_response and e_waybill
                     api_response = {}
                     e_waybill = {}
+                    qr_code_path = None
 
                     if einvoice:
                         # Check if api_response and e_waybill are not None before loading JSON
@@ -10841,6 +10829,21 @@ class MyAPIView(APIView):
                             api_response = json.loads(einvoice.api_response)
                         if einvoice.e_waybill:
                             e_waybill = json.loads(einvoice.e_waybill)
+
+                        # Generate QR code if api_response exists
+                        api_response_str = einvoice.api_response
+                        if api_response_str:
+                            api_response = json.loads(api_response_str)
+                            decrypted_data = api_response.get('DecryptedData', {})
+                            signed_qr_code = decrypted_data.get('SignedQRCode', '')
+
+                            # Generate QR code
+                            qr_code_path = self.generate_qr_code(signed_qr_code)
+
+                    # Extract the URL part from the file path
+                    qr_code_url = None
+                    if qr_code_path:
+                        qr_code_url = os.path.join(settings.MEDIA_URL, os.path.relpath(qr_code_path, settings.MEDIA_ROOT))
 
                     # If found in CustomInvoice, fetch additional data
                     ack_no = api_response.get('DecryptedData', {}).get('AckNo')
@@ -10868,27 +10871,8 @@ class MyAPIView(APIView):
                     sgst = custom_item.get('sgst', 0)  # Default to 0 if sgst is not present
                     igst = custom_item.get('igst', 0)
                     item_total_price = custom_item.get('item_total_price', 0)
-                    api_response_str = einvoice.api_response
-                    if api_response_str:
-                        api_response = json.loads(api_response_str)
-                        decrypted_data = api_response.get('DecryptedData', {})
-                        signed_qr_code = decrypted_data.get('SignedQRCode', '')
-
-                        # Generate QR code
-                        qr_code_path = self.generate_qr_code(signed_qr_code)
-
-                        # Extract the URL part from the file path
-                        qr_code_url = os.path.join(settings.MEDIA_URL,
-                                                   os.path.relpath(qr_code_path, settings.MEDIA_ROOT))
-
-                        # Add QR code URL to invoice_data
-                        invoice_data['qr_code_path'] = qr_code_url
-
-                        # Add QR code path to invoice_data
-                        invoice_data['qr_code_path'] = qr_code_path
 
                     invoice_data = {
-
                         'customer_type_id': custom_invoice.customer_type_id,
                         'item_name': item_name_str,
                         'hsn_number': hsn_number_str,
@@ -11024,6 +11008,7 @@ class MyAPIView(APIView):
                         'EwbDt': ewb_dt,
                         'EwbValidTill': ewb_valid_till,
                     }
+
 
                 except CustomInvoice.DoesNotExist:
                     # If not found in CustomInvoice, raise Http404
