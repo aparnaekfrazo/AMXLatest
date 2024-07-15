@@ -10558,7 +10558,7 @@ class MyAPIView(APIView):
         img = qr.make_image(fill_color="black", back_color="white")
 
         # Define the directory to save the QR code image
-        save_dir = '/amx-crm/site/public/media/qrcode'
+        save_dir = '/amx-crm-dev/site/public/media/qrcode'
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
@@ -10567,14 +10567,14 @@ class MyAPIView(APIView):
         img.save(qr_code_path)
 
         # Adjust the path to start from '/media/qrcode'
-        relative_path = os.path.relpath(qr_code_path, '/amx-crm/site/public/media')
+        relative_path = os.path.relpath(qr_code_path, '/amx-crm-dev/site/public/media')
         qr_code_url = '/media/' + relative_path
 
         return qr_code_url
 
     def get(self, request, invoice_number=None, *args, **kwargs):
         # Your HTML template path
-        html_template_path = '/amx-crm/django/amx_crm/Crm_app/templates/email/pdf.html'
+        html_template_path = '/amx-crm-dev/django/amx_crm_dev/Crm_app/templates/email/pdf.html'
         #base_url = 'https://amx-crm.thestorywallcafe.com'
         base_url = settings.CRM_PORTAL_DOMAIN
         invoice_data = {}
