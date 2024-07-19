@@ -156,6 +156,8 @@ urlpatterns = [
     path('slot-graph/', SlotFilterAPIView.as_view(), name='slot-filter'),
     path('drone-orders-graph/', GetDroneOrdersGraph.as_view(), name='drone-filter'),
     path('customers-org/<int:pk>/', CustomersByRoleView.as_view(), name='customers-by-role'),
+    path('purchased-drone/<int:pk>/', PurchasedDroneCategoriesView.as_view(),
+         name='purchased-drone-categories'),
 
 ]
 

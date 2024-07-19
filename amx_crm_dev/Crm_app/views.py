@@ -16922,3 +16922,30 @@ class CustomersByRoleView(APIView):
             return Response(serializer.data)
 
         return Response({"message": "Invalid role"}, status=400)
+
+
+@method_decorator([authorization_required], name='dispatch')
+class PurchasedDroneCategoriesView(APIView):
+    def get(self, request, pk):
+        try:
+            user = CustomUser.objects.get(id=pk)
+        except CustomUser.DoesNotExist:
+            return Response({"message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        role_name = user.role_id.role_name if user.role_id else None
+
+        if role_name == 'Super_admin':
+            # Fetch all drone categories that have associated drones
+            categories = DroneCategory.objects.filter(drone__isnull=False).distinct()
+            serializer = DroneCategorySerializer(categories, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        elif role_name == 'Partner':
+            # Fetch drones purchased by the Partner
+            orders = Order.objects.filter(user_id=pk, order_status__status_name='Shipped')
+            drone_ids = orders.values_list('drone_id', flat=True).distinct()
+            categories = DroneCategory.objects.filter(drone__id__in=drone_ids).distinct()
+            serializer = DroneCategorySerializer(categories, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        return Response({"message": "Invalid role"}, status=status.HTTP_400_BAD_REQUEST)
