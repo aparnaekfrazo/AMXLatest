@@ -16890,3 +16890,35 @@ class GetDroneOrdersGraph(APIView):
         }
 
         return Response(response_data)
+
+@method_decorator([authorization_required], name='dispatch')
+class CustomersByRoleView(APIView):
+
+    def get(self, request, pk):
+        try:
+            user = CustomUser.objects.get(id=pk)
+        except CustomUser.DoesNotExist:
+            return Response({"message": "User not found"}, status=404)
+
+        role_name = user.role_id.role_name if user.role_id else None
+
+        if role_name == 'Super_admin':
+            # Fetch all users (both partners and customers) created by the Super_admin with category 'organization'
+            users = CustomUser.objects.filter(
+                created_by_id=pk,
+                category__name='Organization'
+            )
+            serializer = CustomUserSerializer(users, many=True, context={'request': request})
+            return Response(serializer.data)
+
+        elif role_name == 'Partner':
+            # Fetch customers created by the Partner with role 'Customer' and category 'organization'
+            customers = CustomUser.objects.filter(
+                created_by_id=pk,
+                role_id__role_name='Customer',
+                category__name='Organization'
+            )
+            serializer = CustomUserSerializer(customers, many=True, context={'request': request})
+            return Response(serializer.data)
+
+        return Response({"message": "Invalid role"}, status=400)
