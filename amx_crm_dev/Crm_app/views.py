@@ -13658,7 +13658,7 @@ class SlotsWithStudents(APIView):
         return Response(response_data)
 
 
-@method_decorator([authorization_required], name='dispatch')
+# @method_decorator([authorization_required], name='dispatch')
 class SlotsWithoutStudents(APIView):
     def get(self, request, user_id):
         # Query slot dates without associated students for the given user ID
@@ -13682,9 +13682,10 @@ class SlotsWithoutStudents(APIView):
         # Restructure the data in the desired format
         response_data = []
         for slot_date, info in unique_slot_dates.items():
+            formatted_slot_date = slot_date.strftime('%d-%m-%Y')
             slot_info = {
                 'id': info['id'],
-                'slot_date': slot_date,
+                'slot_date': formatted_slot_date,
                 'created_date_time': info['created_date_time'],
                 # Add any other slot details you want to include here
             }
