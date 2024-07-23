@@ -13658,7 +13658,7 @@ class SlotsWithStudents(APIView):
         return Response(response_data)
 
 
-# @method_decorator([authorization_required], name='dispatch')
+@method_decorator([authorization_required], name='dispatch')
 class SlotsWithoutStudents(APIView):
     def get(self, request, user_id):
         # Query slot dates without associated students for the given user ID
