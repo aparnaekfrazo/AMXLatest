@@ -13682,10 +13682,9 @@ class SlotsWithoutStudents(APIView):
         # Restructure the data in the desired format
         response_data = []
         for slot_date, info in unique_slot_dates.items():
-            formatted_slot_date = slot_date.strftime('%d-%m-%Y')
             slot_info = {
                 'id': info['id'],
-                'slot_date': formatted_slot_date,
+                'slot_date': slot_date,
                 'created_date_time': info['created_date_time'],
                 # Add any other slot details you want to include here
             }
