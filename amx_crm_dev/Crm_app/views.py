@@ -13641,7 +13641,8 @@ class SlotsWithStudents(APIView):
         for slot_date, info in unique_slot_dates.items():
             slot_info = {
                 'id': info['id'],
-                'slot_date': slot_date,
+                # 'slot_date': slot_date,
+                'slot_date': datetime.strptime(str(slot_date), '%Y-%m-%d').strftime('%d-%b-%Y'),
                 'created_date_time': info['created_date_time'],
                 # Add any other slot details you want to include here
             }
@@ -13684,7 +13685,8 @@ class SlotsWithoutStudents(APIView):
         for slot_date, info in unique_slot_dates.items():
             slot_info = {
                 'id': info['id'],
-                'slot_date': slot_date,
+                # 'slot_date': slot_date,
+                'slot_date': datetime.strptime(str(slot_date), '%Y-%m-%d').strftime('%d-%b-%Y'),
                 'created_date_time': info['created_date_time'],
                 # Add any other slot details you want to include here
             }
