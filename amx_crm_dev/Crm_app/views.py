@@ -4247,24 +4247,59 @@ class AddItemAPI(APIView):
             add_item_instance = get_object_or_404(AddItem, id=item_id)
 
             p = inflect.engine()
-            # Convert numerical values to words using inflect engine
+
+            # Get the amount to pay
             amount_to_pay = add_item_instance.amount_to_pay
-            amount_to_pay_words = p.number_to_words(round(amount_to_pay), andword='and')
-            # Check if the amount_to_pay is a whole number
-            if amount_to_pay.is_integer():
-                amount_to_pay_words = p.number_to_words(int(amount_to_pay), andword='and')
 
-            # Calculate the sum of GST percentages
-            sum_of_igst_percentage = add_item_instance.sum_of_igst_percentage or 0
-            sum_of_cgst_percentage = add_item_instance.sum_of_cgst_percentage or 0
-            sum_of_sgst_percentage = add_item_instance.sum_of_sgst_percentage or 0
+            # Prepare the amount_to_pay_words based on your conditions
+            if amount_to_pay == 0.0:
+                amount_to_pay_words = "zero"
+            else:
+                # Round off the value to the nearest whole number
+                rounded_amount = round(amount_to_pay)
+                decimal_part = amount_to_pay - rounded_amount  # Get the decimal part
 
-            sum_of_gst_percentages = sum_of_igst_percentage + sum_of_cgst_percentage + sum_of_sgst_percentage
-            sum_of_gst_percentages_words = p.number_to_words(round(sum_of_gst_percentages), andword='and')
+                if decimal_part == 0:
+                    # If there is no decimal part (e.g., 216.0), convert the whole number to words
+                    amount_to_pay_words = p.number_to_words(rounded_amount)
+                else:
+                    # Convert the whole number part to words
+                    whole_part_words = p.number_to_words(rounded_amount)
 
-            # Check if sum_of_gst_percentages is a whole number
-            if sum_of_gst_percentages.is_integer():
-                sum_of_gst_percentages_words = p.number_to_words(int(sum_of_gst_percentages), andword='and')
+                    # Convert the decimal part to words
+                    decimal_digits = str(amount_to_pay).split('.')[1]  # Get the decimal digits as a string
+                    decimal_words = " ".join(p.number_to_words(int(digit)) for digit in decimal_digits)
+
+                    # Combine whole and decimal parts
+                    amount_to_pay_words = f"{whole_part_words} point {decimal_words}"
+
+            # Get the sum of GST percentages
+            sum_of_gst_percentages = (
+                    add_item_instance.sum_of_cgst_percentage +
+                    add_item_instance.sum_of_sgst_percentage +
+                    add_item_instance.sum_of_igst_percentage
+            )
+
+            # Convert the sum of GST percentages into words
+            if sum_of_gst_percentages == 0:
+                sum_of_gst_percentages_words = "zero"
+            else:
+                rounded_sum_of_gst = round(sum_of_gst_percentages)
+                decimal_part = sum_of_gst_percentages - rounded_sum_of_gst  # Get the decimal part
+
+                if decimal_part == 0:
+                    # If there is no decimal part (e.g., 18.0), convert the whole number to words
+                    sum_of_gst_percentages_words = p.number_to_words(rounded_sum_of_gst)
+                else:
+                    # Convert the whole number part to words
+                    whole_part_words = p.number_to_words(rounded_sum_of_gst)
+
+                    # Convert the decimal part to words
+                    decimal_digits = str(sum_of_gst_percentages).split('.')[1]  # Get the decimal digits as a string
+                    decimal_words = " ".join(p.number_to_words(int(digit)) for digit in decimal_digits)
+
+                    # Combine whole and decimal parts
+                    sum_of_gst_percentages_words = f"{whole_part_words} point {decimal_words}"
 
             invoice_status = add_item_instance.invoice_status
             invoice_status_name = invoice_status.invoice_status_name if invoice_status else None
@@ -4477,26 +4512,58 @@ class AddItemAPI(APIView):
             for add_item_instance in all_add_items:
                 p = inflect.engine()
 
-                # Convert numerical values to words using inflect engine
+                # Get the amount to pay
                 amount_to_pay = add_item_instance.amount_to_pay
-                amount_to_pay_words = p.number_to_words(round(amount_to_pay), andword='and')
 
-                # Check if the amount_to_pay is a whole number
-                if amount_to_pay.is_integer():
-                    amount_to_pay_words = p.number_to_words(int(amount_to_pay), andword='and')
+                # Prepare the amount_to_pay_words based on your conditions
+                if amount_to_pay == 0.0:
+                    amount_to_pay_words = "zero"
+                else:
+                    # Round off the value to the nearest whole number
+                    rounded_amount = round(amount_to_pay)
+                    decimal_part = amount_to_pay - rounded_amount  # Get the decimal part
 
-                # Calculate the sum of GST percentages
-                sum_of_igst_percentage = add_item_instance.sum_of_igst_percentage or 0
-                sum_of_cgst_percentage = add_item_instance.sum_of_cgst_percentage or 0
-                sum_of_sgst_percentage = add_item_instance.sum_of_sgst_percentage or 0
+                    if decimal_part == 0:
+                        # If there is no decimal part (e.g., 216.0), convert the whole number to words
+                        amount_to_pay_words = p.number_to_words(rounded_amount)
+                    else:
+                        # Convert the whole number part to words
+                        whole_part_words = p.number_to_words(rounded_amount)
 
-                sum_of_gst_percentages = sum_of_igst_percentage + sum_of_cgst_percentage + sum_of_sgst_percentage
-                sum_of_gst_percentages_words = p.number_to_words(round(sum_of_gst_percentages), andword='and')
+                        # Convert the decimal part to words
+                        decimal_digits = str(amount_to_pay).split('.')[1]  # Get the decimal digits as a string
+                        decimal_words = " ".join(p.number_to_words(int(digit)) for digit in decimal_digits)
 
-                # Check if sum_of_gst_percentages is a whole number
-                if round(sum_of_gst_percentages) == sum_of_gst_percentages:
-                    sum_of_gst_percentages_words = p.number_to_words(int(sum_of_gst_percentages), andword='and')
+                        # Combine whole and decimal parts
+                        amount_to_pay_words = f"{whole_part_words} point {decimal_words}"
 
+                # Get the sum of GST percentages
+                sum_of_gst_percentages = (
+                        add_item_instance.sum_of_cgst_percentage +
+                        add_item_instance.sum_of_sgst_percentage +
+                        add_item_instance.sum_of_igst_percentage
+                )
+
+                # Convert the sum of GST percentages into words
+                if sum_of_gst_percentages == 0:
+                    sum_of_gst_percentages_words = "zero"
+                else:
+                    rounded_sum_of_gst = round(sum_of_gst_percentages)
+                    decimal_part = sum_of_gst_percentages - rounded_sum_of_gst  # Get the decimal part
+
+                    if decimal_part == 0:
+                        # If there is no decimal part (e.g., 18.0), convert the whole number to words
+                        sum_of_gst_percentages_words = p.number_to_words(rounded_sum_of_gst)
+                    else:
+                        # Convert the whole number part to words
+                        whole_part_words = p.number_to_words(rounded_sum_of_gst)
+
+                        # Convert the decimal part to words
+                        decimal_digits = str(sum_of_gst_percentages).split('.')[1]  # Get the decimal digits as a string
+                        decimal_words = " ".join(p.number_to_words(int(digit)) for digit in decimal_digits)
+
+                        # Combine whole and decimal parts
+                        sum_of_gst_percentages_words = f"{whole_part_words} point {decimal_words}"
                 customer_instance = add_item_instance.customer_id
                 partner_instance = add_item_instance.owner_id
 
