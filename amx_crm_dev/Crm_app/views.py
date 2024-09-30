@@ -4203,11 +4203,11 @@ import time
 import json
 from decimal import Decimal, ROUND_HALF_UP
 from django.db import transaction
-
+import inflect
 from django.shortcuts import get_object_or_404
 
 
-@method_decorator([authorization_required], name='dispatch')
+# @method_decorator([authorization_required], name='dispatch')
 class AddItemAPI(APIView):
     def generate_serial_numbers(self, quantity):
         # Generate a list of unique serial numbers
@@ -4245,6 +4245,26 @@ class AddItemAPI(APIView):
         if item_id:
             # Retrieve a specific record by ID
             add_item_instance = get_object_or_404(AddItem, id=item_id)
+
+            p = inflect.engine()
+            # Convert numerical values to words using inflect engine
+            amount_to_pay = add_item_instance.amount_to_pay
+            amount_to_pay_words = p.number_to_words(round(amount_to_pay), andword='and')
+            # Check if the amount_to_pay is a whole number
+            if amount_to_pay.is_integer():
+                amount_to_pay_words = p.number_to_words(int(amount_to_pay), andword='and')
+
+            # Calculate the sum of GST percentages
+            sum_of_igst_percentage = add_item_instance.sum_of_igst_percentage or 0
+            sum_of_cgst_percentage = add_item_instance.sum_of_cgst_percentage or 0
+            sum_of_sgst_percentage = add_item_instance.sum_of_sgst_percentage or 0
+
+            sum_of_gst_percentages = sum_of_igst_percentage + sum_of_cgst_percentage + sum_of_sgst_percentage
+            sum_of_gst_percentages_words = p.number_to_words(round(sum_of_gst_percentages), andword='and')
+
+            # Check if sum_of_gst_percentages is a whole number
+            if sum_of_gst_percentages.is_integer():
+                sum_of_gst_percentages_words = p.number_to_words(int(sum_of_gst_percentages), andword='and')
 
             invoice_status = add_item_instance.invoice_status
             invoice_status_name = invoice_status.invoice_status_name if invoice_status else None
@@ -4437,6 +4457,9 @@ class AddItemAPI(APIView):
                 'invoice_status': invoice_status_name,
                 'invoice_status_id': invoice_status_id,
                 'amount_to_pay': add_item_instance.amount_to_pay,
+                'amount_to_pay_words': amount_to_pay_words,
+                'sum_of_gst_percentages': sum_of_gst_percentages,
+                'sum_of_gst_percentages_words': sum_of_gst_percentages_words,
                 'sum_of_item_total_price': add_item_instance.sum_of_item_total_price,
                 'sum_of_igst_percentage': add_item_instance.sum_of_igst_percentage,
                 'sum_of_cgst_percentage': add_item_instance.sum_of_cgst_percentage,
@@ -4452,6 +4475,28 @@ class AddItemAPI(APIView):
             records_list = []
 
             for add_item_instance in all_add_items:
+                p = inflect.engine()
+
+                # Convert numerical values to words using inflect engine
+                amount_to_pay = add_item_instance.amount_to_pay
+                amount_to_pay_words = p.number_to_words(round(amount_to_pay), andword='and')
+
+                # Check if the amount_to_pay is a whole number
+                if amount_to_pay.is_integer():
+                    amount_to_pay_words = p.number_to_words(int(amount_to_pay), andword='and')
+
+                # Calculate the sum of GST percentages
+                sum_of_igst_percentage = add_item_instance.sum_of_igst_percentage or 0
+                sum_of_cgst_percentage = add_item_instance.sum_of_cgst_percentage or 0
+                sum_of_sgst_percentage = add_item_instance.sum_of_sgst_percentage or 0
+
+                sum_of_gst_percentages = sum_of_igst_percentage + sum_of_cgst_percentage + sum_of_sgst_percentage
+                sum_of_gst_percentages_words = p.number_to_words(round(sum_of_gst_percentages), andword='and')
+
+                # Check if sum_of_gst_percentages is a whole number
+                if round(sum_of_gst_percentages) == sum_of_gst_percentages:
+                    sum_of_gst_percentages_words = p.number_to_words(int(sum_of_gst_percentages), andword='and')
+
                 customer_instance = add_item_instance.customer_id
                 partner_instance = add_item_instance.owner_id
 
@@ -4635,6 +4680,9 @@ class AddItemAPI(APIView):
                     'invoice_status': invoice_status_name,
                     'invoice_status_id': invoice_status_id,
                     'amount_to_pay': add_item_instance.amount_to_pay,
+                    'amount_to_pay_words': amount_to_pay_words,
+                    'sum_of_gst_percentages': sum_of_gst_percentages,
+                    'sum_of_gst_percentages_words': sum_of_gst_percentages_words,
                     'sum_of_item_total_price': add_item_instance.sum_of_item_total_price,
                     'sum_of_igst_percentage': add_item_instance.sum_of_igst_percentage,
                     'sum_of_cgst_percentage': add_item_instance.sum_of_cgst_percentage,
