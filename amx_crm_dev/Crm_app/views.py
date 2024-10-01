@@ -4205,9 +4205,30 @@ from decimal import Decimal, ROUND_HALF_UP
 from django.db import transaction
 import inflect
 from django.shortcuts import get_object_or_404
+from num2words import num2words
 
 
-# @method_decorator([authorization_required], name='dispatch')
+def num2words_inr(amount):
+    # Split amount into rupees and paise
+    rupees, paise = str(float(amount)).split(".")
+
+    # Convert paise to words if rupees is zero
+    if int(rupees) == 0 and int(paise) > 0:
+        paise_in_words = num2words(int(paise), lang='en_IN') + " paise"
+        return paise_in_words
+
+    # Convert rupees to words
+    rupees_in_words = num2words(int(rupees), lang='en_IN') + " rupees"
+
+    # Convert paise to words, if any
+    if int(paise) > 0:
+        paise_in_words = num2words(int(paise), lang='en_IN') + " paise"
+        return f"{rupees_in_words} and {paise_in_words}"
+    else:
+        return rupees_in_words
+
+
+@method_decorator([authorization_required], name='dispatch')
 class AddItemAPI(APIView):
     def generate_serial_numbers(self, quantity):
         # Generate a list of unique serial numbers
@@ -4242,65 +4263,10 @@ class AddItemAPI(APIView):
             raise RuntimeError(f"Error generating invoice_number: {str(e)}")
 
     def get(self, request, item_id=None):
+        sum_of_gst_percentages = 0
         if item_id:
             # Retrieve a specific record by ID
             add_item_instance = get_object_or_404(AddItem, id=item_id)
-
-            p = inflect.engine()
-
-            # Get the amount to pay
-            amount_to_pay = add_item_instance.amount_to_pay
-
-            # Prepare the amount_to_pay_words based on your conditions
-            if amount_to_pay == 0.0:
-                amount_to_pay_words = "zero"
-            else:
-                # Round off the value to the nearest whole number
-                rounded_amount = round(amount_to_pay)
-                decimal_part = amount_to_pay - rounded_amount  # Get the decimal part
-
-                if decimal_part == 0:
-                    # If there is no decimal part (e.g., 216.0), convert the whole number to words
-                    amount_to_pay_words = p.number_to_words(rounded_amount)
-                else:
-                    # Convert the whole number part to words
-                    whole_part_words = p.number_to_words(rounded_amount)
-
-                    # Convert the decimal part to words
-                    decimal_digits = str(amount_to_pay).split('.')[1]  # Get the decimal digits as a string
-                    decimal_words = " ".join(p.number_to_words(int(digit)) for digit in decimal_digits)
-
-                    # Combine whole and decimal parts
-                    amount_to_pay_words = f"{whole_part_words} point {decimal_words}"
-
-            # Get the sum of GST percentages
-            sum_of_gst_percentages = (
-                    add_item_instance.sum_of_cgst_percentage +
-                    add_item_instance.sum_of_sgst_percentage +
-                    add_item_instance.sum_of_igst_percentage
-            )
-
-            # Convert the sum of GST percentages into words
-            if sum_of_gst_percentages == 0:
-                sum_of_gst_percentages_words = "zero"
-            else:
-                rounded_sum_of_gst = round(sum_of_gst_percentages)
-                decimal_part = sum_of_gst_percentages - rounded_sum_of_gst  # Get the decimal part
-
-                if decimal_part == 0:
-                    # If there is no decimal part (e.g., 18.0), convert the whole number to words
-                    sum_of_gst_percentages_words = p.number_to_words(rounded_sum_of_gst)
-                else:
-                    # Convert the whole number part to words
-                    whole_part_words = p.number_to_words(rounded_sum_of_gst)
-
-                    # Convert the decimal part to words
-                    decimal_digits = str(sum_of_gst_percentages).split('.')[1]  # Get the decimal digits as a string
-                    decimal_words = " ".join(p.number_to_words(int(digit)) for digit in decimal_digits)
-
-                    # Combine whole and decimal parts
-                    sum_of_gst_percentages_words = f"{whole_part_words} point {decimal_words}"
-
             invoice_status = add_item_instance.invoice_status
             invoice_status_name = invoice_status.invoice_status_name if invoice_status else None
             invoice_status_id = invoice_status.id if invoice_status else None
@@ -4418,9 +4384,7 @@ class AddItemAPI(APIView):
                 "category_id": add_item_instance.customer_id.category.id if add_item_instance.customer_id and add_item_instance.customer_id.category else None,
                 "category_name": add_item_instance.customer_id.category.name if add_item_instance.customer_id and add_item_instance.customer_id.category else None,
             }
-
             dronedetails = add_item_instance.dronedetails or []
-
             drone_info_list = []
 
             if dronedetails:
@@ -4444,7 +4408,7 @@ class AddItemAPI(APIView):
                     total = drone_detail.get("total", 0)
                     created_datetime = drone_detail.get("created_datetime", 0)
                     updated_datetime = drone_detail.get("updated_datetime", 0)
-
+                    sum_of_gst_percentages += (igst_percentage + cgst_percentage + sgst_percentage)
                     try:
                         drone = Drone.objects.get(id=drone_id)
                         drone_ownership = DroneOwnership.objects.filter(user=partner_instance, drone=drone_id).first()
@@ -4492,9 +4456,9 @@ class AddItemAPI(APIView):
                 'invoice_status': invoice_status_name,
                 'invoice_status_id': invoice_status_id,
                 'amount_to_pay': add_item_instance.amount_to_pay,
-                'amount_to_pay_words': amount_to_pay_words,
+                'amount_to_pay_words': num2words_inr(add_item_instance.amount_to_pay),
                 'sum_of_gst_percentages': sum_of_gst_percentages,
-                'sum_of_gst_percentages_words': sum_of_gst_percentages_words,
+                'sum_of_gst_percentages_words': num2words_inr(sum_of_gst_percentages),
                 'sum_of_item_total_price': add_item_instance.sum_of_item_total_price,
                 'sum_of_igst_percentage': add_item_instance.sum_of_igst_percentage,
                 'sum_of_cgst_percentage': add_item_instance.sum_of_cgst_percentage,
@@ -4510,60 +4474,6 @@ class AddItemAPI(APIView):
             records_list = []
 
             for add_item_instance in all_add_items:
-                p = inflect.engine()
-
-                # Get the amount to pay
-                amount_to_pay = add_item_instance.amount_to_pay
-
-                # Prepare the amount_to_pay_words based on your conditions
-                if amount_to_pay == 0.0:
-                    amount_to_pay_words = "zero"
-                else:
-                    # Round off the value to the nearest whole number
-                    rounded_amount = round(amount_to_pay)
-                    decimal_part = amount_to_pay - rounded_amount  # Get the decimal part
-
-                    if decimal_part == 0:
-                        # If there is no decimal part (e.g., 216.0), convert the whole number to words
-                        amount_to_pay_words = p.number_to_words(rounded_amount)
-                    else:
-                        # Convert the whole number part to words
-                        whole_part_words = p.number_to_words(rounded_amount)
-
-                        # Convert the decimal part to words
-                        decimal_digits = str(amount_to_pay).split('.')[1]  # Get the decimal digits as a string
-                        decimal_words = " ".join(p.number_to_words(int(digit)) for digit in decimal_digits)
-
-                        # Combine whole and decimal parts
-                        amount_to_pay_words = f"{whole_part_words} point {decimal_words}"
-
-                # Get the sum of GST percentages
-                sum_of_gst_percentages = (
-                        add_item_instance.sum_of_cgst_percentage +
-                        add_item_instance.sum_of_sgst_percentage +
-                        add_item_instance.sum_of_igst_percentage
-                )
-
-                # Convert the sum of GST percentages into words
-                if sum_of_gst_percentages == 0:
-                    sum_of_gst_percentages_words = "zero"
-                else:
-                    rounded_sum_of_gst = round(sum_of_gst_percentages)
-                    decimal_part = sum_of_gst_percentages - rounded_sum_of_gst  # Get the decimal part
-
-                    if decimal_part == 0:
-                        # If there is no decimal part (e.g., 18.0), convert the whole number to words
-                        sum_of_gst_percentages_words = p.number_to_words(rounded_sum_of_gst)
-                    else:
-                        # Convert the whole number part to words
-                        whole_part_words = p.number_to_words(rounded_sum_of_gst)
-
-                        # Convert the decimal part to words
-                        decimal_digits = str(sum_of_gst_percentages).split('.')[1]  # Get the decimal digits as a string
-                        decimal_words = " ".join(p.number_to_words(int(digit)) for digit in decimal_digits)
-
-                        # Combine whole and decimal parts
-                        sum_of_gst_percentages_words = f"{whole_part_words} point {decimal_words}"
                 customer_instance = add_item_instance.customer_id
                 partner_instance = add_item_instance.owner_id
 
@@ -4700,6 +4610,7 @@ class AddItemAPI(APIView):
                         created_datetime = drone_detail.get("created_datetime", 0)
                         updated_datetime = drone_detail.get("updated_datetime", 0)
                         total = drone_detail.get("total", 0)
+                        sum_of_gst_percentages += (igst_percentage + cgst_percentage + sgst_percentage)
 
                         try:
                             drone = Drone.objects.get(id=drone_id)
@@ -4747,9 +4658,11 @@ class AddItemAPI(APIView):
                     'invoice_status': invoice_status_name,
                     'invoice_status_id': invoice_status_id,
                     'amount_to_pay': add_item_instance.amount_to_pay,
-                    'amount_to_pay_words': amount_to_pay_words,
+                'amount_to_pay_words': num2words_inr(add_item_instance.amount_to_pay),
+
+                    # 'amount_to_pay_words': amount_to_pay_words,
                     'sum_of_gst_percentages': sum_of_gst_percentages,
-                    'sum_of_gst_percentages_words': sum_of_gst_percentages_words,
+                    'sum_of_gst_percentages_words': num2words_inr(sum_of_gst_percentages),
                     'sum_of_item_total_price': add_item_instance.sum_of_item_total_price,
                     'sum_of_igst_percentage': add_item_instance.sum_of_igst_percentage,
                     'sum_of_cgst_percentage': add_item_instance.sum_of_cgst_percentage,
@@ -4758,11 +4671,8 @@ class AddItemAPI(APIView):
                     'sum_of_price_after_discount': add_item_instance.sum_of_price_after_discount,
 
                 }
-
                 records_list.append(record_details)
-
-            response_data = records_list
-
+            response_data = records_lis
         return Response(response_data, status=status.HTTP_200_OK)
 
     def post(self, request):
@@ -10031,7 +9941,7 @@ class ExculdeInvoiceSuperAdmin(APIView):
             return {}
 
 
-@method_decorator([authorization_required], name='dispatch')
+# @method_decorator([authorization_required], name='dispatch')
 class GetByInvoiceNumber(View):
     def get(self, request, *args, **kwargs):
         try:
@@ -10095,6 +10005,9 @@ class GetByInvoiceNumber(View):
             'invoice_status': item.invoice_status.invoice_status_name,
             'ewaybill': item.ewaybill_payload,
             'amount_to_pay': item.amount_to_pay,
+            'amount_to_pay_words': num2words_inr(item.amount_to_pay),
+            'sum_of_gst_percentages': item.sum_of_igst_percentage + item.sum_of_cgst_percentage + item.sum_of_sgst_percentage,
+            'sum_of_gst_percentages_words': num2words_inr(item.sum_of_igst_percentage + item.sum_of_cgst_percentage + item.sum_of_sgst_percentage),
             'sum_of_item_total_price': item.sum_of_item_total_price,
             'sum_of_igst_percentage': item.sum_of_igst_percentage,
             'sum_of_cgst_percentage': item.sum_of_cgst_percentage,
@@ -10155,7 +10068,6 @@ class GetByInvoiceNumber(View):
 
         # elif custom_invoices:
         else:
-            # return ("uuuuuuuuuuuuuuuuuuuuuuuuuuu")
             drone_details_with_info = []
             for custom_item_detail in item.custom_item_details:
                 # drone_id = custom_item_detail.get('drone_id')
