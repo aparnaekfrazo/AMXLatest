@@ -11035,6 +11035,7 @@ class MyAPIView(APIView):
                         'EwbDt': ewb_dt,
                         'EwbValidTill': ewb_valid_till,
                     }
+                    print(invoice_data,"ooooooooooooooooooooooooooo")
 
 
                 except CustomInvoice.DoesNotExist:
@@ -11046,9 +11047,10 @@ class MyAPIView(APIView):
                 'default_data': 'This is default data',
             }
 
+
         # Render HTML content from the template with additional data
         html_content = render_to_string(html_template_path, {'invoice_data': invoice_data})
-        print(invoice_data,"invoiceeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
+
         print(type(invoice_data,"tyyyyyyyyyyyyyyyyyyyyyy"))
 
         # Generate PDF from HTML content
