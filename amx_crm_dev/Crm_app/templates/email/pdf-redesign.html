@@ -180,7 +180,9 @@
                                     <td>{{invoice_data.quantity }}</td>
                                     <td>&#x20B9;{{invoice_data.price }}</td>
                                     <td>{{invoice_data.discount }}</td>
-                                    <td>{{invoice_data.sgst+invoice_data.cgst+invoice_data.igst}}%</td>
+<!--                                    <td>{{invoice_data.sgst+invoice_data.cgst+invoice_data.igst}}%</td>-->
+                                                <td>{{ invoice_data.sgst|add:invoice_data.cgst|add:invoice_data.igst }}%</td>
+
                                     <td>&#x20B9;{{ invoice_data.item_total_price }}</td>
                                             </tr>
                                             <tr>
