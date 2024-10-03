@@ -11048,6 +11048,8 @@ class MyAPIView(APIView):
 
         # Render HTML content from the template with additional data
         html_content = render_to_string(html_template_path, {'invoice_data': invoice_data})
+        print(invoice_data,"invoiceeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
+        print(type(invoice_data,"tyyyyyyyyyyyyyyyyyyyyyy"))
 
         # Generate PDF from HTML content
         pdf_file = HTML(string=html_content).write_pdf()
