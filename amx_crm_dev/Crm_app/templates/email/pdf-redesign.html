@@ -115,10 +115,10 @@
                                 
                             </div>
                             <div class="col-6 justify-content-center text-center align-item-center">
-                                <h2 class="mb-space sub-heading">{{invoice_data.company_name||'-'}}</h2>
-                                <p class="mb-space"><span class="title-label"><b>CIN</b> : </span><span class="title-value">{{invoice_data.company_cin_num || '-'}}</span> | <span class="title-label"><b>GSTIN</b> : </span><span class="title-value">{{invoice_data.company_gst_num||'-'}}</span></p>
-                                <p class="mb-space"><span class="title-label"><b>Office Add</b> : </span> <span class="title-value">{{invoice_data.billing_address||'-'}}</span></p>
-                            <p class="mb-0"><span class="title-label"><b>Email</b> : </span> <span class="title-value">{{invoice_data.email||'-'}}</span> | <span class="title-label"><b>Mob No</b> : </span> <span class="title-value">{{invoice_data.mobile_number||'-'}}</span></p>
+                                <h2 class="mb-space sub-heading">{{invoice_data.owner_company_name||'-'}}</h2>
+                                <p class="mb-space"><span class="title-label"><b>CIN</b> : </span><span class="title-value">{{invoice_data.owner_company_cin_num || '-'}}</span> | <span class="title-label"><b>GSTIN</b> : </span><span class="title-value">{{invoice_data.owner_company_gst_num||'-'}}</span></p>
+                                <p class="mb-space"><span class="title-label"><b>Office Add</b> : </span> <span class="title-value">{{invoice_data.owner_billing_address||'-'}}</span></p>
+                            <p class="mb-0"><span class="title-label"><b>Email</b> : </span> <span class="title-value">{{invoice_data.owner_email||'-'}}</span> | <span class="title-label"><b>Mob No</b> : </span> <span class="title-value">{{invoice_data.owner_mobile_number||'-'}}</span></p>
                             </div>
                             <div class="col-3"></div>
                         </div>
