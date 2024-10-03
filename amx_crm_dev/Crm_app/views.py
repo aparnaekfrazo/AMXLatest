@@ -10054,12 +10054,12 @@ class GetByInvoiceNumber(View):
                     'sgst': drone_detail.get('sgst', 0),
                     'created_datetime': drone_detail.get('created_datetime', []),
                     'updated_datetime': drone_detail.get('updated_datetime', []),
-                    'discount_amount': str(drone_detail.get('discount_amount', 0.0)),
-                    'price_after_discount': str(drone_detail.get('price_after_discount', 0.0)),
-                    'igst_percentage': str(drone_detail.get('igst_percentage', 0.0)),
-                    'cgst_percentage': str(drone_detail.get('cgst_percentage', 0.0)),
-                    'sgst_percentage': str(drone_detail.get('sgst_percentage', 0.0)),
-                    'total': str(drone_detail.get('total', 0.0)),
+                    'discount_amount': drone_detail.get('discount_amount', 0.0),
+                    'price_after_discount': drone_detail.get('price_after_discount', 0.0),
+                    'igst_percentage': drone_detail.get('igst_percentage', 0.0),
+                    'cgst_percentage': drone_detail.get('cgst_percentage', 0.0),
+                    'sgst_percentage': drone_detail.get('sgst_percentage', 0.0),
+                    'total': drone_detail.get('total', 0.0),
                 }
 
                 drone_details_with_info.append(drone_info)
