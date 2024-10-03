@@ -115,10 +115,10 @@
                                 
                             </div>
                             <div class="col-6 justify-content-center text-center align-item-center">
-                                <h2 class="mb-space sub-heading">{{invoice_data.owner_company_name||'-'}}</h2>
-                                <p class="mb-space"><span class="title-label"><b>CIN</b> : </span><span class="title-value">{{invoice_data.owner_company_cin_num || '-'}}</span> | <span class="title-label"><b>GSTIN</b> : </span><span class="title-value">{{invoice_data.owner_company_gst_num||'-'}}</span></p>
-                                <p class="mb-space"><span class="title-label"><b>Office Add</b> : </span> <span class="title-value">{{invoice_data.owner_billing_address||'-'}}</span></p>
-                            <p class="mb-0"><span class="title-label"><b>Email</b> : </span> <span class="title-value">{{invoice_data.owner_email||'-'}}</span> | <span class="title-label"><b>Mob No</b> : </span> <span class="title-value">{{invoice_data.owner_mobile_number||'-'}}</span></p>
+                                <h2 class="mb-space sub-heading">{{invoice_data.owner_company_name}}</h2>
+                                <p class="mb-space"><span class="title-label"><b>CIN</b> : </span><span class="title-value">{{invoice_data.owner_company_cin_num }}</span> | <span class="title-label"><b>GSTIN</b> : </span><span class="title-value">{{invoice_data.owner_company_gst_num}}</span></p>
+                                <p class="mb-space"><span class="title-label"><b>Office Add</b> : </span> <span class="title-value">{{invoice_data.owner_billing_address}}</span></p>
+                            <p class="mb-0"><span class="title-label"><b>Email</b> : </span> <span class="title-value">{{invoice_data.owner_email}}</span> | <span class="title-label"><b>Mob No</b> : </span> <span class="title-value">{{invoice_data.owner_mobile_number}}</span></p>
                             </div>
                             <div class="col-3"></div>
                         </div>
@@ -139,12 +139,12 @@
                             </div>
                             <div class="row d-flex black-border my-2">
                                 <div class="co-12 text-start px-0">
-                                    <h3><b>Bill To: </b> {{invoice_data.customer_first_name || ''}}<span>({{invoice_data.customer_company_name || ''}})</span> </h3>
-                                    <h3><b>Address: </b> <span>{{invoice_data.customer_billing_address||''}}, {{invoice_data.customer_billing_pincode||''}}, {{invoice_data.customer_billing_state||''}}, {{invoice_data.customer_billing_state_country ||''}}</span>
+                                    <h3><b>Bill To: </b> {{invoice_data.customer_first_name }}<span>({{invoice_data.customer_company_name }})</span> </h3>
+                                    <h3><b>Address: </b> <span>{{invoice_data.customer_billing_address}}, {{invoice_data.customer_billing_pincode}}, {{invoice_data.customer_billing_state}}, {{invoice_data.customer_billing_state_country }}</span>
                          </h3>   
-                         <h3><b>GSTIN: </b>{{invoice_data.customer_first_name || ''}}</h3>
-                         <h3><b>Contact Details:</b>{{invoice_data.invoice_data.customer_email || ''}},{{ invoice_data.customer_mobile_number || '' }} </h3>
-                         <h3><b>Place Of Delivery: </b> {{invoice_data.customer_details.shipping_state ||''}}</h3>
+                         <h3><b>GSTIN: </b>{{invoice_data.customer_first_name }}</h3>
+                         <h3><b>Contact Details:</b>{{invoice_data.invoice_data.customer_email }},{{ invoice_data.customer_mobile_number  }} </h3>
+                         <h3><b>Place Of Delivery: </b> {{invoice_data.customer_details.shipping_state }}</h3>
                                 </div>
                             </div>
                             <div class="row d-flex my-2">
