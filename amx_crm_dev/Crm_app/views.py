@@ -10060,6 +10060,8 @@ class GetByInvoiceNumber(View):
                     'cgst_percentage': drone_detail.get('cgst_percentage', 0.0),
                     'sgst_percentage': drone_detail.get('sgst_percentage', 0.0),
                     'total': drone_detail.get('total', 0.0),
+                    'totaltax':drone_detail.get('igst', 0)+drone_detail.get('cgst', 0)+drone_detail.get('sgst', 0),
+                    'tax_percentage_total':drone_detail.get('igst_percentage', 0.0)+drone_detail.get('cgst_percentage', 0.0)+drone_detail.get('sgst_percentage', 0.0)
                 }
 
                 drone_details_with_info.append(drone_info)
