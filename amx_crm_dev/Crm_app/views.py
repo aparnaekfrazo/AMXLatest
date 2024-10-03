@@ -11045,15 +11045,6 @@ class MyAPIView(APIView):
             invoice_data = {
                 'default_data': 'This is default data',
             }
-            if invoice_data:
-                # Ensure sgst, cgst, and igst are set
-                invoice_data['sgst'] = invoice_data.get('sgst', 0)
-                invoice_data['cgst'] = invoice_data.get('cgst', 0)
-                invoice_data['igst'] = invoice_data.get('igst', 0)
-
-                # Calculate total tax
-                total_tax = invoice_data['sgst'] + invoice_data['cgst'] + invoice_data['igst']
-                invoice_data['total_tax'] = total_tax
 
         # Render HTML content from the template with additional data
         html_content = render_to_string(html_template_path, {'invoice_data': invoice_data})
