@@ -115,10 +115,10 @@
                                 
                             </div>
                             <div class="col-6 justify-content-center text-center align-item-center">
-                                <h2 class="mb-space sub-heading">{{invoice_data?.company_name||'-'}}</h2>
-                                <p class="mb-space"><span class="title-label"><b>CIN</b> : </span><span class="title-value">{{invoice_data?.company_cin_num || '-'}}</span> | <span class="title-label"><b>GSTIN</b> : </span><span class="title-value">{{invoice_data?.company_gst_num||'-'}}</span></p>
-                                <p class="mb-space"><span class="title-label"><b>Office Add</b> : </span> <span class="title-value">{{invoice_data?.billing_address||'-'}}</span></p>
-                            <p class="mb-0"><span class="title-label"><b>Email</b> : </span> <span class="title-value">{{invoice_data?.email||'-'}}</span> | <span class="title-label"><b>Mob No</b> : </span> <span class="title-value">{{invoice_data.mobile_number||'-'}}</span></p>
+                                <h2 class="mb-space sub-heading">{{invoice_data.company_name||'-'}}</h2>
+                                <p class="mb-space"><span class="title-label"><b>CIN</b> : </span><span class="title-value">{{invoice_data.company_cin_num || '-'}}</span> | <span class="title-label"><b>GSTIN</b> : </span><span class="title-value">{{invoice_data.company_gst_num||'-'}}</span></p>
+                                <p class="mb-space"><span class="title-label"><b>Office Add</b> : </span> <span class="title-value">{{invoice_data.billing_address||'-'}}</span></p>
+                            <p class="mb-0"><span class="title-label"><b>Email</b> : </span> <span class="title-value">{{invoice_data.email||'-'}}</span> | <span class="title-label"><b>Mob No</b> : </span> <span class="title-value">{{invoice_data.mobile_number||'-'}}</span></p>
                             </div>
                             <div class="col-3"></div>
                         </div>
@@ -129,22 +129,22 @@
                         <div class="container">
                             <div class="row d-flex black-border my-2">
                                 <div class="col-12 text-start px-0">
-                                    <h3><b>Invoice Date:</b> {{ invoice_data?.updated_date_time|date:"d/m/Y H:i A" }} </h3>
-                                    <h3><b>Invoice Number:</b> {{ invoice_data?.invoice_number }} </h3>
-                                    <h3><b>Place Of Supply:</b> {{invoice_data?.billing_state}} ({{invoice_data?.billing_state_code}})</h3>
-                                  <h3><b>E-way Bill Number:</b> {{invoice_data?.EwbNo}}</h3>
-                                  <h3><b>E-way Bill Date:</b> {{invoice_data?.EwbDt}}</h3>
-                                  <h3><b>E-way Valid Till:</b> {{invoice_data?.EwbValidTill}}</h3>
+                                    <h3><b>Invoice Date:</b> {{ invoice_data.updated_date_time|date:"d/m/Y H:i A" }} </h3>
+                                    <h3><b>Invoice Number:</b> {{ invoice_data.invoice_number }} </h3>
+                                    <h3><b>Place Of Supply:</b> {{invoice_data.billing_state}} ({{invoice_data.billing_state_code}})</h3>
+                                  <h3><b>E-way Bill Number:</b> {{invoice_data.EwbNo}}</h3>
+                                  <h3><b>E-way Bill Date:</b> {{invoice_data.EwbDt}}</h3>
+                                  <h3><b>E-way Valid Till:</b> {{invoice_data.EwbValidTill}}</h3>
                                 </div>
                             </div>
                             <div class="row d-flex black-border my-2">
                                 <div class="co-12 text-start px-0">
-                                    <h3><b>Bill To: </b> {{invoice_data?.customer_first_name || ''}}<span>({{invoice_data?.customer_company_name || ''}})</span> </h3>
-                                    <h3><b>Address: </b> <span>{{invoice_data?.customer_billing_address||''}}, {{invoice_data?.customer_billing_pincode||''}}, {{invoice_data?.customer_billing_state||''}}, {{invoice_data?.customer_billing_state_country ||''}}</span>
+                                    <h3><b>Bill To: </b> {{invoice_data.customer_first_name || ''}}<span>({{invoice_data.customer_company_name || ''}})</span> </h3>
+                                    <h3><b>Address: </b> <span>{{invoice_data.customer_billing_address||''}}, {{invoice_data.customer_billing_pincode||''}}, {{invoice_data.customer_billing_state||''}}, {{invoice_data.customer_billing_state_country ||''}}</span>
                          </h3>   
-                         <h3><b>GSTIN: </b>{{invoice_data?.customer_first_name || ''}}</h3>
-                         <h3><b>Contact Details:</b>{{invoice_data?.invoice_data.customer_email || ''}},{{ invoice_data.customer_mobile_number || '' }} </h3>
-                         <h3><b>Place Of Delivery: </b> {{invoice_data?.customer_details.shipping_state ||''}}</h3>        
+                         <h3><b>GSTIN: </b>{{invoice_data.customer_first_name || ''}}</h3>
+                         <h3><b>Contact Details:</b>{{invoice_data.invoice_data.customer_email || ''}},{{ invoice_data.customer_mobile_number || '' }} </h3>
+                         <h3><b>Place Of Delivery: </b> {{invoice_data.customer_details.shipping_state ||''}}</h3>
                                 </div>
                             </div>
                             <div class="row d-flex my-2">
@@ -186,17 +186,17 @@
                                             <tr>
                                                 <td></td>
                                                 <td colspan="6"><b>CGST,SGST,IGST</b></td>
-                                                <td>&#x20B9; {{invoice_data?.sum_of_cgst_percentage}}+{{invoice_data?.sum_of_sgst_percentage}}+{{invoice_data?.sum_of_igst_percentage}}</td>
+                                                <td>&#x20B9; {{invoice_data.sum_of_cgst_percentage}}+{{invoice_data.sum_of_sgst_percentage}}+{{invoice_data.sum_of_igst_percentage}}</td>
                                             </tr>
                                             <tr></tr>
                                                 <td></td>
                                                 <td colspan="6"><b>Discount</b></td>
-                                                <td>&#x20B9; {{invoice_data?.sum_of_discount_amount}}</td>
+                                                <td>&#x20B9; {{invoice_data.sum_of_discount_amount}}</td>
                                             </tr> 
                                             <tr>
                                                 <td></td>
                                                 <td colspan="6"><b>Total</b></td>
-                                                <td>&#x20B9; {{invoice_data?.amount_to_pay}}</td>
+                                                <td>&#x20B9; {{invoice_data.amount_to_pay}}</td>
                                             </tr>
                                             <tr><td colspan="8" style="text-align: start !important;">Total Amount (In Words): </td></tr>
                                             <tr>
@@ -210,19 +210,19 @@
                                                 <th>Amount (&#x20B9;)</th>
                                             </tr>
                                             <tr>
-                                                <td colspan="4">{{invoice_data?.hsn_number}}</td>
-                                                <td>&#x20B9; {{invoice_data?.price_after_discount}}</td>
-                                                <td>{{invoice_data?.cgst+invoice_data?.sgst+invoice_data?.igst}}%</td>
-                                                <td>&#x20B9; {{invoice_data?.cgst_percentage+invoice_data?.sgst_percentage+invoice_data?.igst_percentage}}</td>
-                                                <td>&#x20B9; {{invoice_data?.cgst_percentage+invoice_data?.sgst_percentage+custom_item.igst_percentage}}</td>
+                                                <td colspan="4">{{invoice_data.hsn_number}}</td>
+                                                <td>&#x20B9; {{invoice_data.price_after_discount}}</td>
+                                                <td>{{invoice_data.cgst+invoice_data.sgst+invoice_data.igst}}%</td>
+                                                <td>&#x20B9; {{invoice_data.cgst_percentage+invoice_data.sgst_percentage+invoice_data.igst_percentage}}</td>
+                                                <td>&#x20B9; {{invoice_data.cgst_percentage+invoice_data.sgst_percentage+custom_item.igst_percentage}}</td>
                                                 
                                                 </tr>
                                                 <tr>
                                                     <td colspan="4"><b>Total</b></td>
-                                                    <td>&#x20B9; {{invoice_data?.sum_of_price_after_discount}}</td>
+                                                    <td>&#x20B9; {{invoice_data.sum_of_price_after_discount}}</td>
                                     <td></td>
-                                    <td>&#x20B9; {{invoice_data?.sum_of_cgst_percentage+invoice_data?.sum_of_sgst_percentage+invoice_data?.sum_of_igst_percentage}}</td>
-                                    <td>&#x20B9; {{invoice_data?.sum_of_cgst_percentage+invoice_data?.sum_of_sgst_percentage+invoice_data?.sum_of_igst_percentage}}</td>
+                                    <td>&#x20B9; {{invoice_data.sum_of_cgst_percentage+invoice_data.sum_of_sgst_percentage+invoice_data.sum_of_igst_percentage}}</td>
+                                    <td>&#x20B9; {{invoice_data.sum_of_cgst_percentage+invoice_data.sum_of_sgst_percentage+invoice_data.sum_of_igst_percentage}}</td>
                                 
                                                 </tr>
                                             <tr><td colspan="8" style="text-align: start !important;">Total Tax Amount (In Words): </td></tr>
@@ -244,19 +244,19 @@
                                 <div class="col-6 border py-2">
                                     <div class="row d-flex">
                                     <div class="col-4">
-                                        <img src="https://amx-crm-dev.thestorywallcafe.com/{{invoice_data?.qr_code_path}} " class="qrcode" style="height: 150px; width: 150px;">
+                                        <img src="https://amx-crm-dev.thestorywallcafe.com/{{invoice_data.qr_code_path}} " class="qrcode" style="height: 150px; width: 150px;">
                                     </div> 
                                     <div class="col-8">
-                                        <p><b><h6 style="display: inline;">IRN: </h6></b> {{ invoice_data?.Irn }}</p>
-                                        <p><b><h6 style="display: inline;">Ack No: </h6></b>  {{ invoice_data?.AckNo }}</p>
-                                        <p><b><h6 style="display: inline;">Ack Date: </h6></b>{{ invoice_data?.AckDt }}</p>
+                                        <p><b><h6 style="display: inline;">IRN: </h6></b> {{ invoice_data.Irn }}</p>
+                                        <p><b><h6 style="display: inline;">Ack No: </h6></b>  {{ invoice_data.AckNo }}</p>
+                                        <p><b><h6 style="display: inline;">Ack Date: </h6></b>{{ invoice_data.AckDt }}</p>
                                     </div>  
                                     </div>
                                 </div>
                                 <div class="col-6 border py-2">
                                     <div class="row justify-content-center text-center">
                                         <div class="col-12">
-                                            <img src="https://amx-crm-dev.thestorywallcafe.com/{{invoice_data?.signature}}" alt="" style="height: 100px; width: 150px;">    
+                                            <img src="https://amx-crm-dev.thestorywallcafe.com/{{invoice_data.signature}}" alt="" style="height: 100px; width: 150px;">
                                     </div>
                                    <div class="col-12">
                                     <h5><b>Authorized signature</b></h5>
