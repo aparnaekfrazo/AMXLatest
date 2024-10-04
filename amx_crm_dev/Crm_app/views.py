@@ -10910,7 +10910,7 @@ class MyAPIView(APIView):
                         'igst_percentage': igst_percentage,
                         'quantity': quantity_str,
                         'price': unit_price_str,
-                        'discount': discount_str,
+                        'discount': int(discount_str),
                         'cgst': cgst,
                         'sgst': sgst,
                         'igst': igst,
