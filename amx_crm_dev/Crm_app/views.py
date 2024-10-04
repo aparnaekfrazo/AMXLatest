@@ -10060,8 +10060,6 @@ class GetByInvoiceNumber(View):
                     'cgst_percentage': drone_detail.get('cgst_percentage', 0.0),
                     'sgst_percentage': drone_detail.get('sgst_percentage', 0.0),
                     'total': drone_detail.get('total', 0.0),
-                    'totaltax':drone_detail.get('igst', 0)+drone_detail.get('cgst', 0)+drone_detail.get('sgst', 0),
-                    'tax_percentage_total':drone_detail.get('igst_percentage', 0.0)+drone_detail.get('cgst_percentage', 0.0)+drone_detail.get('sgst_percentage', 0.0)
                 }
 
                 drone_details_with_info.append(drone_info)
@@ -10628,6 +10626,7 @@ class MyAPIView(APIView):
                             'cgst': drone_detail.get('cgst', None),
                             'igst': drone_detail.get('igst', None),
                             'sgst': drone_detail.get('sgst', None),
+                            'totaltax':drone_detail.get('cgst', None)+drone_detail.get('igst', None)+drone_detail.get('sgst', None),
                             'price': drone_detail.get('price', None),
                             'total': drone_detail.get('total', None),
                             'units': drone_detail.get('units', None),
@@ -10640,6 +10639,7 @@ class MyAPIView(APIView):
                             'discount_amount': drone_detail.get('discount_amount', None),
                             'igst_percentage': drone_detail.get('igst_percentage', None),
                             'sgst_percentage': drone_detail.get('sgst_percentage', None),
+                            'tax_percentage_total':drone_detail.get('cgst_percentage', None)+drone_detail.get('igst_percentage', None)+drone_detail.get('sgst_percentage', None),
                             'created_datetime': drone_detail.get('created_datetime', None),
                             'item_total_price': drone_detail.get('item_total_price', None),
                             'updated_datetime': drone_detail.get('updated_datetime', None),
@@ -10914,6 +10914,8 @@ class MyAPIView(APIView):
                         'cgst': cgst,
                         'sgst': sgst,
                         'igst': igst,
+                        'totaltax':int(cgst+sgst+igst),
+                        'tax_percentage_total':int(cgst_percentage+sgst_percentage+igst_percentage),
                         'qr_code_path': qr_code_path,
                         'item_total_price': item_total_price,
                         'price_after_discount': price_after_discount,
