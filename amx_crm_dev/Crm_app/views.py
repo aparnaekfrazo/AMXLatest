@@ -10630,7 +10630,7 @@ class MyAPIView(APIView):
                             'price': drone_detail.get('price', None),
                             'total': drone_detail.get('total', None),
                             'units': drone_detail.get('units', None),
-                            'discount': drone_detail.get('discount', None),
+                            'discount': int(drone_detail.get('discount', None)),
                             'drone_id': drone_detail.get('drone_id', None),
                             'quantity': drone_detail.get('quantity', None),
                             'hsn_number': drone_detail.get('hsn_number', None),
