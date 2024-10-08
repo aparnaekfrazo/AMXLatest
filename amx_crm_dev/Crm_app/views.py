@@ -13438,7 +13438,7 @@ def initiate_payment(request):
         batch_type_id = json_data.get('batch_type_id')
         user_id = json_data.get('user_id')
 
-        if Slot.objects.filter(batch_name=batch_name).exists():
+        if Slot.objects.filter(batch_name=batch_name,user_id=user_id).exists():
             return JsonResponse({'message': 'Batch name already exists'},
                                 status=status.HTTP_400_BAD_REQUEST)
 
