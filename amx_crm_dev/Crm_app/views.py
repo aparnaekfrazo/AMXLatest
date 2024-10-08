@@ -13555,6 +13555,7 @@ class SlotListView(APIView):
         slot_date = self.request.query_params.get('slot_date')
         batch_type_id = self.request.query_params.get('batch_type_id')
         batch_name = self.request.query_params.get('batch_name')
+        search = self.request.query_params.get('search')
 
         slots = Slot.objects.all().order_by('-id')
 
@@ -13566,6 +13567,9 @@ class SlotListView(APIView):
             slots = slots.filter(batch_type_id=batch_type_id)
         if batch_name:
             slots = slots.filter(batch_name=batch_name)
+
+        if search:
+            slots = slots.filter(batch_name__icontains=search)
 
         slots = slots.annotate(student_count=Count('slotstudentrelation'))
         slots = slots.filter(student_count=0)
