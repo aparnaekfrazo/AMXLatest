@@ -16538,7 +16538,7 @@ from datetime import datetime
 from django.utils.dateparse import parse_date
 
 
-@method_decorator([authorization_required], name='dispatch')
+# @method_decorator([authorization_required], name='dispatch')
 class SlotFilterAPIView(APIView):
     def get(self, request):
         role = request.query_params.get('role_name')
@@ -16570,8 +16570,8 @@ class SlotFilterAPIView(APIView):
             except ValueError:
                 return Response({'message': 'Invalid date format. Use DD-MM-YYYY'}, status=400)
         else:
-            start_date = current_date + timedelta(days=0)
-            end_date = current_date + timedelta(days=9)
+            start_date = current_date.replace(day=1)  # First day of the current month
+            end_date = current_date.replace(day=1) + timedelta(days=30)  # Roughly the next month
 
         if role == 'Partner' and user.role_id.role_name == 'Super_admin' and partner_id:
             try:
@@ -16619,32 +16619,32 @@ class SlotFilterAPIView(APIView):
         individual_slots = slots.filter(batch_type__name='Individual')
         group_slots = slots.filter(batch_type__name='Group')
 
-        # Annotate and group by slot_date
-        individual_slot_counts = individual_slots.values('slot_date').annotate(count=Count('slot_date')).order_by('-slot_date')
-        group_slot_counts = group_slots.values('slot_date').annotate(count=Count('slot_date')).order_by('-slot_date')
+        # Annotate and group by month and year
+        individual_slot_counts = individual_slots.annotate(month=ExtractMonth('slot_date')).values('month').annotate(count=Count('id')).order_by('month')
+        group_slot_counts = group_slots.annotate(month=ExtractMonth('slot_date')).values('month').annotate(count=Count('id')).order_by('month')
 
-        # Create dictionaries with dates and their counts
-        individual_slot_dict = {slot['slot_date']: slot['count'] for slot in individual_slot_counts}
-        group_slot_dict = {slot['slot_date']: slot['count'] for slot in group_slot_counts}
+        # Create dictionaries with months and their counts
+        individual_slot_dict = {slot['month']: slot['count'] for slot in individual_slot_counts}
+        group_slot_dict = {slot['month']: slot['count'] for slot in group_slot_counts}
 
-        # Generate the list of dates within the specified range
-        all_dates = [start_date + timedelta(days=i) for i in range((end_date - start_date).days + 1)]
+        # Generate the list of months
+        months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
-        # Format the response including dates with zero count for both batch types
+        # Format the response including months with zero count
         individual_slots_data = [
             {
-                'month': date.strftime("%d-%m-%Y"),
-                'count': individual_slot_dict.get(date, 0)
+                'month': months[i - 1],  # i - 1 because month is 1-indexed
+                'count': individual_slot_dict.get(i, 0)
             }
-            for date in all_dates
+            for i in range(1, 13)  # Loop through 1 to 12 for each month
         ]
 
         group_slots_data = [
             {
-                'month': date.strftime("%d-%m-%Y"),
-                'count': group_slot_dict.get(date, 0)
+                'month': months[i - 1],
+                'count': group_slot_dict.get(i, 0)
             }
-            for date in all_dates
+            for i in range(1, 13)
         ]
 
         response_data = {
