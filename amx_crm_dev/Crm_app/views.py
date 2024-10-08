@@ -10601,7 +10601,7 @@ class MyAPIView(APIView):
 
     def get(self, request, invoice_number=None, *args, **kwargs):
         # Your HTML template path
-        html_template_path = '/amx-crm-dev/django/amx_crm_dev/Crm_app/templates/email/pdf.html'
+        html_template_path = '/home/user/Documents/AMX_LATESTLOCAL/AMXLatest/amx_crm_dev/Crm_app/templates/email/pdf.html'
         #base_url = 'https://amx-crm.thestorywallcafe.com'
         base_url = settings.CRM_PORTAL_DOMAIN
         invoice_data = {}
@@ -10840,6 +10840,7 @@ class MyAPIView(APIView):
                     'EwbDt': EwbDt,
                     'EwbValidTill': EwbValidTill,
                 })
+                print(invoice_data,"pppppppppppppppppppppppppppppppppppppppp")
 
 
 
@@ -13437,8 +13438,8 @@ def initiate_payment(request):
         batch_type_id = json_data.get('batch_type_id')
         user_id = json_data.get('user_id')
 
-        if Slot.objects.filter(batch_name=batch_name, slot_date=slot_date).exists():
-            return JsonResponse({'message': 'Batch name already exists for this slot date'},
+        if Slot.objects.filter(batch_name=batch_name).exists():
+            return JsonResponse({'message': 'Batch name already exists'},
                                 status=status.HTTP_400_BAD_REQUEST)
 
         # Assuming the foreign key field name is batch_type_id
