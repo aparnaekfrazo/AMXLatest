@@ -16539,6 +16539,9 @@ from django.utils.dateparse import parse_date
 
 
 # @method_decorator([authorization_required], name='dispatch')
+from django.db.models.functions import TruncMonth
+from datetime import datetime
+
 class SlotFilterAPIView(APIView):
     def get(self, request):
         role = request.query_params.get('role_name')
@@ -16561,7 +16564,7 @@ class SlotFilterAPIView(APIView):
         except CustomUser.DoesNotExist:
             return Response({'message': 'User does not exist'}, status=404)
 
-        # Parse the start_date and end_date if provided, otherwise use default range
+        # Parse the start_date and end_date if provided
         current_date = timezone.now().date()
         if start_date_str and end_date_str:
             try:
@@ -16570,9 +16573,10 @@ class SlotFilterAPIView(APIView):
             except ValueError:
                 return Response({'message': 'Invalid date format. Use DD-MM-YYYY'}, status=400)
         else:
-            start_date = current_date + timedelta(days=0)
-            end_date = current_date + timedelta(days=9)
+            start_date = datetime(current_date.year, 1, 1).date()  # Start from January 1st of the current year
+            end_date = datetime(current_date.year, 12, 31).date()  # End at December 31st of the current year
 
+        # Filter slots by role and user
         if role == 'Partner' and user.role_id.role_name == 'Super_admin' and partner_id:
             try:
                 partner_id = int(partner_id)
@@ -16619,32 +16623,32 @@ class SlotFilterAPIView(APIView):
         individual_slots = slots.filter(batch_type__name='Individual')
         group_slots = slots.filter(batch_type__name='Group')
 
-        # Annotate and group by slot_date
-        individual_slot_counts = individual_slots.values('slot_date').annotate(count=Count('slot_date')).order_by('-slot_date')
-        group_slot_counts = group_slots.values('slot_date').annotate(count=Count('slot_date')).order_by('-slot_date')
+        # Aggregate counts by month
+        individual_slot_counts = individual_slots.annotate(month=TruncMonth('slot_date')).values('month').annotate(count=Count('month')).order_by('month')
+        group_slot_counts = group_slots.annotate(month=TruncMonth('slot_date')).values('month').annotate(count=Count('month')).order_by('month')
 
-        # Create dictionaries with dates and their counts
-        individual_slot_dict = {slot['slot_date']: slot['count'] for slot in individual_slot_counts}
-        group_slot_dict = {slot['slot_date']: slot['count'] for slot in group_slot_counts}
+        # Create dictionaries with months and their counts
+        individual_slot_dict = {slot['month'].strftime("%B"): slot['count'] for slot in individual_slot_counts}
+        group_slot_dict = {slot['month'].strftime("%B"): slot['count'] for slot in group_slot_counts}
 
-        # Generate the list of dates within the specified range
-        all_dates = [start_date + timedelta(days=i) for i in range((end_date - start_date).days + 1)]
+        # Generate the list of months within the current year
+        all_months = [datetime(current_date.year, month, 1).strftime("%B") for month in range(1, 13)]
 
-        # Format the response including dates with zero count for both batch types
+        # Format the response including months with zero count for both batch types
         individual_slots_data = [
             {
-                'month': date.strftime("%d-%m-%Y"),
-                'count': individual_slot_dict.get(date, 0)
+                'month': month,
+                'count': individual_slot_dict.get(month, 0)
             }
-            for date in all_dates
+            for month in all_months
         ]
 
         group_slots_data = [
             {
-                'month': date.strftime("%d-%m-%Y"),
-                'count': group_slot_dict.get(date, 0)
+                'month': month,
+                'count': group_slot_dict.get(month, 0)
             }
-            for date in all_dates
+            for month in all_months
         ]
 
         response_data = {
@@ -16660,6 +16664,130 @@ class SlotFilterAPIView(APIView):
             ]
         }
         return Response(response_data)
+
+
+###sheetal's code
+# class SlotFilterAPIView(APIView):
+#     def get(self, request):
+#         role = request.query_params.get('role_name')
+#         user_id = request.query_params.get('user_id')
+#         start_date_str = request.query_params.get('start_time')
+#         end_date_str = request.query_params.get('end_time')
+#         partner_id = request.query_params.get('partner_id')
+#
+#         if not role or not user_id:
+#             return Response({'message': 'Role and user_id are required'}, status=400)
+#
+#         try:
+#             user_id = int(user_id)
+#         except ValueError:
+#             return Response({'message': 'Invalid user_id format'}, status=400)
+#
+#         # Check if the user exists
+#         try:
+#             user = CustomUser.objects.get(id=user_id)
+#         except CustomUser.DoesNotExist:
+#             return Response({'message': 'User does not exist'}, status=404)
+#
+#         # Parse the start_date and end_date if provided, otherwise use default range
+#         current_date = timezone.now().date()
+#         if start_date_str and end_date_str:
+#             try:
+#                 start_date = datetime.strptime(start_date_str, "%d-%m-%Y").date()
+#                 end_date = datetime.strptime(end_date_str, "%d-%m-%Y").date()
+#             except ValueError:
+#                 return Response({'message': 'Invalid date format. Use DD-MM-YYYY'}, status=400)
+#         else:
+#             start_date = current_date + timedelta(days=0)
+#             end_date = current_date + timedelta(days=9)
+#
+#         if role == 'Partner' and user.role_id.role_name == 'Super_admin' and partner_id:
+#             try:
+#                 partner_id = int(partner_id)
+#             except ValueError:
+#                 return Response({'message': 'Invalid partner_id format'}, status=400)
+#
+#             # Filter slots by partner_id and date range
+#             slots = Slot.objects.filter(
+#                 user_id=partner_id,
+#                 slot_date__range=[start_date, end_date]
+#             )
+#
+#         elif role == 'Partner':
+#             # Filter slots by user_id and date range for Partner role
+#             slots = Slot.objects.filter(
+#                 user_id=user_id,
+#                 slot_date__range=[start_date, end_date]
+#             )
+#
+#         elif role == 'Super_admin':
+#             # Check if the user is actually a Super Admin
+#             if user.role_id.role_name != 'Super_admin':
+#                 return Response({'message': 'User is not a Super_admin'}, status=403)
+#
+#             # Get the Role object for Partner
+#             try:
+#                 partner_role = Role.objects.get(role_name='Partner')
+#             except Role.DoesNotExist:
+#                 return Response({'message': 'Partner role does not exist'}, status=404)
+#
+#             # Get all partner users
+#             partners = CustomUser.objects.filter(role_id=partner_role)
+#
+#             # Filter slots by date range for all partners
+#             slots = Slot.objects.filter(
+#                 user_id__in=partners,
+#                 slot_date__range=[start_date, end_date]
+#             )
+#
+#         else:
+#             return Response({'message': 'Invalid role'}, status=400)
+#
+#         # Separate slots by batch types
+#         individual_slots = slots.filter(batch_type__name='Individual')
+#         group_slots = slots.filter(batch_type__name='Group')
+#
+#         # Annotate and group by slot_date
+#         individual_slot_counts = individual_slots.values('slot_date').annotate(count=Count('slot_date')).order_by('-slot_date')
+#         group_slot_counts = group_slots.values('slot_date').annotate(count=Count('slot_date')).order_by('-slot_date')
+#
+#         # Create dictionaries with dates and their counts
+#         individual_slot_dict = {slot['slot_date']: slot['count'] for slot in individual_slot_counts}
+#         group_slot_dict = {slot['slot_date']: slot['count'] for slot in group_slot_counts}
+#
+#         # Generate the list of dates within the specified range
+#         all_dates = [start_date + timedelta(days=i) for i in range((end_date - start_date).days + 1)]
+#
+#         # Format the response including dates with zero count for both batch types
+#         individual_slots_data = [
+#             {
+#                 'month': date.strftime("%d-%m-%Y"),
+#                 'count': individual_slot_dict.get(date, 0)
+#             }
+#             for date in all_dates
+#         ]
+#
+#         group_slots_data = [
+#             {
+#                 'month': date.strftime("%d-%m-%Y"),
+#                 'count': group_slot_dict.get(date, 0)
+#             }
+#             for date in all_dates
+#         ]
+#
+#         response_data = {
+#             'student_training': [
+#                 {
+#                     'slots': individual_slots_data,
+#                     'label': 'Individual Slots'
+#                 },
+#                 {
+#                     'slots': group_slots_data,
+#                     'label': 'Group Slots'
+#                 }
+#             ]
+#         }
+#         return Response(response_data)
 
 @method_decorator([authorization_required], name='dispatch')
 class CustomersByRoleView(APIView):
