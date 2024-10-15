@@ -17300,7 +17300,7 @@ class BatchSearchSuggestionView(APIView):
         # Check if user_id and search are provided
         if not user_id or not search:
             return Response(
-                {"message": "user_id and search parameters are required."},
+                {"error": "user_id and search parameters are required."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -17312,10 +17312,16 @@ class BatchSearchSuggestionView(APIView):
         # Check if any batches were found
         if not batches.exists():
             return Response(
-                {"message": f"No batches found with search term: {search}"},
+                {"error": f"No batches found with search term: {search}"},
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        # Use the serializer to serialize the response data
-        serializer = SlotSerializer(batches, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        # Prepare the response data
+        response_data = []
+        for batch in batches:
+            response_data.append({
+                "id": batch.id,
+                "batch_name": batch.batch_name,
+            })
+
+        return Response(response_data, status=status.HTTP_200_OK)
