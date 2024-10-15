@@ -17294,7 +17294,7 @@ class GetDroneOrdersGraph(APIView):
 
 class BatchSearchSuggestionView(APIView):
     def get(self, request, *args, **kwargs):
-        user_id = self.request.query_params.get('user_id')
+        user_id = self.request.query_params.get('partner_id')
         search = self.request.query_params.get('search')
 
         # Check if user_id and search are provided
