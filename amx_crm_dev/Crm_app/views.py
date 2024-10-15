@@ -13575,7 +13575,7 @@ class SlotListView(APIView):
             # Check if any slots exist for the search term
             if not slots.exists():
                 return Response(
-                    {"error": f"No slots found for the search term: {search}"},
+                    {"message": f"No slots found for the search term: {search}"},
                     status=status.HTTP_404_NOT_FOUND
                 )
 
@@ -13583,7 +13583,7 @@ class SlotListView(APIView):
             student_count = slots.annotate(student_count=Count('slotstudentrelation'))
             if student_count.filter(student_count__gt=0).exists():
                 return Response(
-                    {"error": f"No slots found for the search term: {search}"},
+                    {"message": f"No slots found for the search term: {search}"},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
