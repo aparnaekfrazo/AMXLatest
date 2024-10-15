@@ -13548,7 +13548,7 @@ def handle_payment_success(request):
     return JsonResponse({'message': 'Invalid request method'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
-@method_decorator([authorization_required], name='dispatch')
+# @method_decorator([authorization_required], name='dispatch')
 class SlotListView(APIView):
     def get(self, request, *args, **kwargs):
         user_id = self.request.query_params.get('user_id')
@@ -13569,10 +13569,30 @@ class SlotListView(APIView):
             slots = slots.filter(batch_name=batch_name)
 
         if search:
+            # Filter based on search term
             slots = slots.filter(batch_name__icontains=search)
 
+            # Check if any slots exist for the search term
+            if not slots.exists():
+                return Response(
+                    {"error": f"No slots found for the search term: {search}"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+            # Check if any of the resulting slots have students
+            student_count = slots.annotate(student_count=Count('slotstudentrelation'))
+            if student_count.filter(student_count__gt=0).exists():
+                return Response(
+                    {"error": f"No slots found for the search term: {search}"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Annotate slots and filter out those with students
         slots = slots.annotate(student_count=Count('slotstudentrelation'))
         slots = slots.filter(student_count=0)
+
+        # Now slice to get the latest batch
+        slots = slots.order_by('-id')[:1]
 
         serializer = SlotSerializer(slots, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -17271,3 +17291,31 @@ class GetDroneOrdersGraph(APIView):
         }
 
         return Response(response_data)
+
+class BatchSearchSuggestionView(APIView):
+    def get(self, request, *args, **kwargs):
+        user_id = self.request.query_params.get('user_id')
+        search = self.request.query_params.get('search')
+
+        # Check if user_id and search are provided
+        if not user_id or not search:
+            return Response(
+                {"message": "user_id and search parameters are required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Filter slots based on user_id and search term
+        batches = Slot.objects.filter(user_id=user_id).filter(
+            Q(batch_name__icontains=search)
+        ).distinct()
+
+        # Check if any batches were found
+        if not batches.exists():
+            return Response(
+                {"message": f"No batches found with search term: {search}"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Use the serializer to serialize the response data
+        serializer = SlotSerializer(batches, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

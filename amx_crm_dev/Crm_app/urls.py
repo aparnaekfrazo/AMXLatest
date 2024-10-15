@@ -158,6 +158,7 @@ urlpatterns = [
     path('customers-org/<int:pk>/', CustomersByRoleView.as_view(), name='customers-by-role'),
     path('purchased-drone/<int:pk>/', PurchasedDroneCategoriesView.as_view(),
          name='purchased-drone-categories'),
+    path('slots-search-suggession/', BatchSearchSuggestionView.as_view(), name='batch-search-suggestion'),
 
 ]
 
