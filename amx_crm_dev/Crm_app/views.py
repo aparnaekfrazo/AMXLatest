@@ -17297,24 +17297,18 @@ class BatchSearchSuggestionView(APIView):
         user_id = self.request.query_params.get('partner_id')
         search = self.request.query_params.get('search')
 
-        # Check if user_id and search are provided
-        if not user_id or not search:
+        # Check if user_id is provided
+        if not user_id:
             return Response(
-                {"error": "user_id and search parameters are required."},
+                {"error": "user_id parameter is required."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
         # Filter slots based on user_id and search term
-        batches = Slot.objects.filter(user_id=user_id).filter(
-            Q(batch_name__icontains=search)
-        ).distinct()
+        batches = Slot.objects.filter(user_id=user_id)
 
-        # Check if any batches were found
-        if not batches.exists():
-            return Response(
-                {"error": f"No batches found with search term: {search}"},
-                status=status.HTTP_404_NOT_FOUND
-            )
+        if search:
+            batches = batches.filter(batch_name__icontains=search)
 
         # Prepare the response data
         response_data = []
@@ -17324,4 +17318,5 @@ class BatchSearchSuggestionView(APIView):
                 "batch_name": batch.batch_name,
             })
 
+        # Return the response data (could be an empty list if no results are found)
         return Response(response_data, status=status.HTTP_200_OK)
