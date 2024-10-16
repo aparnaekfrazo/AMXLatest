@@ -17343,7 +17343,7 @@ class GetDroneOrdersGraph(APIView):
             for month in months_in_year:
                 order_filter = model_filters & Q(created_date_time__date__month=datetime.strptime(month, '%B').month, order_status__status_name='Shipped')
                 count = Order.objects.filter(order_filter).aggregate(total_quantity=Sum('quantity'))['total_quantity'] or 0
-                graph_data.append({'month': month, 'count': count})
+                graph_data.append({'date': month, 'count': count})  # Changed "month" to "date"
                 purchased_drones_count += count  # Add to the total purchased drones count
             purchased_drones_graph.append({'label': label, 'Purchased_drones': graph_data})
 
@@ -17391,7 +17391,7 @@ class GetDroneOrdersGraph(APIView):
             billing_graph_data = []
             for month in months_in_year:
                 count = date_wise_billing_quantities[model_id][month]
-                billing_graph_data.append({'month': month, 'count': count})
+                billing_graph_data.append({'date': month, 'count': count})  # Changed "month" to "date"
 
             billing_graph.append({'labels': labels, 'Billing_Invoice_Graph': billing_graph_data})
 
@@ -17442,6 +17442,7 @@ class GetDroneOrdersGraph(APIView):
         }
 
         return Response(response_data)
+
 
 
 
