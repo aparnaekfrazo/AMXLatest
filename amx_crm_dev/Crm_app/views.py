@@ -14285,13 +14285,14 @@ class StudentCreateAPIView(APIView):
 
         return Response({'message': 'Students deleted successfully'}, status=status.HTTP_200_OK)
 
+from django.db.models import Q
 
 class StudentPagination(PageNumberPagination):
     page_size = 2  # Number of students per page
     page_size_query_param = 'student_page_size'
     max_page_size = 100
 
-@method_decorator([authorization_required], name='dispatch')
+# @method_decorator([authorization_required], name='dispatch')
 class SlotListStudents(APIView):
     def get(self, request, user_id):
         # Check if the user is a Super_admin
@@ -14310,11 +14311,16 @@ class SlotListStudents(APIView):
         payment = request.query_params.get('payment')
         page_no = request.query_params.get('page')
         page_size = request.query_params.get('page_size')
+        search = request.query_params.get('search')
 
         if slot_date:
             slots = slots.filter(slot_date=slot_date)
         if batch_name:
             slots = slots.filter(batch_name=batch_name)
+
+        if search:
+            # Search by batch name
+            slots = slots.filter(batch_name__icontains=search)
 
         # Filter slots that have associated students
         slots_with_students = slots.filter(student__isnull=False).distinct()
