@@ -14293,6 +14293,90 @@ class StudentPagination(PageNumberPagination):
     max_page_size = 100
 
 # @method_decorator([authorization_required], name='dispatch')
+# class SlotListStudents(APIView):
+#     def get(self, request, user_id):
+#         # Check if the user is a Super_admin
+#         is_super_admin = CustomUser.objects.filter(id=user_id, role_id__role_name="Super_admin").exists()
+#
+#         # If the user is a Super_admin, return all slots
+#         if is_super_admin:
+#             slots = Slot.objects.all()
+#         else:
+#             # Otherwise, return slots created by the user
+#             slots = Slot.objects.filter(user_id=user_id)
+#
+#         # Filter slots by slot_date and batch_name if provided in query parameters
+#         slot_date = request.query_params.get('slot_date')
+#         batch_name = request.query_params.get('batch_name')
+#         payment = request.query_params.get('payment')
+#         page_no = request.query_params.get('page')
+#         page_size = request.query_params.get('page_size')
+#         search = request.query_params.get('search')
+#
+#         if slot_date:
+#             slots = slots.filter(slot_date=slot_date)
+#         if batch_name:
+#             slots = slots.filter(batch_name=batch_name)
+#
+#         if search:
+#             # Search by batch name
+#             slots = slots.filter(batch_name__icontains=search)
+#
+#         # Filter slots that have associated students
+#         slots_with_students = slots.filter(student__isnull=False).distinct()
+#         if payment == 'True' and slot_date:
+#             filtered_slots = []
+#             for slot in slots_with_students:
+#                 students = Student.objects.filter(slot_id=slot.id)
+#                 all_success = all(student.stupayment_status == 'Success' for student in students)
+#                 if not all_success:
+#                     filtered_slots.append(slot)
+#             slots_with_students = filtered_slots
+#
+#         # Serialize the queryset
+#         serializer = SlotStudentSerializer(slots_with_students, many=True)
+#
+#         # Prepare paginated response with student count
+#         paginated_slots = []
+#         for slot_data in serializer.data:
+#             students = slot_data['student_lists']
+#
+#             # Initialize default values for pagination
+#             paginated_student_list = students
+#             total_students_count = len(students)
+#
+#             # Check if page and page_size are provided
+#             if page_no is not None and page_size is not None:
+#                 paginator = Paginator(students, page_size)
+#                 paginated_students = paginator.get_page(page_no)
+#
+#                 # Prepare paginated student list
+#                 paginated_student_list = [student for student in paginated_students]
+#                 total_students_count = paginator.count
+#
+#             # Prepare final data for the slot
+#             paginated_slot_data = {
+#                 'id': slot_data['id'],
+#                 'batch_name': slot_data['batch_name'],
+#                 'slot_date': slot_data['slot_date'],
+#                 'batch_size': slot_data['batch_size'],
+#                 'batch_type': slot_data['batch_type'],
+#                 'user_id': slot_data['user_id'],
+#                 'partner_name': slot_data['partner_name'],
+#                 'partner_mobile': slot_data['partner_mobile'],
+#                 'partner_email': slot_data['partner_email'],
+#                 'created_date_time': slot_data['created_date_time'],
+#                 'updated_date_time': slot_data['updated_date_time'],
+#                 'batch_type_name': slot_data['batch_type_name'],
+#                 'student_lists': paginated_student_list,
+#                 'total_students_count': total_students_count,
+#                 'slot_status': slot_data['slot_status']
+#             }
+#
+#             paginated_slots.append(paginated_slot_data)
+#
+#         return Response(paginated_slots)
+
 class SlotListStudents(APIView):
     def get(self, request, user_id):
         # Check if the user is a Super_admin
@@ -14317,14 +14401,25 @@ class SlotListStudents(APIView):
             slots = slots.filter(slot_date=slot_date)
         if batch_name:
             slots = slots.filter(batch_name=batch_name)
-
         if search:
             # Search by batch name
             slots = slots.filter(batch_name__icontains=search)
 
         # Filter slots that have associated students
         slots_with_students = slots.filter(student__isnull=False).distinct()
+
+        # Handle 'payment == True' in combination with 'slot_date'
         if payment == 'True' and slot_date:
+            filtered_slots = []
+            for slot in slots_with_students:
+                students = Student.objects.filter(slot_id=slot.id)
+                all_success = all(student.stupayment_status == 'Success' for student in students)
+                if not all_success:
+                    filtered_slots.append(slot)
+            slots_with_students = filtered_slots
+
+        # Handle 'payment == True' in combination with 'search'
+        if payment == 'True' and search:
             filtered_slots = []
             for slot in slots_with_students:
                 students = Student.objects.filter(slot_id=slot.id)
@@ -14376,6 +14471,7 @@ class SlotListStudents(APIView):
             paginated_slots.append(paginated_slot_data)
 
         return Response(paginated_slots)
+
 # class SlotListStudents(APIView):
 #     def get(self, request, user_id):
 #         # Check if the user is a Super_admin
