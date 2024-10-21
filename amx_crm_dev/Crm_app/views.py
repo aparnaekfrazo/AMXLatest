@@ -17374,15 +17374,7 @@ class PurchasedDroneCategoriesView(APIView):
 
         return Response({"message": "Invalid role"}, status=status.HTTP_400_BAD_REQUEST)
 
-
-from datetime import datetime, timedelta
-from collections import defaultdict
-from django.db.models import Q, Sum
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from .models import Order, AddItem, InvoiceStatus, DroneCategory
-import calendar
-
+from dateutil.relativedelta import relativedelta
 
 class GetDroneOrdersGraph(APIView):
     def get(self, request):
@@ -17407,10 +17399,13 @@ class GetDroneOrdersGraph(APIView):
 
         filters &= Q(created_date_time__date__gte=start_time, created_date_time__date__lte=end_time)
 
-        if role_name == "Partner" and partner_id:
-            filters &= Q(user_id=partner_id)
+        # Adjust filters based on role_name and partner_id
+        if role_name == "Partner" and user_id:
+            filters &= Q(user_id=user_id)
             label = "Purchased Drones"
-        elif role_name != "Super_admin":
+        elif role_name == "Super_admin":
+            label = 'Drone Sales'
+        else:
             label = 'Drone Sales'
             filters &= Q(user_id=user_id)
 
@@ -17455,12 +17450,25 @@ class GetDroneOrdersGraph(APIView):
         billing_graph_data = []
         total_billing = 0
 
+        completed_status = InvoiceStatus.objects.get(invoice_status_name='Completed')
+        add_items = AddItem.objects.filter(created_date_time__date__gte=start_time,
+                                           created_date_time__date__lte=end_time,
+                                           invoice_status=completed_status)
+
+        # Adjust add_items based on role
+        if role_name == "Partner" and partner_id:
+            add_items = add_items.filter(owner_id=partner_id)
+        elif role_name == "Super_admin" and partner_id:
+            # No additional filter, consider all users' add items
+            add_items = add_items.filter(owner_id=partner_id)
+        elif role_name == "Super_admin" and user_id:
+            pass
+        else:
+            add_items = add_items.filter(owner_id=user_id)
+
         if start_time_str and end_time_str:
             date_wise_billing_quantities = {single_date: 0 for single_date in (start_time + timedelta(n) for n in
                                                                                range((end_time - start_time).days + 1))}
-            completed_status = InvoiceStatus.objects.get(invoice_status_name='Completed')
-            add_items = AddItem.objects.filter(created_date_time__date__gte=start_time,
-                                               created_date_time__date__lte=end_time, invoice_status=completed_status)
             for item in add_items:
                 date_wise_billing_quantities[item.created_date_time.date()] += 1
 
@@ -17472,9 +17480,6 @@ class GetDroneOrdersGraph(APIView):
             total_billing = sum(date_wise_billing_quantities.values())
         else:
             date_wise_billing_quantities = {month: 0 for month in range(1, 13)}
-            completed_status = InvoiceStatus.objects.get(invoice_status_name='Completed')
-            add_items = AddItem.objects.filter(invoice_status=completed_status, created_date_time__date__gte=start_time,
-                                               created_date_time__date__lte=end_time)
             for item in add_items:
                 month = item.created_date_time.month
                 date_wise_billing_quantities[month] += 1
@@ -17503,7 +17508,6 @@ class GetDroneOrdersGraph(APIView):
         }
 
         return Response(response_data)
-
 
 from django.db.models.functions import TruncDate
 from django.db.models import Count, Sum
