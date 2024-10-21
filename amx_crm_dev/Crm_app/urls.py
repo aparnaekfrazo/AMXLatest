@@ -153,6 +153,8 @@ urlpatterns = [
     path('getdashboard/', GetdashbordAPI.as_view(), name='Get Dashboard'),
     path('delete-invoice/<path:invoice_number>/', DeleteInvoice.as_view(), name='delete-invoice'),
     path('drone-orders-graph/', GetDroneOrdersGraph.as_view()),
+    path('admins/', GetDroneOrdersGraphSuperAdmin.as_view(), name='drone_orders_super_admin'),
+
     path('slot-graph/', SlotFilterAPIView.as_view(), name='slot-filter'),
     # path('drone-orders-graph/', GetDroneOrdersGraph.as_view(), name='drone-filter'),
     path('customers-org/<int:pk>/', CustomersByRoleView.as_view(), name='customers-by-role'),
