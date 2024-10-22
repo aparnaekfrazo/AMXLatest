@@ -15417,6 +15417,7 @@ class FilterData(APIView):
                 batchtype_id = request.query_params.get('batchtype_id')
                 batch_name = request.query_params.get('batch_name')
                 search_query = request.query_params.get('search')
+                batch_search = request.query_params.get('batch_search')
 
                 slots = Slot.objects.all()
 
@@ -15602,6 +15603,121 @@ class FilterData(APIView):
                     slot_dates_list = [{'slot_date': slot_date.strftime('%Y-%m-%d')} for slot_date in slot_dates]
 
                     return Response(slot_dates_list)
+
+                elif batch_search:
+
+                    slots = slots.filter(batch_name__icontains=batch_search)
+
+                    slots = slots.exclude(slotstudentrelation__isnull=True)
+
+                    slot_data = []
+
+                    for slot in slots:
+
+                        pay_url = PayUrl.objects.filter(batch_type_id=slot.batch_type_id).first()
+
+                        payment_link_price = pay_url.payment_link_price if pay_url else None
+
+                        # Only filter students by search_query if it exists
+
+                        if search_query:
+
+                            students = Student.objects.filter(slot_id=slot.id, student_name__istartswith=search_query)
+
+                        else:
+
+                            students = Student.objects.filter(slot_id=slot.id)
+
+                        # Pagination logic
+
+                        page = request.query_params.get('page')
+
+                        page_size = request.query_params.get('page_size', 10)  # Default page size
+
+                        paginator = Paginator(students, page_size)
+
+                        try:
+
+                            paginated_students = paginator.page(page)
+
+                        except PageNotAnInteger:
+
+                            paginated_students = paginator.page(1)
+
+                        except EmptyPage:
+
+                            paginated_students = paginator.page(paginator.num_pages)
+
+                        student_details = []
+
+                        for student in paginated_students:
+                            student_details.append({
+
+                                'id': student.id,
+
+                                'student_name': student.student_name,
+
+                                'student_age': student.student_age,
+
+                                'student_mobile': student.student_mobile,
+
+                                'student_email': student.student_email,
+
+                                'student_adhar': student.student_adhar,
+
+                                'created_date_time': student.created_date_time,
+
+                                'updated_date_time': student.updated_date_time,
+
+                                'payment_url': student.payment_url,
+
+                                'order_id': student.order_id,
+
+                                'razorpay_signature': student.razorpay_signature,
+
+                                'stupayment_status': student.stupayment_status,
+
+                                'paylinkdate': student.paylinkdate,
+
+                                'payment_link_price': payment_link_price,
+
+                                'razorpay_payment_id': student.razorpay_payment_id,
+
+                            })
+
+                        if student_details:
+                            batch_type_name = slot.batch_type.name
+
+                            userid = slot.user_id.first_name
+
+                            slot_data.append({
+
+                                'slot_id': slot.id,
+
+                                'slot_name': slot.batch_name,
+
+                                'slot_date': slot.slot_date,
+
+                                'batch_size': slot.batch_size,
+
+                                'batch_type': batch_type_name,
+
+                                'user_id': userid,
+
+                                'created_date_time': slot.created_date_time,
+
+                                'updated_date_time': slot.updated_date_time,
+
+                                'slot_status': slot.slot_status,
+
+                                'students': student_details,
+
+                                'total_students_count': paginator.count,
+
+                            })
+
+                    return Response({'slots': slot_data})
+
                 else:
                     raise Http404("Missing parameters")
 
@@ -15759,166 +15875,93 @@ class FilterData(APIView):
                     slots = Slot.objects.filter(slot_date=date_parser.parse(slot_date).date(),
                                                 batch_type_id=batchtype_id, user_id=user_id)
                     slots = slots.exclude(slotstudentrelation__isnull=True)
-
                     # Get distinct batch names related to the provided slot date and batch type
                     batch_names = slots.values_list('batch_name', flat=True).distinct()
-
                     batch_names_list = [{'batch_names': name} for name in batch_names]
-
                     return Response(batch_names_list)
 
                 elif slot_date:
                     # Filter slots by slot_date and user_id (partner's ID)
                     slots = Slot.objects.filter(slot_date=date_parser.parse(slot_date).date(), user_id=user_id)
                     slots = slots.exclude(slotstudentrelation__isnull=True)
-
                     # Get distinct batch names related to the provided slot date
                     batch_names = slots.values_list('batch_name', flat=True).distinct()
-
                     batch_names_list = [{'batch_names': name} for name in batch_names]
-
                     return Response(batch_names_list)
 
-
                 elif batch_search:
-
                     print("Batch search triggered")
-
                     try:
-
                         page_no = int(page)
-
                         page_size = int(page_size)
-
                     except (ValueError, TypeError):
-
                         return Response({"error": "Invalid page or page_size parameter"}, status=400)
-
                     if not user_id:
                         return Response({"error": "User ID is required"}, status=400)
-
                     if batch_search is None:
                         return Response({"error": "Batch search cannot be None"}, status=400)
-
                     slots = Slot.objects.filter(batch_name__icontains=batch_search, user_id=user_id)
-
                     print(slots, "Filtered slots")
-
                     if not slots.exists():
                         return Response({"message": "No matching slots found"}, status=404)
-
                     slots = slots.exclude(slotstudentrelation__isnull=True)
-
                     slot_data = []
-
                     for slot in slots:
-
                         # Check if batch_type_id is None and skip if so
-
                         if slot.batch_type_id is None:
                             print(f"Skipping slot {slot.id} due to None batch_type_id")
-
                             continue
-
                         # Fetch payment URL
-
                         pay_url = PayUrl.objects.filter(batch_type_id=slot.batch_type_id).first()
-
                         payment_link_price = pay_url.payment_link_price if pay_url else None
-
                         # Handle search query for students
-
                         if search_query:
-
                             students = Student.objects.filter(slot_id=slot.id, student_name__istartswith=search_query)
-
                         else:
-
                             students = Student.objects.filter(slot_id=slot.id)
-
                         paginator = Paginator(students, page_size)
-
                         try:
-
                             paginated_students = paginator.page(page_no)
-
                         except PageNotAnInteger:
-
                             paginated_students = paginator.page(1)
-
                         except EmptyPage:
-
                             paginated_students = paginator.page(paginator.num_pages)
-
                         student_details = [{
-
                             'id': student.id,
-
                             'student_name': student.student_name,
-
                             'student_age': student.student_age,
-
                             'student_mobile': student.student_mobile,
-
                             'student_email': student.student_email,
-
                             'student_adhar': student.student_adhar,
-
                             'created_date_time': student.created_date_time,
-
                             'updated_date_time': student.updated_date_time,
-
                             'payment_url': student.payment_url,
-
                             'order_id': student.order_id,
-
                             'razorpay_signature': student.razorpay_signature,
-
                             'stupayment_status': student.stupayment_status,
-
                             'paylinkdate': student.paylinkdate,
-
                             'payment_link_price': payment_link_price,
-
                             'razorpay_payment_id': student.razorpay_payment_id,
-
                         } for student in paginated_students]
 
                         if student_details:
                             slot_data.append({
-
                                 'slot_id': slot.id,
-
                                 'slot_name': slot.batch_name,
-
                                 'slot_date': slot.slot_date,
-
                                 'batch_size': slot.batch_size,
-
                                 'created_date_time': slot.created_date_time,
-
                                 'updated_date_time': slot.updated_date_time,
-
                                 'slot_status': slot.slot_status,
-
                                 'students': student_details,
-
                                 'total_students_count': paginator.count,
-
                             })
-
                     if slot_data:
-
                         return Response({'slots': slot_data})
-
                     else:
-
                         return Response({"message": "No slots found with students"}, status=404)
-
-
             else:
                 return Response({'message': 'Invalid user role'}, status=status.HTTP_400_BAD_REQUEST)
-
         except Exception as e:
             return Response({'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
