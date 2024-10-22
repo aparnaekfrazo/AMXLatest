@@ -10601,7 +10601,7 @@ class MyAPIView(APIView):
 
     def get(self, request, invoice_number=None, *args, **kwargs):
         # Your HTML template path
-        html_template_path = '/amx-crm-dev/django/amx_crm_dev/Crm_app/templates/email/pdf-design.html'
+        html_template_path = '/amx-crm-dev/django/amx_crm_dev/Crm_app/templates/email/pdf-redesign.html'
         #base_url = 'https://amx-crm.thestorywallcafe.com'
         base_url = settings.CRM_PORTAL_DOMAIN
         invoice_data = {}
