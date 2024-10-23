@@ -11333,7 +11333,10 @@ class MyAPIView(APIView):
                     'customer_billing_state_country': add_item.customer_id.billing_state_country,
                     'owner_user_signature': add_item.owner_id.user_signature.url if add_item.owner_id.user_signature else None,
                     'AckNo': ack_no,
-                    'AckDt': ack_dt,
+                    # 'AckDt': ack_dt,
+                    'AckDt': ack_dt.strftime('%d/%m/%Y') if isinstance(ack_dt, datetime) else datetime.strptime(ack_dt,
+                                                                                                                '%Y-%m-%d').strftime(
+                        '%d/%m/%Y') if ack_dt else None,
                     'Irn': irn,
                     'qr_code_path': qr_code_path,
                     'EwbNo': EwbNo,
