@@ -11099,7 +11099,8 @@ class MyAPIView(APIView):
 
     def get(self, request, invoice_number=None, *args, **kwargs):
         # Your HTML template path
-        html_template_path = '/amx-crm-dev/django/amx_crm_dev/Crm_app/templates/email/pdf-redesign.html'
+        # html_template_path = '/amx-crm-dev/django/amx_crm_dev/Crm_app/templates/email/pdf-redesign.html'
+        html_template_path = '/home/user/Documents/AMX_LATESTLOCAL/AMXLatest/amx_crm_dev/Crm_app/templates/email/pdf-redesign.html'
         #base_url = 'https://amx-crm.thestorywallcafe.com'
         base_url = settings.CRM_PORTAL_DOMAIN
         invoice_data = {}
@@ -11405,10 +11406,13 @@ class MyAPIView(APIView):
                     'invoice_data': invoice_data,
                     'dronedetails': formatted_drones,  # Append the entire list of formatted drones to the context
                     'total': total_price_before_tax+total_tax,
+                    'total_amount_inwords':num2words_inr(total_price_before_tax+total_tax),
                     'total_tax':total_tax,
+                    'total_tax_words' : num2words_inr(total_tax),
+                    # 'total_tax_words':total_tax_words,
                     'price_after_discount':price_after_discount
                 }
-                print(price_after_discount,"lllll")
+                print(context,"lllll")
                 # print(context,"cccccc")
                 # context = {
                 #     'invoice_data': add_item,
@@ -11700,7 +11704,9 @@ class MyAPIView(APIView):
                         'invoice_data': invoice_data,
                         'dronedetails': formatted_drones,  # Append the entire list of formatted drones to the context
                         'total': total_price_before_tax + total_tax,
+                        'total_amount_inwords': num2words_inr(total_price_before_tax + total_tax),
                         'total_tax': total_tax,
+                        'total_tax_words': num2words_inr(total_tax),
                         'price_after_discount': price_after_discount
                     }
 
