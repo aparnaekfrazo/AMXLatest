@@ -214,7 +214,7 @@ p.long-text-readability{
                                                 <td colspan="6"><b>Total</b></td>
                                                 <td>&#x20B9; {{total}}</td>
                                             </tr>
-                                            <tr><td colspan="8" style="text-align: start !important;">Total Amount (In Words): </td></tr>
+                                            <tr><td colspan="8" style="text-align: start !important;">Total Amount (In Words):{{total_amount_inwords}} </td></tr>
                                             <tr>
                                                 <th colspan="4" rowspan="2">HSN/ SAC</th>
                                                 <th rowspan="2">Taxable Value</th>
@@ -243,7 +243,7 @@ p.long-text-readability{
                                     <td>&#x20B9; {{total_tax|default:'-'}}</td>
 
                                                 </tr>
-                                            <tr><td colspan="8" style="text-align: start !important;">Total Tax Amount (In Words): </td></tr>
+                                            <tr><td colspan="8" style="text-align: start !important;">Total Tax Amount (In Words): {{ total_tax_words }}</td></tr>
                                         </tbody>
                                     </table>
 
