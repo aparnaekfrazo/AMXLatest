@@ -178,26 +178,31 @@ p.long-text-readability{
                                         </tr>
                                         </thead>
                                         <tbody>
-                                            <tr>
-                                                <td>1 </td>
+
+                                        {% for drone in dronedetails %}
+                                        <tr>
+                                                <td>{{drone.drone_id}} </td>
                                                 <td>
                                                     {% if invoice_data.item_name %}
-                                                    {{ invoice_data.item_name|default:'-'  }}
+                                                    {{ drone.item_name|default:'-'  }}
                                                 {% elif invoice_data.drone_name %}
-                                                    {{ invoice_data.drone_name |default:'-' }}
+                                                    {{ drone.drone_name |default:'-' }}
                                                 {% endif %}
                                                 </td>
-                                                <td>{{invoice_data.hsn_number|default:'-'  }}</td>
-                                    <td>{{invoice_data.quantity|default:'-'  }}</td>
-                                    <td>&#x20B9;{{invoice_data.price|default:'-'  }}</td>
-                                    <td>{{invoice_data.discount |default:'-' }}</td>
-                                    <td>{{invoice_data.totaltax|default:'-' }}%</td>
-                                    <td>&#x20B9;{{ invoice_data.item_total_price|default:'-'  }}</td>
+                                                <td>{{drone.hsn_number|default:'-'  }}</td>
+                                    <td>{{drone.quantity|default:'-'  }}</td>
+                                    <td>&#x20B9;{{drone.price|default:'-'  }}</td>
+                                    <td>{{drone.discount |default:'-' }}</td>
+                                    <td>{{drone.tax_percentage_total|default:'-' }}%</td>
+                                    <td>&#x20B9;{{ drone.item_total_price|default:'-'  }}</td>
                                             </tr>
+
+                                            {% endfor %}
+
                                             <tr>
                                                 <td></td>
                                                 <td colspan="6"><b>CGST,SGST,IGST</b></td>
-                                                <td>&#x20B9; {{invoice_data.tax_percentage_total|default:'-' }}</td>
+                                                <td>&#x20B9; {{total_tax}}</td>
                                             </tr>
                                             <tr></tr>
                                                 <td></td>
@@ -207,7 +212,7 @@ p.long-text-readability{
                                             <tr>
                                                 <td></td>
                                                 <td colspan="6"><b>Total</b></td>
-                                                <td>&#x20B9; {{invoice_data.amount_to_pay|default:'-' }}</td>
+                                                <td>&#x20B9; {{total}}</td>
                                             </tr>
                                             <tr><td colspan="8" style="text-align: start !important;">Total Amount (In Words): </td></tr>
                                             <tr>
@@ -220,20 +225,22 @@ p.long-text-readability{
                                                 <th>Rate (%)</th>
                                                 <th>Amount (&#x20B9;)</th>
                                             </tr>
+                                        {% for i in dronedetails %}
                                             <tr>
-                                                <td colspan="4">{{invoice_data.hsn_number|default:'-'}}</td>
-                                                <td>&#x20B9; {{invoice_data.price_after_discount|default:'-'}}</td>
-                                                <td>{{invoice_data.totaltax|default:'-'}}%</td>
-                                                <td>&#x20B9; {{invoice_data.tax_percentage_total|default:'-'}}</td>
-                                                <td>&#x20B9; {{invoice_data.tax_percentage_total|default:'-'}}</td>
+                                                <td colspan="4">{{i.hsn_number|default:'-'}}</td>
+                                                <td>&#x20B9; {{i.price_after_discount|default:'-'}}</td>
+                                                <td>{{i.tax_percentage_total|default:'-'}}%</td>
+                                                <td>&#x20B9; {{i.tax_percentage_total|default:'-'}}</td>
+                                                <td>&#x20B9; {{i.tax_percentage_total|default:'-'}}</td>
 
                                                 </tr>
+                                        {% endfor %}
                                                 <tr>
                                                     <td colspan="4"><b>Total</b></td>
-                                                    <td>&#x20B9; {{invoice_data.sum_of_price_after_discount|default:'-'}}</td>
+                                                    <td>&#x20B9; {{price_after_discount|default:'-'}}</td>
                                     <td></td>
-                                    <td>&#x20B9; {{invoice_data.sum_gst_total_amount|default:'-'}}</td>
-                                    <td>&#x20B9; {{invoice_data.sum_gst_total_amount|default:'-'}}</td>
+                                    <td>&#x20B9; {{total_tax|default:'-'}}</td>
+                                    <td>&#x20B9; {{total_tax|default:'-'}}</td>
 
                                                 </tr>
                                             <tr><td colspan="8" style="text-align: start !important;">Total Tax Amount (In Words): </td></tr>
