@@ -11334,7 +11334,7 @@ class MyAPIView(APIView):
                     'owner_user_signature': add_item.owner_id.user_signature.url if add_item.owner_id.user_signature else None,
                     'AckNo': ack_no,
                     # 'AckDt': ack_dt,
-                    'AckDt': datetime.strptime(ack_dt, '%Y-%m-%d').strftime('%Y/%m/%d'),
+                    'AckDt': datetime.strptime(ack_dt, '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%d'),
                     'Irn': irn,
                     'qr_code_path': qr_code_path,
                     'EwbNo': EwbNo,
