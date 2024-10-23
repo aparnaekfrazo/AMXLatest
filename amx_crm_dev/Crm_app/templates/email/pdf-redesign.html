@@ -183,7 +183,7 @@ p.long-text-readability{
                                         <tr>
                                                 <td>{{drone.drone_id}} </td>
                                                 <td>
-                                                    {% if invoice_data.item_name %}
+                                                    {% if drone.item_name %}
                                                     {{ drone.item_name|default:'-'  }}
                                                 {% elif invoice_data.drone_name %}
                                                     {{ drone.drone_name |default:'-' }}
@@ -192,7 +192,7 @@ p.long-text-readability{
                                                 <td>{{drone.hsn_number|default:'-'  }}</td>
                                     <td>{{drone.quantity|default:'-'  }}</td>
                                     <td>&#x20B9;{{drone.price|default:'-'  }}</td>
-                                    <td>{{drone.discount |default:'-' }}</td>
+                                    <td>{{drone.discount |default:0 }}</td>
                                     <td>{{drone.tax_percentage_total|default:'-' }}%</td>
                                     <td>&#x20B9;{{ drone.item_total_price|default:'-'  }}</td>
                                             </tr>
@@ -207,7 +207,7 @@ p.long-text-readability{
                                             <tr></tr>
                                                 <td></td>
                                                 <td colspan="6"><b>Discount</b></td>
-                                                <td>&#x20B9; {{invoice_data.sum_of_discount_amount|default:'-' }}</td>
+                                                <td>&#x20B9; {{invoice_data.sum_of_discount_amount|default:0 }}</td>
                                             </tr>
                                             <tr>
                                                 <td></td>
