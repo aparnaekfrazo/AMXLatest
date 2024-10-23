@@ -8594,7 +8594,7 @@ class GstRateValuesAPI(APIView):
 from decimal import Decimal, ROUND_HALF_UP
 
 
-@method_decorator([authorization_required], name='dispatch')
+# @method_decorator([authorization_required], name='dispatch')
 class AddCustomItemAPI(APIView):
     def create_invoice_number(self):
         try:
@@ -9443,7 +9443,7 @@ class AddCustomItemAPI(APIView):
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-@method_decorator([authorization_required], name='dispatch')
+# @method_decorator([authorization_required], name='dispatch')
 class AddCustomInvoiceSignature(APIView):
     def post(self, request, item_id):
         item = get_object_or_404(CustomInvoice, id=item_id)
@@ -11112,6 +11112,7 @@ class MyAPIView(APIView):
         qr_code_path=None
         # Check if invoice_number is provided
         if invoice_number:
+            print(invoice_number,"eeeeeeee")
             try:
                 # Try to find the invoice_number in AddItem
                 add_item = AddItem.objects.get(invoice_number=invoice_number)
@@ -11346,7 +11347,8 @@ class MyAPIView(APIView):
                 formatted_drones = []
 
                 if dronedetails:
-                    for drone_detail in dronedetails:
+                    # for drone_detail in dronedetails:
+                    for index, drone_detail in enumerate(dronedetails, start=1):
                         # Extract drone details
                         drone_id = drone_detail.get('drone_id')
 
@@ -11360,7 +11362,7 @@ class MyAPIView(APIView):
 
                             # Create a new dictionary for the formatted drone details
                             formatted_drone_detail = {
-                                'drone_id': drone_id,
+                                'drone_id': index,
                                 'drone_name': drone_name,
                                 'drone_category': drone_category,
                                 'quantity': drone_detail.get('quantity'),
@@ -11420,6 +11422,37 @@ class MyAPIView(APIView):
                     custom_invoice = CustomInvoice.objects.get(invoice_number=invoice_number)
                     custom_invoice_details = custom_invoice.custom_item_details
 
+                    if custom_invoice_details:
+                        for drone_detail in custom_invoice_details:
+                            invoice_data.update({
+                                'cgst': drone_detail.get('cgst', None),
+                                'igst': drone_detail.get('igst', None),
+                                'sgst': drone_detail.get('sgst', None),
+                                'totaltax': drone_detail.get('cgst', None) + drone_detail.get('igst',
+                                                                                              None) + drone_detail.get(
+                                    'sgst', None),
+                                'price': drone_detail.get('price', None),
+                                'total': drone_detail.get('total', None),
+                                'units': drone_detail.get('units', None),
+                                'discount': int(drone_detail.get('discount', None)),
+                                'drone_id': drone_detail.get('item_name', None),
+                                'quantity': drone_detail.get('quantity', None),
+                                'hsn_number': drone_detail.get('hsn_number', None),
+                                'serial_numbers': drone_detail.get('serial_numbers', None),
+                                'cgst_percentage': drone_detail.get('cgst_percentage', None),
+                                'discount_amount': drone_detail.get('discount_amount', None),
+                                'igst_percentage': drone_detail.get('igst_percentage', None),
+                                'sgst_percentage': drone_detail.get('sgst_percentage', None),
+                                'tax_percentage_total': drone_detail.get('cgst_percentage', None) + drone_detail.get(
+                                    'igst_percentage', None) + drone_detail.get('sgst_percentage', None),
+                                'created_datetime': drone_detail.get('created_datetime', None),
+                                'item_total_price': drone_detail.get('item_total_price', None),
+                                'updated_datetime': drone_detail.get('updated_datetime', None),
+                                'price_after_discount': drone_detail.get('price_after_discount', None),
+                                # Add other drone fields as needed
+                            })
+                    print(invoice_data,"pppppppppp")
+
                     einvoice = custom_invoice.einvoice_set.first()
 
                     api_response = {}
@@ -11475,29 +11508,14 @@ class MyAPIView(APIView):
                     igst = custom_item.get('igst', 0)
                     item_total_price = custom_item.get('item_total_price', 0)
 
-                    invoice_data = {
+                    invoice_data.update({
+                        'invoice_id': custom_invoice.id,
                         'customer_type_id': custom_invoice.customer_type_id,
-                        'item_name': item_name_str,
-                        'hsn_number': hsn_number_str,
-                        'cgst_percentage': cgst_percentage,
-                        'sgst_percentage': sgst_percentage,
-                        'igst_percentage': igst_percentage,
-                        'quantity': quantity_str,
-                        'price': unit_price_str,
-                        'discount': int(discount_str),
-                        'cgst': cgst,
-                        'sgst': sgst,
-                        'igst': igst,
-                        'totaltax':int(cgst+sgst+igst),
-                        'tax_percentage_total':int(cgst_percentage+sgst_percentage+igst_percentage),
-                        'qr_code_path': qr_code_path,
-                        'item_total_price': item_total_price,
-                        'price_after_discount': price_after_discount,
                         'customer_id': custom_invoice.customer_id,
                         'owner_id': custom_invoice.owner_id,
                         'invoice_type_id': custom_invoice.invoice_type_id,
                         'e_invoice_status': custom_invoice.e_invoice_status,
-                        'custom_item_details': custom_invoice.custom_item_details,
+                        # 'custom_item_details': add_item.custom_item_details,
                         'created_date_time': custom_invoice.created_date_time,
                         'updated_date_time': custom_invoice.updated_date_time,
                         'invoice_number': custom_invoice.invoice_number,
@@ -11506,12 +11524,12 @@ class MyAPIView(APIView):
                         'invoice_status': custom_invoice.invoice_status,
                         'ewaybill_payload': custom_invoice.ewaybill_payload,
                         'amount_to_pay': custom_invoice.amount_to_pay,
-                        # 'sum_gst_total_amount':custom_invoice.sum_gst_total_amount,
+                        # 'sum_gst_total_amount':add_item.sum_gst_total_amount+,
                         'sum_of_item_total_price': custom_invoice.sum_of_item_total_price,
                         'sum_of_igst_percentage': custom_invoice.sum_of_igst_percentage,
                         'sum_of_cgst_percentage': custom_invoice.sum_of_cgst_percentage,
                         'sum_of_sgst_percentage': custom_invoice.sum_of_sgst_percentage,
-                        'sum_gst_total_amount':custom_invoice.sum_of_igst_percentage+custom_invoice.sum_of_cgst_percentage+custom_invoice.sum_of_sgst_percentage,
+                        'sum_gst_total_amount': custom_invoice.sum_of_igst_percentage + custom_invoice.sum_of_cgst_percentage + custom_invoice.sum_of_sgst_percentage,
                         'sum_of_discount_amount': custom_invoice.sum_of_discount_amount,
                         'sum_of_price_after_discount': custom_invoice.sum_of_price_after_discount,
                         'owner_id': custom_invoice.owner_id.id,
@@ -11604,16 +11622,86 @@ class MyAPIView(APIView):
                         'customer_billing_state_code': custom_invoice.customer_id.billing_state_code,
                         'customer_billing_state_city': custom_invoice.customer_id.billing_state_city,
                         'customer_billing_state_country': custom_invoice.customer_id.billing_state_country,
-
-                        # Include other customer details as needed
                         'owner_user_signature': custom_invoice.owner_id.user_signature.url if custom_invoice.owner_id.user_signature else None,
-
                         'AckNo': ack_no,
                         'AckDt': ack_dt,
                         'Irn': irn,
-                        'EwbNo': ewb_no,
-                        'EwbDt': ewb_dt,
-                        'EwbValidTill': ewb_valid_till,
+                        'qr_code_path': qr_code_path,
+                        'EwbNo': EwbNo,
+                        'EwbDt': EwbDt,
+                        'EwbValidTill': EwbValidTill,
+                    })
+                    print(invoice_data,"iiiiiiiii")
+                    dronedetails = custom_invoice.custom_item_details
+
+                    dronedetails = custom_invoice.custom_item_details  # Assuming this retrieves a list of drone details
+
+                    # Initialize an empty list to hold the formatted drone details
+                    formatted_drones = []
+
+                    if dronedetails:
+                        # for drone_detail in dronedetails:
+                        for index, drone_detail in enumerate(dronedetails, start=1):
+                            # Extract drone details
+                            drone_id = drone_detail.get('item_name')
+
+                            if drone_id:
+                                # Query the Drone model to get the drone details using the drone_id
+                                # drone = Drone.objects.get(pk=drone_id)
+
+                                # Now you can access the drone name and category
+                                drone_name = drone_detail.get('item_name')
+                                # drone_category = drone.drone_category.category_name if drone.drone_category else None
+
+                                # Create a new dictionary for the formatted drone details
+                                formatted_drone_detail = {
+                                    # 'drone_id': drone_id,
+                                    'drone_id': index,
+                                    'item_name': drone_detail.get('item_name'),
+                                    # 'drone_category': drone_category,
+                                    'quantity': drone_detail.get('quantity'),
+                                    'price': drone_detail.get('price'),
+                                    'total': drone_detail.get('total'),
+                                    'units': drone_detail.get('units'),
+                                    'discount': int(drone_detail.get('discount', 0)),  # Use 0 if discount is None
+                                    'hsn_number': drone_detail.get('hsn_number'),
+                                    'serial_numbers': drone_detail.get('serial_numbers'),
+                                    'cgst': drone_detail.get('cgst'),
+                                    'igst': drone_detail.get('igst'),
+                                    'sgst': drone_detail.get('sgst'),
+                                    'cgst_percentage': drone_detail.get('cgst_percentage'),
+                                    'igst_percentage': drone_detail.get('igst_percentage'),
+                                    'sgst_percentage': drone_detail.get('sgst_percentage'),
+                                    'discount_amount': drone_detail.get('discount_amount'),
+                                    'price_after_discount': drone_detail.get('price_after_discount'),
+                                    'created_datetime': drone_detail.get('created_datetime'),
+                                    'updated_datetime': drone_detail.get('updated_datetime'),
+                                    'item_total_price': drone_detail.get('item_total_price'),
+                                    'tax_percentage_total': (
+                                            drone_detail.get('cgst_percentage', 0) +
+                                            drone_detail.get('igst_percentage', 0) +
+                                            drone_detail.get('sgst_percentage', 0)
+                                    ),
+                                }
+
+                                # Append the formatted drone detail to the list
+                                formatted_drones.append(formatted_drone_detail)
+
+
+                    total_price_before_tax = 0
+                    total_tax = 0
+                    price_after_discount = 0
+                    for drone in formatted_drones:
+                        total_price_before_tax += float(drone["item_total_price"])
+                        total_tax += float(drone["tax_percentage_total"])
+                        price_after_discount += float(drone["price_after_discount"])
+                    # Prepare the context
+                    context = {
+                        'invoice_data': invoice_data,
+                        'dronedetails': formatted_drones,  # Append the entire list of formatted drones to the context
+                        'total': total_price_before_tax + total_tax,
+                        'total_tax': total_tax,
+                        'price_after_discount': price_after_discount
                     }
 
 
