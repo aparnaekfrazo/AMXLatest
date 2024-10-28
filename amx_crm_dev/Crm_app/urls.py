@@ -162,6 +162,9 @@ urlpatterns = [
          name='purchased-drone-categories'),
     path('slots-search-suggestion/', BatchSearchSuggestionView.as_view(), name='batch-search-suggestion'),
     path('drone-orders-graph/', PartnerOrderSummary.as_view()),
-
+    # Other URLs
+    path('s/', SuperAdminOrderSummary.as_view(), name='superadmin-order-summary'),
 ]
+
+
 
