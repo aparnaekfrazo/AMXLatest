@@ -18232,12 +18232,10 @@ class GetDroneOrdersGraphSuperAdmin(APIView):
             # Check if the role exists
             try:
                 partner_role = Role.objects.get(role_name__iexact=role_name)
-                print(partner_role,"yyyyyyyyy")
             except Role.DoesNotExist:
                 return Response({'error': 'Role not found.'}, status=status.HTTP_404_NOT_FOUND)
 
             if role_name == "super_admin":
-                # Filter orders for the given partner and user
                 orders = Order.objects.filter(order_status__status_name="Shipped")
 
                 # Filter by drone categories if `drone_model` is provided
@@ -18247,56 +18245,85 @@ class GetDroneOrdersGraphSuperAdmin(APIView):
                     relevant_drones = Drone.objects.filter(drone_category_id__in=drone_category_ids)
                     orders = orders.filter(drone_id__in=relevant_drones)
 
+                # Prepare response structure
                 response_data = {
-                    "inventory_count": 0,
-                    "total_billing": 0,
                     "total_orders": 0,
+                    "total_billing": 0,
                     "Purchased_drones_Graph": [],
-                    "Billing_graph": [{
-                        "labels": "Invoice Billing Count",
-                        "Billing_Invoice_Graph": []
-                    }]
+                    "Billing_graph": [
+                        {
+                            "labels": "Invoice Billing Count",
+                            "Billing_Invoice_Graph": []
+                        }
+                    ]
                 }
 
+                # Define current_year outside of the conditional blocks
                 current_year = timezone.now().year
 
-                # Process date range filtering
+                # If start_time and end_time are provided
                 if start_time and end_time:
                     try:
+                        # Parse the start and end time
                         start_date = timezone.make_aware(datetime.strptime(start_time, '%d-%m-%Y'))
                         end_date = timezone.make_aware(datetime.strptime(end_time, '%d-%m-%Y'))
 
-                        date_list = [(start_date + timedelta(days=i)).date() for i in range((end_date - start_date).days + 1)]
+                        # Create a list of all dates in the range
+                        date_list = [(start_date + timedelta(days=i)).date() for i in
+                                     range((end_date - start_date).days + 1)]
 
+                        # Sum the quantity of orders for each day using updated_date_time
                         daily_data = orders.filter(updated_date_time__range=(start_date, end_date)) \
                             .values('updated_date_time__date') \
                             .annotate(daily_quantity=Sum('quantity'))
 
+                        # Create a dictionary to hold the counts for each date
                         date_counts = {date: 0 for date in date_list}
+
+                        # Map daily quantities to the date counts
                         for item in daily_data:
                             date_key = item['updated_date_time__date']
-                            date_counts[date_key] = item.get('daily_quantity', 0)
+                            if date_key in date_counts:
+                                date_counts[date_key] = item.get('daily_quantity', 0)
 
-                        total_orders = sum(date_counts.values())
-                        response_data['total_orders'] = total_orders
-
+                        # If drone models are provided, prepare the purchased drones graph with categories
                         if relevant_drones:
-                            categories = relevant_drones.values_list('drone_category__category_name', flat=True).distinct()
+                            # Get unique drone categories
+                            categories = relevant_drones.values_list('drone_category__category_name',
+                                                                     flat=True).distinct()
+
                             for category in categories:
-                                purchased_drones = [{"date": date.strftime('%d-%m-%Y'), "count": 0} for date in date_list]
+                                # Initialize the Purchased_drones list with zero counts
+                                purchased_drones = [{"date": date.strftime('%d-%m-%Y'), "count": 0} for date in
+                                                    date_list]
+
+                                # Fill the purchased drones count for each category
                                 for item in daily_data:
                                     date_key = item['updated_date_time__date']
                                     if date_key in date_counts:
-                                        drones_in_category = relevant_drones.filter(drone_category__category_name=category)
+                                        # Get the corresponding drones for this category
+                                        drones_in_category = relevant_drones.filter(
+                                            drone_category__category_name=category)
                                         if drones_in_category.exists():
                                             purchased_drones_index = date_list.index(date_key)
                                             purchased_drones[purchased_drones_index]['count'] = date_counts[date_key]
 
+                                # Append to the response regardless of purchase history
                                 response_data['Purchased_drones_Graph'].append({
                                     "label": category,
                                     "Purchased_drones": purchased_drones
                                 })
 
+                        else:
+                            # Default response when no drone models are provided
+                            response_data['Purchased_drones_Graph'].append({
+                                "label": "Purchased Drones",
+                                "Purchased_drones": [{"date": date.strftime('%d-%m-%Y'), "count": count} for date, count
+                                                     in
+                                                     date_counts.items()]
+                            })
+
+                        # Calculate total billing for completed invoices in the date range
                         completed_items = AddItem.objects.filter(
                             owner_id=user_id,
                             invoice_status__invoice_status_name="Completed",
@@ -18306,90 +18333,124 @@ class GetDroneOrdersGraphSuperAdmin(APIView):
                         total_billing = 0
                         completed_day_counts = {date: 0 for date in date_list}
 
+                        # Check and sum quantities based on `drone_model`
                         for item in completed_items:
                             dronedetails = item.dronedetails  # Assuming this is a JSON field
-                            invoice_date = item.updated_date_time
+                            invoice_date = item.updated_date_time  # Use updated_date_time instead of invoice_date
                             if dronedetails:
                                 for drone in dronedetails:
-                                    if not drone_model or drone['drone_id'] in relevant_drones.values_list('id', flat=True):
+                                    # If `drone_model` filter is provided, check drone_id
+                                    if not drone_model or drone['drone_id'] in relevant_drones.values_list('id',
+                                                                                                           flat=True):
                                         quantity = drone.get('quantity', 0)
                                         total_billing += quantity
+                                        # Increment the count for the corresponding date
                                         if invoice_date.date() in completed_day_counts:
                                             completed_day_counts[invoice_date.date()] += quantity
 
+                        # Add total billing count to the response
                         response_data['total_billing'] = total_billing
-                        total_purchased_orders = sum(date_counts.values())
-                        response_data['inventory_count'] = total_purchased_orders - total_billing
 
+                        # Calculate inventory count (sum of all orders)
+                        total_purchased_orders = sum(date_counts.values())
+                        print(total_purchased_orders, "ppppp")
+                        response_data['total_orders'] = total_purchased_orders
+
+                        # Build the Billing graph based on completed invoices
                         for date, count in completed_day_counts.items():
                             response_data['Billing_graph'][0]['Billing_Invoice_Graph'].append({
-                                "date": date.strftime('%d-%m-%Y'),
+                                "date": date.strftime('%d-%m-%Y'),  # Format as DD-MM-YYYY
                                 "count": count
                             })
 
                     except ValueError:
-                        return Response({'error': 'Invalid date format. Use DD-MM-YYYY.'}, status=status.HTTP_400_BAD_REQUEST)
+                        return Response({'error': 'Invalid date format. Use DD-MM-YYYY.'},
+                                        status=status.HTTP_400_BAD_REQUEST)
 
+                    # Wrap response data for date range in the required format
                     return Response({"result": {"data": response_data}}, status=status.HTTP_200_OK)
 
                 else:
+                    # If no date range is provided, aggregate by month for the current year
                     monthly_data = orders.filter(updated_date_time__year=current_year) \
                         .values('updated_date_time__month') \
                         .annotate(monthly_quantity=Sum('quantity'))
 
+                    # Create a dictionary to hold the monthly counts
                     month_counts = {month: 0 for month in range(1, 13)}
+
+                    # Map monthly quantities to the month counts
                     for item in monthly_data:
                         month_key = item['updated_date_time__month']
                         month_counts[month_key] = item.get('monthly_quantity', 0)
 
-                    total_orders = sum(month_counts.values())
-                    response_data['total_orders'] = total_orders
+                    # Set the inventory count as the sum of all monthly quantities
+                    response_data['total_orders'] = sum(month_counts.values())
 
+                    # Build the response for the purchased drones graph by month
                     if relevant_drones:
+                        # Get unique drone categories
                         categories = relevant_drones.values_list('drone_category__category_name', flat=True).distinct()
+
                         for category in categories:
-                            purchased_drones = [{"date": datetime(current_year, month, 1).strftime('%B'), "count": 0} for month in range(1, 13)]
-                            for month, count in month_counts.items():
-                                for idx, category_data in enumerate(purchased_drones):
-                                    if category_data["date"] == datetime(current_year, month, 1).strftime('%B'):
-                                        purchased_drones[idx]['count'] = count
+                            purchased_drones = [{"date": datetime(current_year, month, 1).strftime('%B'), "count": 0}
+                                                for
+                                                month in range(1, 13)]
+
+                            for month in month_counts:
+                                # Set the count based on the month_counts dictionary
+                                purchased_drones[month - 1]['count'] = month_counts[month]  # **Clarified mapping**
 
                             response_data['Purchased_drones_Graph'].append({
                                 "label": category,
                                 "Purchased_drones": purchased_drones
                             })
 
-                    completed_items = AddItem.objects.filter(
-                        owner_id=user_id,
-                        invoice_status__invoice_status_name="Completed",
-                        updated_date_time__year=current_year
-                    )
-
-                    total_billing = 0
-                    monthly_billing_counts = {month: 0 for month in range(1, 13)}
-
-                    for item in completed_items:
-                        dronedetails = item.dronedetails
-                        invoice_date = item.updated_date_time
-                        if dronedetails:
-                            for drone in dronedetails:
-                                if not drone_model or drone['drone_id'] in relevant_drones.values_list('id', flat=True):
-                                    quantity = drone.get('quantity', 0)
-                                    total_billing += quantity
-                                    monthly_billing_counts[invoice_date.month] += quantity
-
-                    response_data['total_billing'] = total_billing
-                    total_purchased_orders = sum(month_counts.values())
-                    response_data['inventory_count'] = total_purchased_orders - total_billing
-
-                    for month, count in monthly_billing_counts.items():
-                        response_data['Billing_graph'][0]['Billing_Invoice_Graph'].append({
-                            "date": datetime(current_year, month, 1).strftime('%B'),
-                            "count": count
+                    else:
+                        # Default response when no drone models are provided
+                        response_data['Purchased_drones_Graph'].append({
+                            "label": "Purchased Drones",
+                            "Purchased_drones": [
+                                {"date": datetime(current_year, month, 1).strftime('%B'), "count": count} for
+                                month, count in month_counts.items()]
                         })
 
-                    return Response({"result": {"data": response_data}}, status=status.HTTP_200_OK)
+                    # Calculate the total billing for the user based on completed orders in AddItem
+                    try:
+                        completed_items = AddItem.objects.filter(
+                            owner_id=user_id,
+                            invoice_status__invoice_status_name="Completed"
+                        )
 
+                        total_billing = 0
+                        completed_month_counts = {month: 0 for month in range(1, 13)}
+
+                        for item in completed_items:
+                            dronedetails = item.dronedetails  # JSON field
+                            invoice_date = item.updated_date_time  # Use updated_date_time instead of invoice_date
+                            if dronedetails:
+                                for drone in dronedetails:
+                                    if not drone_model or drone['drone_id'] in relevant_drones.values_list('id',
+                                                                                                           flat=True):
+                                        quantity = drone.get('quantity', 0)
+                                        total_billing += quantity
+                                        completed_month_counts[invoice_date.month] += quantity
+
+                        # Add total billing count to the response
+                        response_data['total_billing'] = total_billing
+
+                        # Build the billing graph based on completed invoices
+                        for month, count in completed_month_counts.items():
+                            response_data['Billing_graph'][0]['Billing_Invoice_Graph'].append({
+                                "date": datetime(current_year, month, 1).strftime('%B'),  # Format as Month
+                                "count": count
+                            })
+
+                    except Exception as e:
+                        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+                    # Wrap response data for the current year in the required format
+                    return Response({"result": {"data": response_data}}, status=status.HTTP_200_OK)
             elif role_name == "partner":
                 if partner_id:
                     orders = Order.objects.filter(user_id=partner_id, order_status__status_name="Shipped")
@@ -18683,7 +18744,8 @@ class GetDroneOrdersGraphSuperAdmin(APIView):
                                                 drone_category__category_name=category)
                                             if drones_in_category.exists():
                                                 purchased_drones_index = date_list.index(date_key)
-                                                purchased_drones[purchased_drones_index]['count'] = date_counts[date_key]
+                                                purchased_drones[purchased_drones_index]['count'] = date_counts[
+                                                    date_key]
 
                                     # Append to the response regardless of purchase history
                                     response_data['Purchased_drones_Graph'].append({
@@ -18695,7 +18757,8 @@ class GetDroneOrdersGraphSuperAdmin(APIView):
                                 # Default response when no drone models are provided
                                 response_data['Purchased_drones_Graph'].append({
                                     "label": "Purchased Drones",
-                                    "Purchased_drones": [{"date": date.strftime('%d-%m-%Y'), "count": count} for date, count
+                                    "Purchased_drones": [{"date": date.strftime('%d-%m-%Y'), "count": count} for
+                                                         date, count
                                                          in
                                                          date_counts.items()]
                                 })
@@ -18764,12 +18827,14 @@ class GetDroneOrdersGraphSuperAdmin(APIView):
                         # Build the response for the purchased drones graph by month
                         if relevant_drones:
                             # Get unique drone categories
-                            categories = relevant_drones.values_list('drone_category__category_name', flat=True).distinct()
+                            categories = relevant_drones.values_list('drone_category__category_name',
+                                                                     flat=True).distinct()
 
                             for category in categories:
-                                purchased_drones = [{"date": datetime(current_year, month, 1).strftime('%B'), "count": 0}
-                                                    for
-                                                    month in range(1, 13)]
+                                purchased_drones = [
+                                    {"date": datetime(current_year, month, 1).strftime('%B'), "count": 0}
+                                    for
+                                    month in range(1, 13)]
 
                                 for month, count in month_counts.items():
                                     for idx, category_data in enumerate(purchased_drones):
