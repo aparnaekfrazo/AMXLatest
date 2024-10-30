@@ -20978,11 +20978,12 @@ class PartnerOrderSummary(APIView):
                     .values('updated_date_time__date', 'drone_id__drone_category') \
                     .annotate(daily_quantity=Sum('quantity'))
 
+                # Create a dictionary to hold total counts per date
                 date_counts = {date: 0 for date in date_list}
                 for item in daily_data:
                     date_key = item['updated_date_time__date']
                     if date_key in date_counts:
-                        date_counts[date_key] = item.get('daily_quantity', 0)
+                        date_counts[date_key] += item.get('daily_quantity', 0)
 
                 # Handle purchased drones graph
                 if relevant_drones:
@@ -20992,7 +20993,8 @@ class PartnerOrderSummary(APIView):
                         for item in daily_data:
                             if item['drone_id__drone_category'] == category_id:
                                 date_key = item['updated_date_time__date']
-                                purchased_drones[date_list.index(date_key)]['count'] = item.get('daily_quantity', 0)
+                                if date_key in date_counts:
+                                    purchased_drones[date_list.index(date_key)]['count'] += item.get('daily_quantity', 0)  # Accumulate counts
                         response_data['Purchased_drones_Graph'].append({
                             "label": category,
                             "Purchased_drones": purchased_drones
