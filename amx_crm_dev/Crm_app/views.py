@@ -16271,9 +16271,9 @@ class FilterData(APIView):
 
                     return Response(slot_dates_list)
 
-                elif batch_search:
+                elif batch_search and partner_id:
 
-                    slots = slots.filter(batch_name__icontains=batch_search)
+                    slots = slots.filter(user_id=partner_id,batch_name__icontains=batch_search)
 
                     slots = slots.exclude(slotstudentrelation__isnull=True)
 
