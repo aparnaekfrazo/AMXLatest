@@ -18246,7 +18246,7 @@ class GetDroneOrdersGraphSuperAdmin(APIView):
                     orders = orders.filter(drone_id__in=relevant_drones)
 
                 response_data = {
-                    "inventory_count": 0,
+                    "total_orders": 0,
                     "total_billing": 0,
                     "Purchased_drones_Graph": [],
                     "Billing_graph": [
@@ -18322,7 +18322,7 @@ class GetDroneOrdersGraphSuperAdmin(APIView):
                                         completed_day_counts[item.updated_date_time.date()] += quantity
 
                         response_data['total_billing'] = total_billing
-                        response_data['inventory_count'] = sum(date_counts.values())  # Sum of purchased drones
+                        response_data['total_orders'] = sum(date_counts.values())  # Sum of purchased drones
                         for date, count in completed_day_counts.items():
                             response_data['Billing_graph'][0]['Billing_Invoice_Graph'].append({
                                 "date": date.strftime('%d-%m-%Y'),
@@ -18383,7 +18383,7 @@ class GetDroneOrdersGraphSuperAdmin(APIView):
                                     completed_month_counts[item.updated_date_time.month] += quantity
 
                     response_data['total_billing'] += total_billing  # Total billing accumulation
-                    response_data['inventory_count'] = sum(month_counts.values())  # Sum of purchased drones
+                    response_data['total_orders'] = sum(month_counts.values())  # Sum of purchased drones
                     for month, count in completed_month_counts.items():
                         response_data['Billing_graph'][0]['Billing_Invoice_Graph'].append({
                             "date": datetime(current_year, month, 1).strftime('%B'),
@@ -21773,7 +21773,7 @@ class SuperAdminOrderSummary(APIView):
                     orders = orders.filter(drone_id__in=relevant_drones)
 
                 response_data = {
-                    "inventory_count": 0,
+                    "total_orders": 0,
                     "total_billing": 0,
                     "Purchased_drones_Graph": [],
                     "Billing_graph": [
@@ -21849,7 +21849,7 @@ class SuperAdminOrderSummary(APIView):
                                         completed_day_counts[item.updated_date_time.date()] += quantity
 
                         response_data['total_billing'] = total_billing
-                        response_data['inventory_count'] = sum(date_counts.values())  # Sum of purchased drones
+                        response_data['total_orders'] = sum(date_counts.values())  # Sum of purchased drones
                         for date, count in completed_day_counts.items():
                             response_data['Billing_graph'][0]['Billing_Invoice_Graph'].append({
                                 "date": date.strftime('%d-%m-%Y'),
@@ -21910,7 +21910,7 @@ class SuperAdminOrderSummary(APIView):
                                     completed_month_counts[item.updated_date_time.month] += quantity
 
                     response_data['total_billing'] += total_billing  # Total billing accumulation
-                    response_data['inventory_count'] = sum(month_counts.values())  # Sum of purchased drones
+                    response_data['total_orders'] = sum(month_counts.values())  # Sum of purchased drones
                     for month, count in completed_month_counts.items():
                         response_data['Billing_graph'][0]['Billing_Invoice_Graph'].append({
                             "date": datetime(current_year, month, 1).strftime('%B'),
