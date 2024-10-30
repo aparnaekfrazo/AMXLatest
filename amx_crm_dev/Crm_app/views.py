@@ -16079,6 +16079,7 @@ class FilterData(APIView):
             user = get_object_or_404(CustomUser, id=user_id)
 
             if user.role_id.role_name == 'Super_admin':
+                print("sooooooooooooooo")
                 partner_id = request.query_params.get('partner_id')
                 slot_date = request.query_params.get('slot_date')
                 batchtype_id = request.query_params.get('batchtype_id')
@@ -16089,6 +16090,7 @@ class FilterData(APIView):
                 slots = Slot.objects.all()
 
                 if partner_id and slot_date and batchtype_id and batch_name and search_query:
+                    print("11111")
                     slots = slots.filter(user_id=partner_id, slot_date=date_parser.parse(slot_date).date(),
                                          batch_type_id=batchtype_id, batch_name=batch_name)
 
@@ -16160,6 +16162,7 @@ class FilterData(APIView):
                     return Response({'slots': slot_data})
 
                 elif partner_id and slot_date and batchtype_id and batch_name:
+                    print("2222")
 
                     slots = slots.filter(user_id=partner_id, slot_date=date_parser.parse(slot_date).date(),
                                          batch_type_id=batchtype_id, batch_name=batch_name)
@@ -16232,6 +16235,7 @@ class FilterData(APIView):
 
                 # If partner_id, slot_date, and batchtype_id are provided
                 elif partner_id and slot_date and batchtype_id:
+                    print("3333")
                     # Filter slots by partner_id, slot_date, and batchtype_id
                     slots = slots.filter(user_id=partner_id, slot_date=date_parser.parse(slot_date).date(),
                                          batch_type_id=batchtype_id)
@@ -16245,6 +16249,7 @@ class FilterData(APIView):
                     return Response(batch_names_list)
 
                 elif partner_id and slot_date:
+                    print("444")
                     # Filter slots by partner_id and slot_date
                     slots = slots.filter(user_id=partner_id, slot_date=date_parser.parse(slot_date).date())
 
@@ -16257,7 +16262,79 @@ class FilterData(APIView):
 
                     return Response(batch_names_list)
 
+                elif partner_id and batch_search:
+
+                    print("kkkk")
+
+                    slots = slots.filter(user_id=partner_id,batch_name__icontains=batch_search)
+                    slots = slots.exclude(slotstudentrelation__isnull=True)
+                    slot_data = []
+                    for slot in slots:
+                        pay_url = PayUrl.objects.filter(batch_type_id=slot.batch_type_id).first()
+                        payment_link_price = pay_url.payment_link_price if pay_url else None
+                        # Only filter students by search_query if it exists
+
+                        if search_query:
+                            students = Student.objects.filter(slot_id=slot.id, student_name__istartswith=search_query)
+
+                        else:
+                            students = Student.objects.filter(slot_id=slot.id)
+
+                        # Pagination logic
+                        page = request.query_params.get('page')
+                        page_size = request.query_params.get('page_size', 10)  # Default page size
+                        paginator = Paginator(students, page_size)
+
+                        try:
+                            paginated_students = paginator.page(page)
+
+                        except PageNotAnInteger:
+                            paginated_students = paginator.page(1)
+
+                        except EmptyPage:
+                            paginated_students = paginator.page(paginator.num_pages)
+                        student_details = []
+                        for student in paginated_students:
+                            student_details.append({
+                                'id': student.id,
+                                'student_name': student.student_name,
+                                'student_age': student.student_age,
+                                'student_mobile': student.student_mobile,
+                                'student_email': student.student_email,
+                                'student_adhar': student.student_adhar,
+                                'created_date_time': student.created_date_time,
+                                'updated_date_time': student.updated_date_time,
+                                'payment_url': student.payment_url,
+                                'order_id': student.order_id,
+                                'razorpay_signature': student.razorpay_signature,
+                                'stupayment_status': student.stupayment_status,
+                                'paylinkdate': student.paylinkdate,
+                                'payment_link_price': payment_link_price,
+                                'razorpay_payment_id': student.razorpay_payment_id,
+                            })
+
+                        if student_details:
+                            batch_type_name = slot.batch_type.name
+                            userid = slot.user_id.first_name
+
+                            slot_data.append({
+                                'slot_id': slot.id,
+                                'slot_name': slot.batch_name,
+                                'slot_date': slot.slot_date,
+                                'batch_size': slot.batch_size,
+                                'batch_type': batch_type_name,
+                                'user_id': userid,
+                                'created_date_time': slot.created_date_time,
+                                'updated_date_time': slot.updated_date_time,
+                                'slot_status': slot.slot_status,
+                                'students': student_details,
+                                'total_students_count': paginator.count,
+                            })
+                    return Response({'slots': slot_data})
+
+
                 elif partner_id:
+                    print("5555")
                     slots = slots.filter(user_id=partner_id)
 
                     # Filter out slots that don't have any associated students
@@ -16271,122 +16348,7 @@ class FilterData(APIView):
 
                     return Response(slot_dates_list)
 
-                elif batch_search and partner_id:
 
-                    slots = slots.filter(user_id=partner_id,batch_name__icontains=batch_search)
-
-                    slots = slots.exclude(slotstudentrelation__isnull=True)
-
-                    slot_data = []
-
-                    for slot in slots:
-
-                        pay_url = PayUrl.objects.filter(batch_type_id=slot.batch_type_id).first()
-
-                        payment_link_price = pay_url.payment_link_price if pay_url else None
-
-                        # Only filter students by search_query if it exists
-
-                        if search_query:
-
-                            students = Student.objects.filter(slot_id=slot.id, student_name__istartswith=search_query)
-
-                        else:
-
-                            students = Student.objects.filter(slot_id=slot.id)
-
-                        # Pagination logic
-
-                        page = request.query_params.get('page')
-
-                        page_size = request.query_params.get('page_size', 10)  # Default page size
-
-                        paginator = Paginator(students, page_size)
-
-                        try:
-
-                            paginated_students = paginator.page(page)
-
-                        except PageNotAnInteger:
-
-                            paginated_students = paginator.page(1)
-
-                        except EmptyPage:
-
-                            paginated_students = paginator.page(paginator.num_pages)
-
-                        student_details = []
-
-                        for student in paginated_students:
-                            student_details.append({
-
-                                'id': student.id,
-
-                                'student_name': student.student_name,
-
-                                'student_age': student.student_age,
-
-                                'student_mobile': student.student_mobile,
-
-                                'student_email': student.student_email,
-
-                                'student_adhar': student.student_adhar,
-
-                                'created_date_time': student.created_date_time,
-
-                                'updated_date_time': student.updated_date_time,
-
-                                'payment_url': student.payment_url,
-
-                                'order_id': student.order_id,
-
-                                'razorpay_signature': student.razorpay_signature,
-
-                                'stupayment_status': student.stupayment_status,
-
-                                'paylinkdate': student.paylinkdate,
-
-                                'payment_link_price': payment_link_price,
-
-                                'razorpay_payment_id': student.razorpay_payment_id,
-
-                            })
-
-                        if student_details:
-                            batch_type_name = slot.batch_type.name
-
-                            userid = slot.user_id.first_name
-
-                            slot_data.append({
-
-                                'slot_id': slot.id,
-
-                                'slot_name': slot.batch_name,
-
-                                'slot_date': slot.slot_date,
-
-                                'batch_size': slot.batch_size,
-
-                                'batch_type': batch_type_name,
-
-                                'user_id': userid,
-
-                                'created_date_time': slot.created_date_time,
-
-                                'updated_date_time': slot.updated_date_time,
-
-                                'slot_status': slot.slot_status,
-
-                                'students': student_details,
-
-                                'total_students_count': paginator.count,
-
-                            })
-
-                    return Response({'slots': slot_data})
-
-                else:
-                    raise Http404("Missing parameters")
 
             elif user.role_id.role_name == 'Partner':
                 slot_date = request.query_params.get('slot_date')
