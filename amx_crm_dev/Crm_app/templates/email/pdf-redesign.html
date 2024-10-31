@@ -154,7 +154,7 @@ p.long-text-readability{
                                     <h3><b>Bill To: </b> {{invoice_data.customer_first_name|default:''}}<span>({{invoice_data.customer_company_name|default:''}})</span> </h3>
                                     <h3><b>Address: </b> <span>{{invoice_data.customer_billing_address|default:'' }}, {{invoice_data.customer_billing_pincode|default:'' }}, {{invoice_data.customer_billing_state|default:'' }}, {{invoice_data.customer_billing_state_country |default:''}}</span>
                          </h3>
-                         <h3><b>GSTIN: </b>{{invoice_data.customer_first_name|default:'N/A' }}</h3>
+                         <h3><b>GSTIN: </b>{{invoice_data.customer_gst_number|default:'N/A' }}</h3>
                          <h3><b>Contact Details:</b>Email:{{invoice_data.customer_email|default:'N/A' }} | Mob:{{ invoice_data.customer_mobile_number|default:'N/A'  }} </h3>
                          <h3><b>Place Of Delivery: </b> {{invoice_data.customer_shipping_state|default:'N/A' }}</h3>
                                 </div>
