@@ -15085,14 +15085,31 @@ class SlotListStudents(APIView):
                     filtered_slots.append(slot)
             slots_with_students = filtered_slots
 
-        # Handle 'payment == True' in combination with 'search'
+        # Handle 'payment == True' in combination with 'search' olddddddddddddddddd
+        # if payment == 'True' and search:
+        #     filtered_slots = []
+        #     for slot in slots_with_students:
+        #         students = Student.objects.filter(slot_id=slot.id)
+        #         all_success = all(student.stupayment_status == 'Success' for student in students)
+        #         if not all_success:
+        #             filtered_slots.append(slot)
+        #     slots_with_students = filtered_slots
         if payment == 'True' and search:
+            print("jjjjjj")
             filtered_slots = []
             for slot in slots_with_students:
-                students = Student.objects.filter(slot_id=slot.id)
-                all_success = all(student.stupayment_status == 'Success' for student in students)
-                if not all_success:
-                    filtered_slots.append(slot)
+                # Check if batch name matches exactly (case-insensitive)
+                if slot.batch_name.lower() == search.lower():
+                    students = Student.objects.filter(slot_id=slot.id)
+                    # Check if all students have payment status 'Success'
+                    all_success = all(student.stupayment_status == 'Success' for student in students)
+                    # If not all are successful, include the slot in filtered results
+                    if not all_success:
+                        filtered_slots.append(slot)
+            # If no slots match the exact batch name, raise an error
+            if not filtered_slots:
+                raise NotFound(
+                    "No slots found with the exact batch name provided. Please enter the correct batch name.")
             slots_with_students = filtered_slots
 
         # Serialize the queryset
