@@ -15070,7 +15070,13 @@ class SlotListStudents(APIView):
             slots = slots.filter(batch_name=batch_name)
         if search:
             # Search by batch name
-            slots = slots.filter(batch_name__icontains=search)
+            slots = slots.filter(batch_name__iexact=search)
+            # Check if any slots exist for the search term
+            if not slots.exists():
+                return Response(
+                    {"message": "No slots found with the exact batch name provided. Please enter the correct batch name"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
 
         # Filter slots that have associated students
         slots_with_students = slots.filter(student__isnull=False).distinct()
