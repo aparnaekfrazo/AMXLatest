@@ -16289,7 +16289,7 @@ class FilterData(APIView):
                     # Check if no slots were found with the provided batch name
                     if not slots.exists():
                         return Response({
-                                            'error': 'No slots found with the exact batch name provided. Please enter the correct batch name.'},
+                                            'message': 'No slots found with the exact batch name provided. Please enter the correct batch name.'},
                                         status=status.HTTP_404_NOT_FOUND)
                     slot_data = []
                     for slot in slots:
@@ -16552,8 +16552,9 @@ class FilterData(APIView):
                         return Response({"error": "User ID is required"}, status=400)
                     if batch_search is None:
                         return Response({"error": "Batch search cannot be None"}, status=400)
-                    slots = Slot.objects.filter(batch_name__icontains=batch_search, user_id=user_id)
-                    print(slots, "Filtered slots")
+                    # slots = Slot.objects.filter(batch_name__icontains=batch_search, user_id=user_id)
+                    slots = Slot.objects.filter(batch_name__iexact=batch_search, user_id=user_id)
+
                     if not slots.exists():
                         return Response({"message": "No matching slots found"}, status=404)
                     slots = slots.exclude(slotstudentrelation__isnull=True)
