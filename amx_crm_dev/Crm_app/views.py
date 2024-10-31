@@ -15071,6 +15071,7 @@ class SlotListStudents(APIView):
         if search:
             # Search by batch name
             slots = slots.filter(batch_name__iexact=search)
+            slots = slots.exclude(slotstudentrelation__isnull=True)
             # Check if any slots exist for the search term
             if not slots.exists():
                 return Response(
