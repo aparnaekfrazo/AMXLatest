@@ -16266,8 +16266,14 @@ class FilterData(APIView):
 
                     print("kkkk")
 
-                    slots = slots.filter(user_id=partner_id,batch_name__icontains=batch_search)
+                    # slots = slots.filter(user_id=partner_id,batch_name__icontains=batch_search)
+                    slots = slots.filter(user_id=partner_id,batch_name__iexact=batch_search)
                     slots = slots.exclude(slotstudentrelation__isnull=True)
+                    # Check if no slots were found with the provided batch name
+                    if not slots.exists():
+                        return Response({
+                                            'error': 'No slots found with the exact batch name provided. Please enter the correct batch name.'},
+                                        status=status.HTTP_404_NOT_FOUND)
                     slot_data = []
                     for slot in slots:
                         pay_url = PayUrl.objects.filter(batch_type_id=slot.batch_type_id).first()
