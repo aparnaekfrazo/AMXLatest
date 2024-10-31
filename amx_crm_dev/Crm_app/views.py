@@ -15108,8 +15108,9 @@ class SlotListStudents(APIView):
                         filtered_slots.append(slot)
             # If no slots match the exact batch name, raise an error
             if not filtered_slots:
-                raise NotFound(
-                    "No slots found with the exact batch name provided. Please enter the correct batch name.")
+                # raise NotFound(
+                #     "No slots found with the exact batch name provided. Please enter the correct batch name.")
+                return Response({'message': 'No slots found with the exact batch name provided. Please enter the correct batch name.'}, status=status.HTTP_404_NOT_FOUND)
             slots_with_students = filtered_slots
 
         # Serialize the queryset
