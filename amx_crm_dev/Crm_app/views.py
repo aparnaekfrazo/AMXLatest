@@ -3631,6 +3631,10 @@ class CompanyAndPartnerDetailsAPIView(APIView):
                 address = data.get('address')
                 signature_data = data.get('user_signature')
                 profile_pic = data.get('profile_pic')
+                first_name = data.get('first_name')
+                last_name = data.get('last_name')
+                email = data.get('email')
+                mobile_number = data.get('mobile_number')
 
                 partner.company_name = company_name
                 partner.company_email = company_email
@@ -3645,6 +3649,10 @@ class CompanyAndPartnerDetailsAPIView(APIView):
                 partner.email_altr = email_altr
                 partner.address = address
                 partner.pan_number = pan_number
+                partner.first_name = first_name
+                partner.last_name = last_name
+                partner.email = email
+                partner.mobile_number = mobile_number
 
                 shipping_location_details = self.get_location_details(shipping_pincode)
                 if shipping_location_details:
