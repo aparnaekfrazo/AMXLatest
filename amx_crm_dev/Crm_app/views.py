@@ -18473,7 +18473,9 @@ class GetDroneOrdersGraphSuperAdmin(APIView):
                                             completed_day_counts[item.updated_date_time.date()] += quantity
 
                             response_data['total_billing'] = total_billing
-                            response_data['inventory_count'] = sum(date_counts.values()) - total_billing
+                            # response_data['inventory_count'] = sum(date_counts.values()) - total_billing
+                            response_data['inventory_count'] = max(sum(date_counts.values()) - total_billing, 0)
+
                             for date, count in completed_day_counts.items():
                                 response_data['Billing_graph'][0]['Billing_Invoice_Graph'].append({
                                     "date": date.strftime('%d-%m-%Y'),
@@ -18535,7 +18537,9 @@ class GetDroneOrdersGraphSuperAdmin(APIView):
                                         completed_month_counts[item.updated_date_time.month] += quantity
 
                         response_data['total_billing'] = total_billing
-                        response_data['inventory_count'] = sum(month_counts.values()) - total_billing
+                        # response_data['inventory_count'] = sum(month_counts.values()) - total_billing
+                        response_data['inventory_count'] = max(sum(month_counts.values()) - total_billing, 0)
+
                         for month, count in completed_month_counts.items():
                             response_data['Billing_graph'][0]['Billing_Invoice_Graph'].append({
                                 "date": datetime(current_year, month, 1).strftime('%B'),
@@ -18638,7 +18642,9 @@ class GetDroneOrdersGraphSuperAdmin(APIView):
                                             completed_day_counts[item.updated_date_time.date()] += quantity
 
                             response_data['total_billing'] = total_billing
-                            response_data['inventory_count'] = sum(date_counts.values()) - total_billing
+                            # response_data['inventory_count'] = sum(date_counts.values()) - total_billing
+                            response_data['inventory_count'] = max(sum(date_counts.values()) - total_billing, 0)
+
                             for date, count in completed_day_counts.items():
                                 response_data['Billing_graph'][0]['Billing_Invoice_Graph'].append({
                                     "date": date.strftime('%d-%m-%Y'),
@@ -18705,7 +18711,9 @@ class GetDroneOrdersGraphSuperAdmin(APIView):
                                         completed_month_counts[item.updated_date_time.month] += quantity
 
                         response_data['total_billing'] = total_billing
-                        response_data['inventory_count'] = sum(month_counts.values()) - total_billing
+                        # response_data['inventory_count'] = sum(month_counts.values()) - total_billing
+                        response_data['inventory_count'] = max(sum(month_counts.values()) - total_billing, 0)
+
                         for month, count in completed_month_counts.items():
                             response_data['Billing_graph'][0]['Billing_Invoice_Graph'].append({
                                 "date": datetime(current_year, month, 1).strftime('%B'),
@@ -20838,7 +20846,9 @@ class PartnerOrderSummary(APIView):
                                 completed_day_counts[item.updated_date_time.date()] += quantity
 
                 response_data['total_billing'] = total_billing
-                response_data['inventory_count'] = sum(date_counts.values()) - total_billing
+                # response_data['inventory_count'] = sum(date_counts.values()) - total_billing
+                response_data['inventory_count'] = max(sum(date_counts.values()) - total_billing, 0)
+
                 for date, count in completed_day_counts.items():
                     response_data['Billing_graph'][0]['Billing_Invoice_Graph'].append({
                         "date": date.strftime('%d-%m-%Y'),
@@ -20892,7 +20902,9 @@ class PartnerOrderSummary(APIView):
                             completed_month_counts[item.updated_date_time.month] += quantity
 
             response_data['total_billing'] = total_billing
-            response_data['inventory_count'] = sum(month_counts.values()) - total_billing
+            # response_data['inventory_count'] = sum(month_counts.values()) - total_billing
+            response_data['inventory_count'] = max(sum(month_counts.values()) - total_billing, 0)
+
             for month, count in completed_month_counts.items():
                 response_data['Billing_graph'][0]['Billing_Invoice_Graph'].append({
                     "date": datetime(current_year, month, 1).strftime('%B'),
