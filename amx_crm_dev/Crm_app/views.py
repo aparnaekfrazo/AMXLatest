@@ -1898,7 +1898,7 @@ class AddToCart(APIView):
             # Update 'checked' status for multiple instances
             DroneSales.objects.filter(id__in=ids).update(checked=checked)
 
-            return Response({'message': 'Updated checked status for multiple instances successfully.'})
+            return Response({'message': 'Updated multiple instances successfully.'})
 
         # If 'pk' parameter is present, update a single instance
         elif pk and DroneSales.objects.filter(id=pk).exists():
@@ -1910,7 +1910,7 @@ class AddToCart(APIView):
                 checked=checked
             )
 
-            return Response({'message': 'Updated checked status for a single instance successfully.'})
+            return Response({'message': 'Updated single instance successfully.'})
 
         else:
             return Response({'message': 'Invalid request. Provide either "ids" or a valid "pk".'},
@@ -9485,7 +9485,7 @@ class AddCustomInvoiceSignature(APIView):
         item.save()
 
         response_data = {
-            'message': ' signature is applied successfully!',
+            'message': 'Discount updated successfully',
             'item_id': item.id,
             'signature_url': item.signature.url if item.signature else None
         }
@@ -9514,7 +9514,7 @@ class AddCustomInvoiceSignature(APIView):
         item.save()
 
         response_data = {
-            'result': 'signature is updated successfully!',
+            'result': 'Discount updated successfully',
             'item_id': item.id,
 
         }
@@ -10371,7 +10371,7 @@ class UnitPriceListAPI(APIView):
             units=units
         )
 
-        return Response({'result': 'UnitPriceList is created successfully!'}, status=status.HTTP_201_CREATED)
+        return Response({'message': 'UnitPriceList is created successfully!'}, status=status.HTTP_201_CREATED)
 
     def get(self, request):
         id = request.query_params.get('id')
