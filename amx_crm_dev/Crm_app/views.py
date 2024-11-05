@@ -5658,6 +5658,7 @@ class CustomerCreateOrginizationAPIView(APIView):
         customer.company_name = data.get('company_name', customer.company_name)
         customer.gstin_reg_type = data.get('gstin_reg_type', customer.gstin_reg_type)
         customer.gst_number = data.get('gst', customer.gst_number)
+        customer.updated_date_time = timezone.now()
 
         shipping_location_details = self.get_location_details(customer.shipping_pincode)
         if shipping_location_details:
@@ -5924,6 +5925,7 @@ class CustomerCreateIndividualAPIView(APIView):
         customer.billing_pincode = data.get('billing_pincode', customer.billing_pincode)
         customer.pin_code = data.get('pin_code', customer.pin_code)
         customer.pan_number = data.get('pan_number', customer.pan_number)
+        customer.updated_date_time = timezone.now()
 
         shipping_location_details = self.get_location_details(customer.shipping_pincode)
         if shipping_location_details:
