@@ -814,7 +814,7 @@ class DroneAPIView(APIView):
         drone.drone_sub_images = sub_images_list
         drone.save()
 
-        return Response({"message": "Drone created successfully!"}, status=status.HTTP_201_CREATED)
+        return Response({"message": "Drone details created successfully"}, status=status.HTTP_201_CREATED)
 
     def put(self, request, pk):
         data = request.data
@@ -915,7 +915,7 @@ class DroneAPIView(APIView):
 
         drone.save()
 
-        return Response({"message": "Drone updated successfully!"}, status=status.HTTP_200_OK)
+        return Response({"message": "Drone details updated successfully"}, status=status.HTTP_200_OK)
 
     def save_image(self, drone, image_data, folder_name, image_name):
         if image_data.startswith(('http:', 'https:')):
@@ -1824,7 +1824,7 @@ class AddToCart(APIView):
                 custom_price=custom_price_instance
 
             )
-            return Response({"message": "Dronesales created successfully!"}, status=status.HTTP_201_CREATED)
+            return Response({"message": "Drone added to cart"}, status=status.HTTP_201_CREATED)
 
     def get(self, request):
         user_id = request.query_params.get('user_id')
@@ -5676,7 +5676,7 @@ class CustomerCreateOrginizationAPIView(APIView):
 
         try:
             customer.save()
-            return Response({"message": "Customer updated successfully", "customer_id": customer.id},
+            return Response({"message": "Customer details updated successfully", "customer_id": customer.id},
                             status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -5942,7 +5942,7 @@ class CustomerCreateIndividualAPIView(APIView):
 
         try:
             customer.save()
-            return Response({"message": "Customer updated successfully", "customer_id": customer.id},
+            return Response({"message": "Customer details updated successfully", "customer_id": customer.id},
                             status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -8589,7 +8589,7 @@ class GstRateValuesAPI(APIView):
 
         if gstrates is not None:
             if GstRateValues.objects.filter(gstrates=gstrates).exclude(id=pk).exists():
-                return Response({'message': 'gstrates already exists'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'message': 'GST rate value already exists'}, status=status.HTTP_400_BAD_REQUEST)
 
             gst_rate_value.gstrates = gstrates
             gst_rate_value.updated_date_time = timezone.now()
