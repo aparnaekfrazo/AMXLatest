@@ -6933,7 +6933,7 @@ class InvoiceStatusAPI(APIView):
             status_instance = InvoiceStatus.objects.get(id=pk)
 
             if InvoiceStatus.objects.filter(invoice_status_name=invoice_status_name).exclude(id=pk).exists():
-                return Response({'message': 'DroneCategory name already exists. Choose a different name.'},
+                return Response({'message': 'Invoice status name already exists. Choose a different name.'},
                                 status=status.HTTP_400_BAD_REQUEST)
 
             status_instance.invoice_status_name = invoice_status_name
