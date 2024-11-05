@@ -7183,7 +7183,7 @@ class MyApiView(APIView):
 
                                 # Prepare response data
                                 response_data = {
-                                    "message": "Invoice payload updated successfully.",
+                                    "message": "E-Invoice generated successfully.",
                                     "Data": item.invoice_payload,
                                     "sek": sek_key,
                                     "api_response": api_response,
@@ -7398,7 +7398,7 @@ class MyApiView(APIView):
                                     )
                                 # Prepare response data
                                 response_data = {
-                                    "message": "Invoice payload updated successfully.",
+                                    "message": "E-Invoice generated successfully.",
                                     "Data": custom.invoice_payload,
                                     "sek": sek_key,
                                     "api_response": api_response,
@@ -7601,7 +7601,7 @@ class MyApiView(APIView):
                                 response_data = api_response['Status']
 
                                 response_data = {
-                                    "message": "Invoice data saved successfully.",
+                                    "message": "Invoice saved to draft successfully.",
                                 }
                                 return Response(response_data, status=status.HTTP_200_OK)
                             else:
@@ -7752,7 +7752,7 @@ class MyApiView(APIView):
                                 response_data = api_response['Status']
 
                                 response_data = {
-                                    "message": "Invoice data saved successfully.",
+                                    "message": "Invoice saved to draft successfully.",
                                 }
                                 return Response(response_data, status=status.HTTP_200_OK)
                             else:
@@ -16833,7 +16833,7 @@ class UpdateInvoiceStatusView(APIView):
         if add_item:
             add_item.invoice_status = new_status
             add_item.save()
-            return JsonResponse({'message': 'Invoice status updated successfully for Droneinvoice.'},
+            return JsonResponse({'message': 'Invoice generated successfully for Droneinvoice.'},
                                 status=status.HTTP_200_OK)
 
         # Check in CustomInvoice
@@ -16845,7 +16845,7 @@ class UpdateInvoiceStatusView(APIView):
         if custom_invoice:
             custom_invoice.invoice_status = new_status
             custom_invoice.save()
-            return JsonResponse({'message': 'Invoice status updated successfully for CustomInvoice.'},
+            return JsonResponse({'message': 'Invoice generated successfully for CustomInvoice.'},
                                 status=status.HTTP_200_OK)
 
         return JsonResponse({'error': 'Invoice not found or customer_type is not Individual.'},
