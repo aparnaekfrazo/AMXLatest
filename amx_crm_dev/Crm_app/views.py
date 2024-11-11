@@ -15159,6 +15159,7 @@ class SlotListStudents(APIView):
                 'id': slot_data['id'],
                 'batch_name': slot_data['batch_name'],
                 'slot_date': slot_data['slot_date'],
+                'end_date': slot_data['end_date'],
                 'batch_size': slot_data['batch_size'],
                 'batch_type': slot_data['batch_type'],
                 'user_id': slot_data['user_id'],
