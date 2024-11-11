@@ -445,6 +445,7 @@ class Slot(models.Model):
     created_date_time = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     updated_date_time = models.DateTimeField(null=True, blank=True)
     slot_status = models.BooleanField(null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
     def __str__(self):
         return str(self.batch_name)
 

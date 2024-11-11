@@ -14114,6 +14114,7 @@ def initiate_payment(request):
         batch_size = json_data.get('batch_size')
         batch_type_id = json_data.get('batch_type_id')
         user_id = json_data.get('user_id')
+        end_date = json_data.get('end_date')
 
         if Slot.objects.filter(batch_name=batch_name,user_id=user_id).exists():
             return JsonResponse({'message': 'Batch name already exists'},
@@ -14159,7 +14160,8 @@ def initiate_payment(request):
             batch_size=batch_size,
             batch_type=batch_type,
             order_id=order_id,
-            user_id=user_instance  # Assign the CustomUser instance
+            user_id=user_instance, # Assign the CustomUser instance
+            end_date=end_date
         )
 
         # Return necessary details for initiating the payment
@@ -14214,7 +14216,8 @@ def handle_payment_success(request):
                 slot_date=slot_order_instance.slot_date,
                 batch_size=slot_order_instance.batch_size,
                 batch_type=slot_order_instance.batch_type,
-                user_id=slot_order_instance.user_id
+                user_id=slot_order_instance.user_id,
+                end_date = slot_order_instance.end_date
             )
 
             return JsonResponse({'message': 'Slot booked successfully.'}, status=status.HTTP_200_OK)
