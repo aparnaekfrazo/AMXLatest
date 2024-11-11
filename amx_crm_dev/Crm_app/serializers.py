@@ -154,7 +154,7 @@ class SlotSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Slot
-        fields = ['id','batch_name', 'slot_date', 'batch_size', 'batch_type', 'batch_type_name',
+        fields = ['id','batch_name', 'slot_date','end_date', 'batch_size', 'batch_type', 'batch_type_name',
                   'user_id', 'partner_name', 'partner_mobile', 'partner_email',
                   'created_date_time', 'updated_date_time','slot_status']
 
@@ -204,7 +204,7 @@ class SlotStudentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Slot
-        fields = ['id', 'batch_name', 'slot_date', 'batch_size', 'batch_type',
+        fields = ['id', 'batch_name', 'slot_date','end_date', 'batch_size', 'batch_type',
                   'user_id', 'partner_name', 'partner_mobile', 'partner_email',
                   'created_date_time', 'updated_date_time', 'batch_type_name',
                   'student_lists', 'slot_status']

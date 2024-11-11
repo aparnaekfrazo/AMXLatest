@@ -432,6 +432,7 @@ class SlotOrder(models.Model):
     slot_date = models.DateField(null=True, blank=True)
     batch_size = models.IntegerField(null=True, blank=True)
     batch_type = models.ForeignKey(Batchtype, on_delete=models.PROTECT, null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
 
     def __str__(self):
         return str(self.user_id)
