@@ -8566,7 +8566,7 @@ class GstRateValuesAPI(APIView):
         gstrates = data.get('gstrates')
 
         if GstRateValues.objects.filter(gstrates=gstrates).exists():
-            return Response({'message': 'gstrates is already exists'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'message': 'GST rate value already exists'}, status=status.HTTP_400_BAD_REQUEST)
         else:
             data = GstRateValues.objects.create(gstrates=gstrates)
             return Response({'message': 'GST rate value added successfully'})
