@@ -14683,6 +14683,31 @@ class StudentCreateAPIView(APIView):
         except Slot.DoesNotExist:
             return Response({'message': 'Slot not found'}, status=status.HTTP_404_NOT_FOUND)
 
+        ####new code of payeestudent
+        if slot_instance.batch_type and slot_instance.batch_type.name == "Group":
+            # Check if a PayeeStudent already exists for this slot
+            if PayeeStudent.objects.filter(slot_id=slot_instance).exists():
+                return Response(
+                    {'message': 'A payee has already been added for this slot.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # If no payee exists, proceed to create a new one
+            payee_data = request.data.get('payee_details', {})
+            payee_name = payee_data.get('payee_name')
+            payee_email = payee_data.get('payee_email')
+            payee_mobile = payee_data.get('payee_mobile')
+            payee_address = payee_data.get('payee_address')
+
+            payee_student = PayeeStudent.objects.create(
+                payee_name=payee_name,
+                payee_email=payee_email,
+                payee_mobile=payee_mobile,
+                payee_address=payee_address,
+                slot_id=slot_instance
+            )
+            ######ending newcode of payeestudent#########
+
         # Validate unique mobile numbers, Aadhar numbers, and emails
         mobile_numbers = set()
         adhar_numbers = set()
@@ -14792,6 +14817,35 @@ class StudentCreateAPIView(APIView):
             slot_instance = Slot.objects.get(id=slot_id)
         except Slot.DoesNotExist:
             return Response({'message': 'Slot not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        ###new payeeecodeeeeeeeeeeeeeeeeeeeeeeeee
+        if slot_instance.batch_type and slot_instance.batch_type.name == "Group":
+            # Get payee details from the request
+            payee_data = request.data.get('payee_details', {})
+            payee_name = payee_data.get('payee_name')
+            payee_email = payee_data.get('payee_email')
+            payee_mobile = payee_data.get('payee_mobile')
+            payee_address = payee_data.get('payee_address')
+
+            # If a PayeeStudent exists for the slot, update it
+            try:
+                payee_student = PayeeStudent.objects.get(slot_id=slot_instance)
+                payee_student.payee_name = payee_name
+                payee_student.payee_email = payee_email
+                payee_student.payee_mobile = payee_mobile
+                payee_student.payee_address = payee_address
+                payee_student.updated_date_time = timezone.now()
+                payee_student.save()
+            except PayeeStudent.DoesNotExist:
+                # If no PayeeStudent exists, create a new one
+                PayeeStudent.objects.create(
+                    payee_name=payee_name,
+                    payee_email=payee_email,
+                    payee_mobile=payee_mobile,
+                    payee_address=payee_address,
+                    slot_id=slot_instance
+                )
+                ###new payee codeeeee#############################
 
         # Validate unique mobile numbers, Aadhar numbers, and emails within payload
         mobile_numbers = set()
@@ -14964,6 +15018,16 @@ class StudentCreateAPIView(APIView):
         relations_to_delete.delete()
 
         return Response({'message': 'Students deleted successfully'}, status=status.HTTP_200_OK)
+
+class DeletePayeeStudent(APIView):
+    def delete(self, request, slot_id, *args, **kwargs):
+        # Retrieve and delete the PayeeStudent instance by slot_id
+        try:
+            payee_student = get_object_or_404(PayeeStudent, slot_id=slot_id)
+            payee_student.delete()
+            return Response({'message': 'PayeeStudent deleted successfully'}, status=status.HTTP_200_OK)
+        except PayeeStudent.DoesNotExist:
+            return Response({'message': 'PayeeStudent not found'}, status=status.HTTP_404_NOT_FOUND)
 
 from django.db.models import Q
 

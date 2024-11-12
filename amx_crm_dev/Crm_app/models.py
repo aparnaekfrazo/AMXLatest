@@ -472,6 +472,25 @@ class Student(models.Model):
     def __str__(self):
         return str(self.student_name)
 
+class PayeeStudent(models.Model):
+    payee_name = models.CharField(max_length=150, null=True, blank=True)
+    payee_email = models.EmailField(null=True, blank=True)
+    payee_mobile = models.BigIntegerField(null=True, blank=True)
+    payee_address = models.TextField(null=True, blank=True)
+    slot_id = models.ForeignKey(Slot, on_delete=models.PROTECT, null=True, blank=True)
+    payment_url = models.URLField(max_length=500, null=True, blank=True)
+    payment_status = models.ForeignKey(PaymentLinkStatus, on_delete=models.PROTECT, null=True, blank=True)
+    order_id = models.CharField(max_length=250, null=True, blank=True)
+    razorpay_payment_id = models.TextField(max_length=250, null=True, blank=True)
+    razorpay_signature = models.TextField(max_length=250, null=True, blank=True)
+    payee_status = models.CharField(max_length=50, null=True, blank=True)
+    paylinkdate = models.DateTimeField(null=True, blank=True)
+    created_date_time = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    updated_date_time = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+
+    def __str__(self):
+        return str(self.payee_name)
+
 class SlotStudentRelation(models.Model):
     slot = models.ForeignKey(Slot, on_delete=models.CASCADE, null=True, blank=True)
     student = models.ForeignKey(Student, on_delete=models.CASCADE, null=True, blank=True)

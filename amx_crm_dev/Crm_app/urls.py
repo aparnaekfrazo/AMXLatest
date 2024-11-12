@@ -164,6 +164,8 @@ urlpatterns = [
     path('drone-orders-graph/', PartnerOrderSummary.as_view()),
     # Other URLs
     path('s/', SuperAdminOrderSummary.as_view(), name='superadmin-order-summary'),
+    path('payee-student/<int:slot_id>/', DeletePayeeStudent.as_view(), name='delete_payee_student'),
+
 ]
 
 

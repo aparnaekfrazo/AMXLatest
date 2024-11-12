@@ -166,4 +166,12 @@ class ModelAdmin(admin.ModelAdmin):
 class ModelAdmin(admin.ModelAdmin):
     list_display = ['id','payment_status_name','created_date_time','updated_date_time']
 
+@admin.register(PayeeStudent)
+class PayeeStudentAdmin(admin.ModelAdmin):
+    list_display = [
+        'id', 'payee_name','payee_email','payee_mobile', 'payee_address',  'slot_id',
+        'payment_url', 'payment_status','order_id','razorpay_payment_id', 'razorpay_signature',
+        'payee_status','paylinkdate','created_date_time', 'updated_date_time'
+    ]
+
 
