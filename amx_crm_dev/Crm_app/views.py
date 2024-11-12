@@ -1898,7 +1898,7 @@ class AddToCart(APIView):
             # Update 'checked' status for multiple instances
             DroneSales.objects.filter(id__in=ids).update(checked=checked)
 
-            return Response({'message': 'Updated multiple instances successfully.'})
+            return Response({'message': 'cart updated succesfully'})
 
         # If 'pk' parameter is present, update a single instance
         elif pk and DroneSales.objects.filter(id=pk).exists():
@@ -1910,7 +1910,7 @@ class AddToCart(APIView):
                 checked=checked
             )
 
-            return Response({'message': 'Updated single instance successfully.'})
+            return Response({'message': 'cart updated succesfully'})
 
         else:
             return Response({'message': 'Invalid request. Provide either "ids" or a valid "pk".'},
