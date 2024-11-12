@@ -3714,7 +3714,7 @@ class CompanyAndPartnerDetailsAPIView(APIView):
                 partner.updated_date_time_company = timezone.now()
                 partner.save()
 
-                return Response({"message": "Company details updated successfully"}, status=status.HTTP_200_OK)
+                return Response({"message": "Profile and company details updated successfully"}, status=status.HTTP_200_OK)
 
         except CustomUser.DoesNotExist:
             return Response({"message": "Partner not found"}, status=status.HTTP_404_NOT_FOUND)
