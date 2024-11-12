@@ -10373,7 +10373,7 @@ class UnitPriceListAPI(APIView):
             units=units
         )
 
-        return Response({'message': 'UnitPriceList is created successfully!'}, status=status.HTTP_201_CREATED)
+        return Response({'message': 'unit list is created successfully!'}, status=status.HTTP_201_CREATED)
 
     def get(self, request):
         id = request.query_params.get('id')
