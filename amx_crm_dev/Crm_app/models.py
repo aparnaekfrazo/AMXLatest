@@ -487,6 +487,7 @@ class PayeeStudent(models.Model):
     paylinkdate = models.DateTimeField(null=True, blank=True)
     created_date_time = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     updated_date_time = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    testemail = models.EmailField(null=True, blank=True)
 
     def __str__(self):
         return str(self.payee_name)
