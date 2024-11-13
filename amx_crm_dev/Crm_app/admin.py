@@ -171,7 +171,7 @@ class PayeeStudentAdmin(admin.ModelAdmin):
     list_display = [
         'id', 'payee_name','payee_email','payee_mobile', 'payee_address',  'slot_id',
         'payment_url', 'payment_status','order_id','razorpay_payment_id', 'razorpay_signature',
-        'payee_status','paylinkdate','created_date_time', 'updated_date_time'
+        'stupayment_status','paylinkdate','created_date_time', 'updated_date_time'
     ]
 
 
