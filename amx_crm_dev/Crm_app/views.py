@@ -15748,22 +15748,172 @@ class PaymentLinkStatusAPI(APIView):
             return Response({'message': 'Payment status does not exist'}, status=status.HTTP_404_NOT_FOUND)
 
 
+
+################################################olddd##############################################################3
+#
+# @api_view(['POST'])
+# def generate_payment_links_view(request):
+#     try:
+#         # Get student IDs from request data
+#         student_ids = request.data.get('student_ids', [])
+#
+#         # Retrieve the price for payment link based on batch type
+#         try:
+#             individual_price = PayUrl.objects.get(batch_type__name='Individual').payment_link_price
+#         except PayUrl.DoesNotExist:
+#             return Response({'message': 'Individual PayUrl does not exist.'}, status=status.HTTP_400_BAD_REQUEST)
+#
+#         try:
+#             group_price = PayUrl.objects.get(batch_type__name='Group').payment_link_price
+#         except PayUrl.DoesNotExist:
+#             return Response({'message': 'Group PayUrl does not exist.'}, status=status.HTTP_400_BAD_REQUEST)
+#
+#         # Initialize Razorpay client
+#         client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+#
+#         # List to store payment link details
+#         payment_links = []
+#
+#         # Iterate over each student ID
+#         for student_id in student_ids:
+#             try:
+#                 # Retrieve student details
+#                 student = Student.objects.get(id=student_id)
+#
+#                 # Determine the payment link price based on batch type
+#                 price = individual_price if student.slot_id.batch_type.name == 'Individual' else group_price
+#
+#                 # Check if payment link already exists and emails match
+#                 if student.testemail and student.testemail == student.student_email and student.stupayment_status == 'Pending':
+#                     # Use existing order ID and payment link
+#                     payment_link = student.payment_url
+#                 else:
+#                     # Create new order ID using Razorpay
+#                     order_data = {
+#                         'amount': price * 100,  # Razorpay accepts amount in paise
+#                         'currency': 'INR',
+#                         'receipt': f'order_{student_id}',
+#                         'payment_capture': 1  # Auto capture payment
+#                     }
+#                     order = client.order.create(data=order_data)
+#
+#                     # Save new order ID in student object
+#                     student.order_id = order['id']
+#
+#                     # Generate new payment link
+#                     # payment_link = f' https://amx-crm-dev.thestorywallcafe.com/#/payment-link?order_id={order["id"]}'
+#                     payment_link = f'{settings.CRM_PORTAL_DOMAIN}/#/payment-link?order_id={order["id"]}'  # Changed line
+#
+#                     # Save the new payment link and other details
+#                     student.payment_url = payment_link
+#                     student.paylinkdate = timezone.now()  # Capture the current datetime
+#                     student.stupayment_status = 'Pending'
+#                     student.testemail = student.student_email  # Update the testemail field
+#
+#                 student.save()
+#
+#                 # Send email to student with payment link
+#                 subject = 'Payment Link for Course'
+#                 message = f"Dear {student.student_name},\n\nHere is your payment link for the course: {payment_link}\n\nRegards,\nAMX"
+#                 send_mail(subject, message, settings.EMAIL_HOST_USER, [student.student_email])
+#
+#                 # Save payment link details in the response list
+#                 payment_links.append({
+#                     'student_id': student_id,
+#                     'order_id': student.order_id,
+#                     'amount': price
+#                 })
+#
+#             except Student.DoesNotExist:
+#                 pass  # Handle the case where the student with given ID doesn't exist
+#
+#         return Response({'message': 'Email for payment sent successfully'},
+#                         status=status.HTTP_200_OK)
+#
+#     except Exception as e:
+#         return Response({'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#
+#
+# @csrf_exempt
+# @api_view(['GET'])
+# def payment_details_view(request, order_id):
+#     try:
+#         # Retrieve student details based on the order ID
+#         student = Student.objects.filter(order_id=order_id).first()
+#         # payment_status = "Pending"
+#         if student:
+#             student_name = student.student_name
+#             student_id = student.id
+#             student_mobile = student.student_mobile
+#             student_email = student.student_email
+#             stupayment_status = student.stupayment_status
+#
+#             # Fetch the associated PayUrl instance
+#             pay_url = PayUrl.objects.filter(batch_type=student.slot_id.batch_type).first()
+#             if pay_url:
+#                 amount = pay_url.payment_link_price
+#             else:
+#                 amount = 0  # Set a default value or handle the case when PayUrl is not found
+#
+#             return JsonResponse({'order_id': order_id, 'student_name': student_name, 'amount': amount,
+#                                  "payment_status": stupayment_status, "student_id": student_id,
+#                                  "student_mobile": student_mobile, "student_email": student_email})
+#         else:
+#             return JsonResponse({'message': 'Student not found for the given order ID'},
+#                                 status=status.HTTP_404_NOT_FOUND)
+#
+#     except Exception as e:
+#         return JsonResponse({'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#
+#
+# class CheckPaymentStatusView(APIView):
+#     def post(self, request, student_id):
+#         try:
+#             # Get payment details from the request data
+#             razorpay_payment_id = request.data.get('razorpay_payment_id')
+#             razorpay_order_id = request.data.get('razorpay_order_id')
+#             razorpay_signature = request.data.get('razorpay_signature')
+#
+#             # Initialize Razorpay client
+#             client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+#
+#             # Verify the payment signature
+#             params_dict = {
+#                 'razorpay_order_id': razorpay_order_id,
+#                 'razorpay_payment_id': razorpay_payment_id,
+#                 'razorpay_signature': razorpay_signature
+#             }
+#             client.utility.verify_payment_signature(params_dict)
+#
+#             # Fetch payment details
+#             payment = client.payment.fetch(razorpay_payment_id)
+#
+#             # Extract payment status
+#             payment_status = payment.get('status')
+#
+#             # Update the student's payment status in the database
+#             student = Student.objects.get(id=student_id)
+#             student.razorpay_payment_id = razorpay_payment_id
+#             student.razorpay_signature = razorpay_signature
+#             student.stupayment_status = 'Success'
+#             student.save()
+#
+#             return Response({'payment_status': payment_status, 'student_id': student_id})
+#
+#         except Exception as e:
+#             return Response({'message': str(e)}, status=400)
+#
+#
+# from dateutil import parser as date_parser
+#########olddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+
+
 @api_view(['POST'])
 def generate_payment_links_view(request):
     try:
-        # Get student IDs from request data
-        student_ids = request.data.get('student_ids', [])
-
-        # Retrieve the price for payment link based on batch type
-        try:
-            individual_price = PayUrl.objects.get(batch_type__name='Individual').payment_link_price
-        except PayUrl.DoesNotExist:
-            return Response({'message': 'Individual PayUrl does not exist.'}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            group_price = PayUrl.objects.get(batch_type__name='Group').payment_link_price
-        except PayUrl.DoesNotExist:
-            return Response({'message': 'Group PayUrl does not exist.'}, status=status.HTTP_400_BAD_REQUEST)
+        # Get slot ID or student IDs from request data
+        slot_id = request.data.get('slot_id', None)  # Only used if batch_type is 'Group'
+        student_ids = request.data.get('student_ids', [])  # Only used if batch_type is 'Individual'
 
         # Initialize Razorpay client
         client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
@@ -15771,60 +15921,122 @@ def generate_payment_links_view(request):
         # List to store payment link details
         payment_links = []
 
-        # Iterate over each student ID
-        for student_id in student_ids:
+        # Determine the batch type based on whether `slot_id` is provided
+        if slot_id:
             try:
-                # Retrieve student details
-                student = Student.objects.get(id=student_id)
+                # Retrieve the slot instance and associated batch type
+                slot_instance = Slot.objects.get(id=slot_id)
+                batch_type = slot_instance.batch_type.name
 
-                # Determine the payment link price based on batch type
-                price = individual_price if student.slot_id.batch_type.name == 'Individual' else group_price
+                # Retrieve group price from PayUrl model
+                group_price = PayUrl.objects.get(batch_type__name='Group').payment_link_price
 
-                # Check if payment link already exists and emails match
-                if student.testemail and student.testemail == student.student_email and student.stupayment_status == 'Pending':
-                    # Use existing order ID and payment link
-                    payment_link = student.payment_url
-                else:
-                    # Create new order ID using Razorpay
-                    order_data = {
-                        'amount': price * 100,  # Razorpay accepts amount in paise
-                        'currency': 'INR',
-                        'receipt': f'order_{student_id}',
-                        'payment_capture': 1  # Auto capture payment
-                    }
-                    order = client.order.create(data=order_data)
+                if batch_type == 'Group':
+                    # Retrieve the payee for the specified slot
+                    payee = PayeeStudent.objects.get(slot_id=slot_id)
+                    payee_email = payee.payee_email
+                    recipient_name = payee.payee_name
 
-                    # Save new order ID in student object
-                    student.order_id = order['id']
+                    # Check if payment link already exists and email matches
+                    if payee.testemail == payee_email and payee.stupayment_status == 'Pending':
+                        # Use existing order ID and payment link
+                        payment_link = payee.payment_url
+                    else:
+                        # Create a new order ID using Razorpay
+                        order_data = {
+                            'amount': group_price * 100,  # Razorpay accepts amount in paise
+                            'currency': 'INR',
+                            'receipt': f'order_slot_{slot_id}',
+                            'payment_capture': 1  # Auto capture payment
+                        }
+                        order = client.order.create(data=order_data)
+                        print(order, "oooooo")
 
-                    # Generate new payment link
-                    # payment_link = f' https://amx-crm-dev.thestorywallcafe.com/#/payment-link?order_id={order["id"]}'
-                    payment_link = f'{settings.CRM_PORTAL_DOMAIN}/#/payment-link?order_id={order["id"]}'  # Changed line
+                        # Generate new payment link
+                        payment_link = f'{settings.CRM_PORTAL_DOMAIN}/#/payment-link?order_id={order["id"]}'
 
-                    # Save the new payment link and other details
-                    student.payment_url = payment_link
-                    student.paylinkdate = timezone.now()  # Capture the current datetime
-                    student.stupayment_status = 'Pending'
-                    student.testemail = student.student_email  # Update the testemail field
+                        # Save the new payment link and other details in the payee record
+                        payee.order_id = order["id"]  # Save the order_id
+                        payee.payment_url = payment_link
+                        payee.paylinkdate = timezone.now()  # Capture the current datetime
+                        payee.stupayment_status = 'Pending'
+                        payee.testemail = payee_email  # Update the testemail field with payee email
 
-                student.save()
+                        # Save changes
+                        payee.save()
 
-                # Send email to student with payment link
-                subject = 'Payment Link for Course'
-                message = f"Dear {student.student_name},\n\nHere is your payment link for the course: {payment_link}\n\nRegards,\nAMX"
-                send_mail(subject, message, settings.EMAIL_HOST_USER, [student.student_email])
+                    # Send email to payee with payment link
+                    subject = 'Payment Link for Course'
+                    message = f"Dear {recipient_name},\n\nHere is your payment link for the course: {payment_link}\n\nRegards,\nAMX"
+                    send_mail(subject, message, settings.EMAIL_HOST_USER, [payee_email])
 
-                # Save payment link details in the response list
-                payment_links.append({
-                    'student_id': student_id,
-                    'order_id': student.order_id,
-                    'amount': price
-                })
+                    # Save payment link details in the response list
+                    payment_links.append({
+                        'slot_id': slot_id,
+                        'order_id': payee.order_id,
+                        'amount': group_price
+                    })
 
-            except Student.DoesNotExist:
-                pass  # Handle the case where the student with given ID doesn't exist
+            except (Slot.DoesNotExist, PayeeStudent.DoesNotExist, PayUrl.DoesNotExist):
+                return Response({'message': 'Slot, Payee, or Group PayUrl not found.'},
+                                status=status.HTTP_404_NOT_FOUND)
 
-        return Response({'message': 'Email for payment sent successfully'},
+        else:
+            # Handle the 'Individual' case using student_ids and their details
+            try:
+                # Retrieve individual price from PayUrl model
+                individual_price = PayUrl.objects.get(batch_type__name='Individual').payment_link_price
+            except PayUrl.DoesNotExist:
+                return Response({'message': 'Individual PayUrl does not exist.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            for student_id in student_ids:
+                try:
+                    # Retrieve student details
+                    student = Student.objects.get(id=student_id)
+
+                    # Check if payment link already exists and emails match
+                    if student.testemail == student.student_email and student.stupayment_status == 'Pending':
+                        # Use existing order ID and payment link
+                        payment_link = student.payment_url
+                    else:
+                        # Create new order ID using Razorpay
+                        order_data = {
+                            'amount': individual_price * 100,  # Razorpay accepts amount in paise
+                            'currency': 'INR',
+                            'receipt': f'order_{student_id}',
+                            'payment_capture': 1  # Auto capture payment
+                        }
+                        order = client.order.create(data=order_data)
+
+                        # Generate new payment link
+                        payment_link = f'{settings.CRM_PORTAL_DOMAIN}/#/payment-link?order_id={order["id"]}'
+
+                        # Save the new payment link and other details in student record
+                        student.order_id = order["id"]  # Save the order_id
+                        student.payment_url = payment_link
+                        student.paylinkdate = timezone.now()  # Capture the current datetime
+                        student.stupayment_status = 'Pending'
+                        student.testemail = student.student_email  # Update the testemail field
+
+                        # Save changes
+                        student.save()
+
+                    # Send email to student with payment link
+                    subject = 'Payment Link for Course'
+                    message = f"Dear {student.student_name},\n\nHere is your payment link for the course: {payment_link}\n\nRegards,\nAMX"
+                    send_mail(subject, message, settings.EMAIL_HOST_USER, [student.student_email])
+
+                    # Save payment link details in the response list
+                    payment_links.append({
+                        'student_id': student_id,
+                        'order_id': student.order_id,
+                        'amount': individual_price
+                    })
+
+                except Student.DoesNotExist:
+                    pass  # Handle the case where the student with given ID doesn't exist
+
+        return Response({'message': 'Email for payment sent successfully', 'payment_links': payment_links},
                         status=status.HTTP_200_OK)
 
     except Exception as e:
@@ -15835,9 +16047,37 @@ def generate_payment_links_view(request):
 @api_view(['GET'])
 def payment_details_view(request, order_id):
     try:
-        # Retrieve student details based on the order ID
+        # First, check if the order_id exists in PayeeStudent (for Payee details)
+        payee_student = PayeeStudent.objects.filter(order_id=order_id).first()
+
+        if payee_student:
+            # If it's a Payee, retrieve the slot details and payee information
+            slot_id = payee_student.slot_id
+            payee_name = payee_student.payee_name
+            payee_email = payee_student.payee_email
+            payee_mobile = payee_student.payee_mobile
+            stupayment_status = payee_student.stupayment_status
+
+            # Fetch the associated PayUrl instance based on the batch type of the slot
+            pay_url = PayUrl.objects.filter(batch_type=slot_id.batch_type).first()
+            if pay_url:
+                amount = pay_url.payment_link_price
+            else:
+                amount = 0  # Set a default value or handle the case when PayUrl is not found
+
+            return JsonResponse({
+                'order_id': order_id,
+                'payee_name': payee_name,
+                'payee_email': payee_email,
+                'payee_mobile': payee_mobile,
+                'amount': amount,
+                'slot_id': slot_id.id,  # Return the slot_id for reference
+                'payment_status': stupayment_status
+            })
+
+        # If not a payee, check for a student using order_id in the Student table
         student = Student.objects.filter(order_id=order_id).first()
-        # payment_status = "Pending"
+
         if student:
             student_name = student.student_name
             student_id = student.id
@@ -15845,16 +16085,22 @@ def payment_details_view(request, order_id):
             student_email = student.student_email
             stupayment_status = student.stupayment_status
 
-            # Fetch the associated PayUrl instance
+            # Fetch the associated PayUrl instance based on the batch type of the student's slot
             pay_url = PayUrl.objects.filter(batch_type=student.slot_id.batch_type).first()
             if pay_url:
                 amount = pay_url.payment_link_price
             else:
                 amount = 0  # Set a default value or handle the case when PayUrl is not found
 
-            return JsonResponse({'order_id': order_id, 'student_name': student_name, 'amount': amount,
-                                 "payment_status": stupayment_status, "student_id": student_id,
-                                 "student_mobile": student_mobile, "student_email": student_email})
+            return JsonResponse({
+                'order_id': order_id,
+                'student_name': student_name,
+                'amount': amount,
+                'payment_status': stupayment_status,
+                'student_id': student_id,
+                'student_mobile': student_mobile,
+                'student_email': student_email
+            })
         else:
             return JsonResponse({'message': 'Student not found for the given order ID'},
                                 status=status.HTTP_404_NOT_FOUND)
@@ -15864,7 +16110,7 @@ def payment_details_view(request, order_id):
 
 
 class CheckPaymentStatusView(APIView):
-    def post(self, request, student_id):
+    def post(self, request, student_id=None, slot_id=None):
         try:
             # Get payment details from the request data
             razorpay_payment_id = request.data.get('razorpay_payment_id')
@@ -15888,20 +16134,44 @@ class CheckPaymentStatusView(APIView):
             # Extract payment status
             payment_status = payment.get('status')
 
-            # Update the student's payment status in the database
-            student = Student.objects.get(id=student_id)
-            student.razorpay_payment_id = razorpay_payment_id
-            student.razorpay_signature = razorpay_signature
-            student.stupayment_status = 'Success'
-            student.save()
+            if student_id:
+                # If student_id is provided, treat it as a student
+                try:
+                    student = Student.objects.get(id=student_id)
+                    # Update student payment status
+                    student.razorpay_payment_id = razorpay_payment_id
+                    student.razorpay_signature = razorpay_signature
+                    student.stupayment_status = 'Success'
+                    student.save()
 
-            return Response({'payment_status': payment_status, 'student_id': student_id})
+                    return Response({'payment_status': payment_status, 'student_id': student_id})
+
+                except Student.DoesNotExist:
+                    return Response({'message': 'Student not found for the given student ID'}, status=404)
+
+            elif slot_id:
+                # If slot_id is provided, treat it as a payee
+                try:
+                    payee_student = PayeeStudent.objects.get(slot_id=slot_id)
+                    # Update payee payment status
+                    payee_student.razorpay_payment_id = razorpay_payment_id
+                    payee_student.razorpay_signature = razorpay_signature
+                    payee_student.stupayment_status = 'Success'
+                    payee_student.save()
+
+                    return Response({'payment_status': payment_status, 'slot_id': slot_id})
+
+                except PayeeStudent.DoesNotExist:
+                    return Response({'message': 'Payee not found for the given slot ID'}, status=404)
+
+            else:
+                return Response({'message': 'Either student_id or slot_id must be provided'}, status=400)
 
         except Exception as e:
             return Response({'message': str(e)}, status=400)
 
 
-from dateutil import parser as date_parser
+
 
 
 # @method_decorator([authorization_required], name='dispatch')
