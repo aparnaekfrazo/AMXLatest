@@ -240,11 +240,16 @@ class SlotStudentSerializer(serializers.ModelSerializer):
             return False
 
 class PayeeStudentSerializer(serializers.ModelSerializer):
+    payment_link_price = serializers.SerializerMethodField()
     class Meta:
         model = PayeeStudent
         fields = [
             'payee_name', 'payee_email', 'payee_mobile', 'payee_address',
             'payment_url', 'payment_status', 'order_id', 'razorpay_payment_id',
             'razorpay_signature', 'stupayment_status', 'paylinkdate', 'created_date_time',
-            'updated_date_time', 'testemail'
+            'updated_date_time','payment_link_price', 'testemail'
         ]
+
+    def get_payment_link_price(self, obj):
+        pay_url = PayUrl.objects.filter(batch_type_id=obj.slot_id.batch_type_id).first()
+        return pay_url.payment_link_price if pay_url else None

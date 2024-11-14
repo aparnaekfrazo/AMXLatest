@@ -16195,7 +16195,6 @@ class FilterData(APIView):
             user = get_object_or_404(CustomUser, id=user_id)
 
             if user.role_id.role_name == 'Super_admin':
-                print("sooooooooooooooo")
                 partner_id = request.query_params.get('partner_id')
                 slot_date = request.query_params.get('slot_date')
                 batchtype_id = request.query_params.get('batchtype_id')
@@ -16206,7 +16205,6 @@ class FilterData(APIView):
                 slots = Slot.objects.all()
 
                 if partner_id and slot_date and batchtype_id and batch_name and search_query:
-                    print("11111")
                     slots = slots.filter(user_id=partner_id, slot_date=date_parser.parse(slot_date).date(),
                                          batch_type_id=batchtype_id, batch_name=batch_name)
 
@@ -16214,6 +16212,11 @@ class FilterData(APIView):
 
                     slot_data = []
                     for slot in slots:
+                        ###### new code with payeeee
+                        payee_details = PayeeStudent.objects.filter(slot_id=slot.id)
+                        payee_serializer = PayeeStudentSerializer(payee_details, many=True)
+                        #######endsss###########
+
                         pay_url = PayUrl.objects.filter(batch_type_id=slot.batch_type_id).first()
                         payment_link_price = pay_url.payment_link_price if pay_url else None
                         # Filter students based on search query
@@ -16270,6 +16273,7 @@ class FilterData(APIView):
                                 'slot_status': slot.slot_status,
                                 'students': student_details,
                                 'total_students_count': paginator.count,
+                                'payee_details': payee_serializer.data  # payeee response
                                 # 'has_next': paginated_students.has_next(),
                                 # 'has_previous': paginated_students.has_previous(),
                                 # 'page_number': paginated_students.number,
@@ -16279,7 +16283,6 @@ class FilterData(APIView):
                     return Response({'slots': slot_data})
 
                 elif partner_id and slot_date and batchtype_id and batch_name:
-                    print("2222")
 
                     slots = slots.filter(user_id=partner_id, slot_date=date_parser.parse(slot_date).date(),
                                          batch_type_id=batchtype_id, batch_name=batch_name)
@@ -16287,6 +16290,10 @@ class FilterData(APIView):
                     slot_data = []
 
                     for slot in slots:
+                        ######new code of payeeeeeeeeeeeeeee############
+                        payee_details = PayeeStudent.objects.filter(slot_id=slot.id)
+                        payee_serializer = PayeeStudentSerializer(payee_details, many=True)
+                        ###ends######################################33
                         pay_url = PayUrl.objects.filter(batch_type_id=slot.batch_type_id).first()
                         payment_link_price = pay_url.payment_link_price if pay_url else None
                         students = Student.objects.filter(slot_id=slot.id)
@@ -16343,6 +16350,7 @@ class FilterData(APIView):
                                 'slot_status': slot.slot_status,
                                 'students': student_details,
                                 'total_students_count': paginator.count,
+                                'payee_details': payee_serializer.data  #####new###############
                                 # 'has_next': paginated_students.has_next(),
                                 # 'has_previous': paginated_students.has_previous(),
                                 # 'page_number': paginated_students.number,
@@ -16353,7 +16361,6 @@ class FilterData(APIView):
 
                 # If partner_id, slot_date, and batchtype_id are provided
                 elif partner_id and slot_date and batchtype_id:
-                    print("3333")
                     # Filter slots by partner_id, slot_date, and batchtype_id
                     slots = slots.filter(user_id=partner_id, slot_date=date_parser.parse(slot_date).date(),
                                          batch_type_id=batchtype_id)
@@ -16367,7 +16374,6 @@ class FilterData(APIView):
                     return Response(batch_names_list)
 
                 elif partner_id and slot_date:
-                    print("444")
                     # Filter slots by partner_id and slot_date
                     slots = slots.filter(user_id=partner_id, slot_date=date_parser.parse(slot_date).date())
 
@@ -16381,9 +16387,6 @@ class FilterData(APIView):
                     return Response(batch_names_list)
 
                 elif partner_id and batch_search:
-
-                    print("kkkk")
-
                     # slots = slots.filter(user_id=partner_id,batch_name__icontains=batch_search)
                     slots = slots.filter(user_id=partner_id,batch_name__iexact=batch_search)
                     slots = slots.exclude(slotstudentrelation__isnull=True)
@@ -16394,6 +16397,10 @@ class FilterData(APIView):
                                         status=status.HTTP_404_NOT_FOUND)
                     slot_data = []
                     for slot in slots:
+                        #######new code of payee ############
+                        payee_details = PayeeStudent.objects.filter(slot_id=slot.id)
+                        payee_serializer = PayeeStudentSerializer(payee_details, many=True)
+                        ##########ends###############33
                         pay_url = PayUrl.objects.filter(batch_type_id=slot.batch_type_id).first()
                         payment_link_price = pay_url.payment_link_price if pay_url else None
                         # Only filter students by search_query if it exists
@@ -16454,12 +16461,11 @@ class FilterData(APIView):
                                 'slot_status': slot.slot_status,
                                 'students': student_details,
                                 'total_students_count': paginator.count,
+                                'payee_details': payee_serializer.data  #### newww
                             })
                     return Response({'slots': slot_data})
 
-
                 elif partner_id:
-                    print("5555")
                     slots = slots.filter(user_id=partner_id)
 
                     # Filter out slots that don't have any associated students
@@ -16500,6 +16506,10 @@ class FilterData(APIView):
 
                     slot_data = []
                     for slot in slots:
+                        ######newww payeee codee #####
+                        payee_details = PayeeStudent.objects.filter(slot_id=slot.id)
+                        payee_serializer = PayeeStudentSerializer(payee_details, many=True)
+                        #####newww payeee ######
                         pay_url = PayUrl.objects.filter(batch_type_id=slot.batch_type_id).first()
                         payment_link_price = pay_url.payment_link_price if pay_url else None
 
@@ -16545,6 +16555,7 @@ class FilterData(APIView):
                                 'slot_status': slot.slot_status,
                                 'students': student_details,
                                 'total_students_count': paginator.count,
+                                'payee_details': payee_serializer.data ### newwww
                                 # 'has_next': paginated_students.has_next(),
                                 # 'has_previous': paginated_students.has_previous(),
                                 # 'page_number': paginated_students.number,
@@ -16568,6 +16579,10 @@ class FilterData(APIView):
 
                     slot_data = []
                     for slot in slots:
+                        ##### new code payeee #######
+                        payee_details = PayeeStudent.objects.filter(slot_id=slot.id)
+                        payee_serializer = PayeeStudentSerializer(payee_details, many=True)
+                        ####endss############
                         pay_url = PayUrl.objects.filter(batch_type_id=slot.batch_type_id).first()
                         payment_link_price = pay_url.payment_link_price if pay_url else None
 
@@ -16618,6 +16633,7 @@ class FilterData(APIView):
                             'slot_status': slot.slot_status,
                             'students': student_details,
                             'total_students_count': paginator.count,
+                            'payee_details': payee_serializer.data ### newwww ####
                             # 'has_next': paginated_students.has_next(),
                             # 'has_previous': paginated_students.has_previous(),
                             # 'page_number': paginated_students.number,
@@ -16646,7 +16662,6 @@ class FilterData(APIView):
                     return Response(batch_names_list)
 
                 elif batch_search:
-                    print("Batch search triggered")
                     try:
                         page_no = int(page)
                         page_size = int(page_size)
@@ -16701,6 +16716,11 @@ class FilterData(APIView):
                             'razorpay_payment_id': student.razorpay_payment_id,
                         } for student in paginated_students]
 
+                        ##### new code of payeee #####
+                        payee_details = PayeeStudent.objects.filter(slot_id=slot.id)
+                        payee_serializer = PayeeStudentSerializer(payee_details, many=True)
+                        ### end of new code
+
                         if student_details:
                             slot_data.append({
                                 'slot_id': slot.id,
@@ -16713,6 +16733,7 @@ class FilterData(APIView):
                                 'slot_status': slot.slot_status,
                                 'students': student_details,
                                 'total_students_count': paginator.count,
+                                'payee_details': payee_serializer.data,
                             })
                     if slot_data:
                         return Response({'slots': slot_data})
