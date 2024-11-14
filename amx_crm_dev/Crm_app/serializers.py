@@ -238,3 +238,13 @@ class SlotStudentSerializer(serializers.ModelSerializer):
             return True
         else:
             return False
+
+class PayeeStudentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PayeeStudent
+        fields = [
+            'payee_name', 'payee_email', 'payee_mobile', 'payee_address',
+            'payment_url', 'payment_status', 'order_id', 'razorpay_payment_id',
+            'razorpay_signature', 'stupayment_status', 'paylinkdate', 'created_date_time',
+            'updated_date_time', 'testemail'
+        ]

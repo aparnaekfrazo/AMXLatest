@@ -15333,6 +15333,13 @@ class SlotDetailsAPIView(APIView):
                 student_serializer = StudentSerializer(student)
                 students_data.append(student_serializer.data)
 
+            # Serialize the payee details for the slot#####newwwwwwwwwwwwwwwwwwwwww
+            payee_data = []
+            payees = PayeeStudent.objects.filter(slot_id=slot)
+            for payee in payees:
+                payee_serializer = PayeeStudentSerializer(payee)
+                payee_data.append(payee_serializer.data)
+
             # Calculate remaining students count for the slot
             remaining_students_count = slot.batch_size - slot.student_set.count()
 
@@ -15343,7 +15350,8 @@ class SlotDetailsAPIView(APIView):
             # Construct the response data
             response_data = {
                 'slot_details': slot_data,
-                'students_details': students_data
+                'students_details': students_data,
+                'payee_details': payee_data   ###newwwwwwwwwwwww
             }
 
             return Response(response_data, status=status.HTTP_200_OK)
