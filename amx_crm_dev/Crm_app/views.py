@@ -15179,7 +15179,6 @@ class SlotListStudents(APIView):
         #             filtered_slots.append(slot)
         #     slots_with_students = filtered_slots
         if payment == 'True' and search:
-            print("jjjjjj")
             filtered_slots = []
             for slot in slots_with_students:
                 # Check if batch name matches exactly (case-insensitive)
@@ -15218,6 +15217,11 @@ class SlotListStudents(APIView):
                 paginated_student_list = [student for student in paginated_students]
                 total_students_count = paginator.count
 
+            #####new code with payeeeeeeee
+            payee_details = PayeeStudent.objects.filter(slot_id=slot_data['id'])
+            payee_serializer = PayeeStudentSerializer(payee_details, many=True)
+            #####newcode ends################
+
             # Prepare final data for the slot
             paginated_slot_data = {
                 'id': slot_data['id'],
@@ -15235,7 +15239,8 @@ class SlotListStudents(APIView):
                 'batch_type_name': slot_data['batch_type_name'],
                 'student_lists': paginated_student_list,
                 'total_students_count': total_students_count,
-                'slot_status': slot_data['slot_status']
+                'slot_status': slot_data['slot_status'],
+                'payee_details': payee_serializer.data  # Include payee details outside student pagination
             }
 
             paginated_slots.append(paginated_slot_data)
