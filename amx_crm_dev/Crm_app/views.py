@@ -16110,12 +16110,15 @@ def payment_details_view(request, order_id):
 
 
 class CheckPaymentStatusView(APIView):
-    def post(self, request, student_id=None, slot_id=None):
+    # def post(self, request, student_id=None, slot_id=None):
+    def post(self, request):
         try:
             # Get payment details from the request data
             razorpay_payment_id = request.data.get('razorpay_payment_id')
             razorpay_order_id = request.data.get('razorpay_order_id')
             razorpay_signature = request.data.get('razorpay_signature')
+            student_id = request.data.get('student_id')
+            slot_id = request.data.get('slot_id')
 
             # Initialize Razorpay client
             client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
