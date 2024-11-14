@@ -16457,8 +16457,9 @@ class CheckPaymentStatusView(APIView):
 #
 #         except Exception as e:
 #             return Response({'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+from dateutil import parser as date_parser
 
-# @method_decorator([authorization_required], name='dispatch')
+@method_decorator([authorization_required], name='dispatch')
 class FilterData(APIView):
     def get(self, request, user_id):
         try:
