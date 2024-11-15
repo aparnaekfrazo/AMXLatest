@@ -668,7 +668,8 @@ class DroneAPIView(APIView):
         if search_param:
             drones = drones.filter(
                 Q(drone_name__icontains=search_param) |
-                Q(drone_category__name__icontains=search_param) |  # Assuming drone_category has a 'name' field
+                # Q(drone_category__name__icontains=search_param) |  # Assuming drone_category has a 'name' field
+                Q(drone_category__category_name__icontains=search_param) |  # Assuming drone_category has a 'name' field
                 Q(market_price__icontains=search_param) |
                 Q(our_price__icontains=search_param) |
                 Q(drone_specification__icontains=search_param) |
