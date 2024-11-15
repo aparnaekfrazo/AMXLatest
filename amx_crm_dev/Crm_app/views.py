@@ -8841,6 +8841,7 @@ class AddCustomItemAPI(APIView):
                 return Response(response_data, status=status.HTTP_201_CREATED)
 
     def get(self, request, item_id=None):
+        sum_of_gst_percentages = 0
         if item_id:
             # Retrieve a specific record by ID
             add_item_instance = get_object_or_404(CustomInvoice, id=item_id)
@@ -8982,6 +8983,7 @@ class AddCustomItemAPI(APIView):
                     cgst_percentage = drone_detail.get("cgst_percentage", 0)
                     sgst_percentage = drone_detail.get("sgst_percentage", 0)
                     total = drone_detail.get("total", 0)
+                    sum_of_gst_percentages += (igst_percentage + cgst_percentage + sgst_percentage)
 
                     # drone = Drone.objects.get(id=drone_id)
                     # drone_ownership = DroneOwnership.objects.filter(user=partner_instance, drone=drone_id).first()
@@ -9024,6 +9026,9 @@ class AddCustomItemAPI(APIView):
                 'invoice_status': invoice_status_name,
                 'invoice_status_id': invoice_status_id,
                 'amount_to_pay': add_item_instance.amount_to_pay,
+                'amount_to_pay_words': num2words_inr(add_item_instance.amount_to_pay),
+                'sum_of_gst_percentages': sum_of_gst_percentages,
+                'sum_of_gst_percentages_words': num2words_inr(sum_of_gst_percentages),
                 'sum_of_item_total_price': add_item_instance.sum_of_item_total_price,
                 'sum_of_igst_percentage': add_item_instance.sum_of_igst_percentage,
                 'sum_of_cgst_percentage': add_item_instance.sum_of_cgst_percentage,
@@ -9174,6 +9179,7 @@ class AddCustomItemAPI(APIView):
                         cgst_percentage = drone_detail.get("cgst_percentage", 0)
                         sgst_percentage = drone_detail.get("sgst_percentage", 0)
                         total = drone_detail.get("total", 0)
+                        sum_of_gst_percentages += (igst_percentage + cgst_percentage + sgst_percentage)
 
                         # try:
                         #     drone = Drone.objects.get(id=drone_id)
@@ -9218,6 +9224,9 @@ class AddCustomItemAPI(APIView):
                     'invoice_status': invoice_status_name,
                     'invoice_status_id': invoice_status_id,
                     'amount_to_pay': add_item_instance.amount_to_pay,
+                    'amount_to_pay_words': num2words_inr(add_item_instance.amount_to_pay),
+                    'sum_of_gst_percentages': sum_of_gst_percentages,
+                    'sum_of_gst_percentages_words': num2words_inr(sum_of_gst_percentages),
                     'sum_of_item_total_price': add_item_instance.sum_of_item_total_price,
                     'sum_of_igst_percentage': add_item_instance.sum_of_igst_percentage,
                     'sum_of_cgst_percentage': add_item_instance.sum_of_cgst_percentage,
