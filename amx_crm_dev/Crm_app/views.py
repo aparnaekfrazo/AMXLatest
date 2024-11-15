@@ -348,19 +348,19 @@ class PartnerAPIView(APIView):
             if not partner_ids:
                 partners = CustomUser.objects.filter(role_id__role_name="Partner")
                 partners.delete()
-                return Response({"message": "All partners deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+                return Response({"message": "All partners deleted successfully"}, status=status.HTTP_200_OK)
             try:
                 partners = CustomUser.objects.filter(pk__in=partner_ids, role_id__role_name="Partner")
                 partners.delete()
                 return Response({"message": "Selected partners deleted successfully"},
-                                status=status.HTTP_204_NO_CONTENT)
+                                status=status.HTTP_200_OK)
             except CustomUser.DoesNotExist:
                 return Response({"message": "Partners not found."}, status=status.HTTP_404_NOT_FOUND)
         else:
             try:
                 partner = CustomUser.objects.get(pk=pk, role_id__role_name="Partner").delete()
 
-                return Response({"message": "Partner deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+                return Response({"message": "Partner deleted successfully"}, status=status.HTTP_200_OK)
             except CustomUser.DoesNotExist:
                 return Response({"message": "Partner not found"}, status=status.HTTP_404_NOT_FOUND)
 
