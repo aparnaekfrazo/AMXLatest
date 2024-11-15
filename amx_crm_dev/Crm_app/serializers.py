@@ -50,7 +50,12 @@ class CustomUserSerializer(serializers.ModelSerializer):
         if obj.role_id.role_name == "Partner":
             if (CustomUser.objects.filter(created_by=obj, role_id__role_name="Customer").exists()
                     or Order.objects.filter(user_id=obj, order_status__status_name__in=["Pending", "Shipped"]).exists()
-                    or Slot.objects.filter(user_id=obj).exists()):
+                    or Slot.objects.filter(user_id=obj).exists()
+                    or AddItem.objects.filter(customer_id=obj).exists()  # Check for AddItem with customer_id
+                    or CustomInvoice.objects.filter(
+                        customer_id=obj).exists()  # Check for CustomInvoice with customer_id
+                    or AddItem.objects.filter(owner_id=obj).exists()  # Check for AddItem with owner_id
+                    or CustomInvoice.objects.filter(owner_id=obj).exists()):
                 return True
         return False
 
