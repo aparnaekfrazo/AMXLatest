@@ -3893,95 +3893,152 @@ class CustomerCreateAPIView(APIView):
         if partner_ids:
             partner_ids = partner_ids.split(',')
 
-        if partner_id is None:
-            customers = CustomUser.objects.filter(role_id__role_name="Customer")
-        else:
-            customers = CustomUser.objects.filter(created_by=partner_id, role_id__role_name="Customer")
+        # Initial customer queryset
+        customers = CustomUser.objects.filter(role_id__role_name="Customer")
 
+        # Filter by partner ID if provided
+        if partner_id:
+            customers = customers.filter(created_by=partner_id)
+
+        # Apply filters based on query parameters
         if customer_id:
-            customers = customers.filter(id=customer_id, role_id__role_name="Customer")
+            customers = customers.filter(id=customer_id)
 
         if invoice_id:
-            customers = customers.filter(invoice__id=invoice_id, role_id__role_name="Customer")
+            customers = customers.filter(invoice__id=invoice_id)
 
         if category_id:
-            customers = customers.filter(category__id=category_id, role_id__role_name="Customer")
-
-        if category_id and search:
-            customers = customers.filter(category__id=category_id, first_name__istartswith=search,
-                                         role_id__role_name="Customer")
+            customers = customers.filter(category__id=category_id)
 
         if search:
-            customers = customers.filter(first_name__istartswith=search, role_id__role_name="Customer")
+            customers = customers.filter(first_name__istartswith=search)
 
+        # Additional filters for specific query_key
         if query_key == "admin":
-            customers = CustomUser.objects.filter(created_by__role_id__role_name="Super_admin",
-                                                  role_id__role_name="Customer")
-
-        if query_key == "admin" and search:
-            customers = CustomUser.objects.filter(created_by__role_id__role_name="Super_admin",
-                                                  first_name__istartswith=search, role_id__role_name="Customer")
-
-        if query_key == "admin" and category_id:
-            customers = CustomUser.objects.filter(created_by__role_id__role_name="Super_admin",
-                                                  category__id=category_id, role_id__role_name="Customer")
-
-        if query_key == "admin" and category_id and search:
-            customers = CustomUser.objects.filter(created_by__role_id__role_name="Super_admin",
-                                                  category__id=category_id, first_name__istartswith=search,
-                                                  role_id__role_name="Customer")
+            customers = customers.filter(created_by__role_id__role_name="Super_admin")
+            if category_id:
+                customers = customers.filter(category__id=category_id)
+            if search:
+                customers = customers.filter(first_name__istartswith=search)
 
         if query_key == "partner":
-            customers = CustomUser.objects.filter(created_by__role_id__role_name="Partner",
-                                                  role_id__role_name="Customer")
-
-        if query_key == "partner" and search:
-            customers = CustomUser.objects.filter(created_by__role_id__role_name="Partner",
-                                                  first_name__istartswith=search, role_id__role_name="Customer")
-
-        if query_key == "partner" and category_id:
-            customers = CustomUser.objects.filter(created_by__role_id__role_name="Partner", category__id=category_id,
-                                                  role_id__role_name="Customer")
-
-        if query_key == "partner" and category_id and search:
-            customers = CustomUser.objects.filter(created_by__role_id__role_name="Partner", category__id=category_id,
-                                                  first_name__istartswith=search, role_id__role_name="Customer")
-
-        if query_key == "partner" and partner_ids:
-
+            customers = customers.filter(created_by__role_id__role_name="Partner")
             if partner_ids:
-                customers = CustomUser.objects.filter(created_by__role_id__role_name="Partner",
-                                                      created_by__in=partner_ids, role_id__role_name="Customer")
+                customers = customers.filter(created_by__in=partner_ids)
+            if category_id:
+                customers = customers.filter(category__id=category_id)
+            if search:
+                customers = customers.filter(first_name__istartswith=search)
 
-        if query_key == "partner" and partner_ids and search:
-
-            if partner_ids:
-                customers = CustomUser.objects.filter(created_by__role_id__role_name="Partner",
-                                                      created_by__in=partner_ids, first_name__istartswith=search,
-                                                      role_id__role_name="Customer")
-
-        if query_key == "partner" and partner_ids and category_id:
-            if partner_ids:
-                customers = CustomUser.objects.filter(created_by__role_id__role_name="Partner",
-                                                      created_by__in=partner_ids, category__id=category_id,
-                                                      role_id__role_name="Customer")
-
-        if query_key == "partner" and partner_ids and category_id and search:
-
-            if partner_ids:
-                customers = CustomUser.objects.filter(created_by__role_id__role_name="Partner",
-                                                      created_by__in=partner_ids, category__id=category_id,
-                                                      first_name__istartswith=search, role_id__role_name="Customer")
-
+        # Order and paginate the results
         customers = customers.order_by('-id')
-
         paginator = self.pagination_class()
         result_page = paginator.paginate_queryset(customers, request)
         serializer = CustomUserSerializer(result_page, many=True, context={'request': request})
 
         return paginator.get_paginated_response(serializer.data)
-        # serializer = CustomUserSerializer(customers, many=True, context={'request': request})
-        # return Response(serializer.data)
+
+    # def get(self, request, *args, **kwargs):  ###old codeeeeeeeeeeee
+    #     partner_id = self.kwargs.get('partner_id')
+    #     customer_id = self.request.query_params.get('customer_id')
+    #     invoice_id = self.request.query_params.get('invoice_type_id')
+    #     category_id = self.request.query_params.get('customer_type_id')
+    #     search = self.request.query_params.get('search')
+    #     query_key = request.GET.get('key', None)
+    #     partner_ids = request.GET.get('partner_ids', None)
+    #
+    #     if partner_ids:
+    #         partner_ids = partner_ids.split(',')
+    #
+    #     if partner_id is None:
+    #         customers = CustomUser.objects.filter(role_id__role_name="Customer")
+    #     else:
+    #         customers = CustomUser.objects.filter(created_by=partner_id, role_id__role_name="Customer")
+    #
+    #     if customer_id:
+    #         customers = customers.filter(id=customer_id, role_id__role_name="Customer")
+    #
+    #     if invoice_id:
+    #         customers = customers.filter(invoice__id=invoice_id, role_id__role_name="Customer")
+    #
+    #     if category_id:
+    #         customers = customers.filter(category__id=category_id, role_id__role_name="Customer")
+    #
+    #     if category_id and search:
+    #         customers = customers.filter(category__id=category_id, first_name__istartswith=search,
+    #                                      role_id__role_name="Customer")
+    #
+    #     if search:
+    #         customers = customers.filter(first_name__istartswith=search, role_id__role_name="Customer")
+    #
+    #     if query_key == "admin":
+    #         customers = CustomUser.objects.filter(created_by__role_id__role_name="Super_admin",
+    #                                               role_id__role_name="Customer")
+    #
+    #     if query_key == "admin" and search:
+    #         customers = CustomUser.objects.filter(created_by__role_id__role_name="Super_admin",
+    #                                               first_name__istartswith=search, role_id__role_name="Customer")
+    #
+    #     if query_key == "admin" and category_id:
+    #         customers = CustomUser.objects.filter(created_by__role_id__role_name="Super_admin",
+    #                                               category__id=category_id, role_id__role_name="Customer")
+    #
+    #     if query_key == "admin" and category_id and search:
+    #         customers = CustomUser.objects.filter(created_by__role_id__role_name="Super_admin",
+    #                                               category__id=category_id, first_name__istartswith=search,
+    #                                               role_id__role_name="Customer")
+    #
+    #     if query_key == "partner":
+    #         customers = CustomUser.objects.filter(created_by__role_id__role_name="Partner",
+    #                                               role_id__role_name="Customer")
+    #
+    #     if query_key == "partner" and search:
+    #         customers = CustomUser.objects.filter(created_by__role_id__role_name="Partner",
+    #                                               first_name__istartswith=search, role_id__role_name="Customer")
+    #
+    #     if query_key == "partner" and category_id:
+    #         customers = CustomUser.objects.filter(created_by__role_id__role_name="Partner", category__id=category_id,
+    #                                               role_id__role_name="Customer")
+    #
+    #     if query_key == "partner" and category_id and search:
+    #         customers = CustomUser.objects.filter(created_by__role_id__role_name="Partner", category__id=category_id,
+    #                                               first_name__istartswith=search, role_id__role_name="Customer")
+    #
+    #     if query_key == "partner" and partner_ids:
+    #
+    #         if partner_ids:
+    #             customers = CustomUser.objects.filter(created_by__role_id__role_name="Partner",
+    #                                                   created_by__in=partner_ids, role_id__role_name="Customer")
+    #
+    #     if query_key == "partner" and partner_ids and search:
+    #
+    #         if partner_ids:
+    #             customers = CustomUser.objects.filter(created_by__role_id__role_name="Partner",
+    #                                                   created_by__in=partner_ids, first_name__istartswith=search,
+    #                                                   role_id__role_name="Customer")
+    #
+    #     if query_key == "partner" and partner_ids and category_id:
+    #         if partner_ids:
+    #             customers = CustomUser.objects.filter(created_by__role_id__role_name="Partner",
+    #                                                   created_by__in=partner_ids, category__id=category_id,
+    #                                                   role_id__role_name="Customer")
+    #
+    #     if query_key == "partner" and partner_ids and category_id and search:
+    #
+    #         if partner_ids:
+    #             customers = CustomUser.objects.filter(created_by__role_id__role_name="Partner",
+    #                                                   created_by__in=partner_ids, category__id=category_id,
+    #                                                   first_name__istartswith=search, role_id__role_name="Customer")
+    #
+    #     customers = customers.order_by('-id')
+    #
+    #     paginator = self.pagination_class()
+    #     result_page = paginator.paginate_queryset(customers, request)
+    #     serializer = CustomUserSerializer(result_page, many=True, context={'request': request})
+    #
+    #     return paginator.get_paginated_response(serializer.data)
+    #     # serializer = CustomUserSerializer(customers, many=True, context={'request': request})
+    #     # return Response(serializer.data)
 
 
 @method_decorator([authorization_required], name='dispatch')
