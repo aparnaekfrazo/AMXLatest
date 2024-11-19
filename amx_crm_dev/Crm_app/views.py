@@ -5552,7 +5552,7 @@ class AddDiscountAPI(APIView):
         item.save()
 
         response_data = {
-            'result': 'Discount is applied successfully!',
+            'message': 'Discount is applied successfully!',
             'item_id': item.id,
             'signature_url': item.signature.url if item.signature else None
 
@@ -9717,7 +9717,7 @@ class AddCustomInvoiceSignature(APIView):
         item.save()
 
         response_data = {
-            'result': 'Discount updated successfully',
+            'message': 'Discount updated successfully',
             'item_id': item.id,
 
         }
