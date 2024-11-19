@@ -666,17 +666,18 @@ class DroneAPIView(APIView):
 
         # Apply filters
         if search_param:
-            drones = drones.filter(
-                Q(drone_name__icontains=search_param) |
-                # Q(drone_category__name__icontains=search_param) |  # Assuming drone_category has a 'name' field
-                Q(drone_category__category_name__icontains=search_param) |  # Assuming drone_category has a 'name' field
-                Q(market_price__icontains=search_param) |
-                Q(our_price__icontains=search_param) |
-                Q(drone_specification__icontains=search_param) |
-                Q(sales_status__icontains=search_param) |
-                Q(created_date_time__icontains=search_param) |
-                Q(updated_date_time__icontains=search_param)
-            )
+            drones = drones.filter(drone_name__istartswith=search_param)
+            # drones = drones.filter(
+            #     Q(drone_name__icontains=search_param) |
+            #     # Q(drone_category__name__icontains=search_param) |  # Assuming drone_category has a 'name' field
+            #     Q(drone_category__category_name__icontains=search_param) |  # Assuming drone_category has a 'name' field
+            #     Q(market_price__icontains=search_param) |
+            #     Q(our_price__icontains=search_param) |
+            #     Q(drone_specification__icontains=search_param) |
+            #     Q(sales_status__icontains=search_param) |
+            #     Q(created_date_time__icontains=search_param) |
+            #     Q(updated_date_time__icontains=search_param)
+            # )
 
         if drone_category:
             drone_category_ids = [int(category_id) for category_id in drone_category]
@@ -2102,84 +2103,79 @@ class MydronesAPI(APIView):
         # orders = Order.objects.exclude(order_status__isnull=True).order_by('-id')
 
         if search_param:
-            orders = orders.filter(
-                Q(drone_id__drone_name__icontains=search_param) |
-                Q(order_id__icontains=search_param) |
-                Q(quantity__icontains=search_param) |
-                Q(order_status__status_name__icontains=search_param) |
-                Q(drone_id__drone_category__category_name__icontains=search_param) |
-                Q(drone_id__market_price__icontains=search_param) |
-                Q(drone_id__our_price__icontains=search_param) |
-                Q(drone_id__drone_specification__icontains=search_param) |
-                Q(drone_id__sales_status__icontains=search_param) |
-                Q(created_date_time__icontains=search_param) |
-                Q(updated_date_time__icontains=search_param)
-            )
+            orders = orders.filter(drone_id__drone_name__istartswith=search_param,user_id__id=user_id)
         if drone_category:
             drone_category_ids = [int(category_id) for category_id in drone_category]
             orders = orders.filter(drone_id__drone_category__id__in=drone_category_ids).order_by('-id')
 
         if order_status:
-            orders = orders.filter(order_status__status_name=order_status)
+            order_status_ids = [int(status_id) for status_id in order_status.split(',')]
+            orders = orders.filter(order_status__id__in=order_status_ids,user_id__id=user_id)
 
         if user_id:
             orders = orders.filter(user_id__id=user_id)
 
         if search_param and drone_category and order_status and user_id:
             drone_category_ids = [int(category_id) for category_id in drone_category]
+            order_status_ids = [int(status_id) for status_id in order_status.split(',')]
             orders = orders.filter(
-                Q(order_status__status_name=order_status) &
-                Q(drone_id__drone_name__icontains=search_param) &
-                Q(user_id__id=user_id) &
-                Q(drone_id__drone_category__id__in=drone_category_ids)
+                order_status__id__in=order_status_ids,  # Use IDs instead of status_name
+                drone_id__drone_name__istartswith=search_param,
+                user_id__id=user_id,
+                drone_id__drone_category__id__in=drone_category_ids,
             )
         if search_param and drone_category and order_status:
             drone_category_ids = [int(category_id) for category_id in drone_category]
+            order_status_ids = [int(status_id) for status_id in order_status.split(',')]
             orders = orders.filter(
-                Q(order_status__status_name=order_status) &
-                Q(drone_id__drone_name__icontains=search_param) &
+                Q(order_status__id__in=order_status_ids) &
+                Q(drone_id__drone_name__istartswith=search_param) &
                 Q(drone_id__drone_category__id__in=drone_category_ids)
             )
         if search_param and drone_category:
             drone_category_ids = [int(category_id) for category_id in drone_category]
             orders = orders.filter(
-                Q(drone_id__drone_name__icontains=search_param) &
+                Q(drone_id__drone_name__istartswith=search_param) &
                 Q(drone_id__drone_category__id__in=drone_category_ids)
             )
 
         if search_param and drone_category and user_id:
             drone_category_ids = [int(category_id) for category_id in drone_category]
             orders = orders.filter(
-                Q(drone_id__drone_name__icontains=search_param) &
+                Q(drone_id__drone_name__istartswith=search_param) &
                 Q(user_id__id=user_id) &
                 Q(drone_id__drone_category__id__in=drone_category_ids)
             )
 
         if search_param and order_status:
+            order_status_ids = [int(status_id) for status_id in order_status.split(',')]
             orders = orders.filter(
-                Q(order_status__status_name=order_status) &
-                Q(drone_id__drone_name__icontains=search_param)
+                Q(order_status__id__in=order_status_ids) &
+                Q(drone_id__drone_name__istartswith=search_param)
             )
 
         if search_param and order_status and user_id:
+            order_status_ids = [int(status_id) for status_id in order_status.split(',')]
             orders = orders.filter(
-                Q(order_status__status_name=order_status) &
+                Q(order_status__id__in=order_status_ids) &
                 Q(user_id__id=user_id) &
-                Q(drone_id__drone_name__icontains=search_param)
+                Q(drone_id__drone_name__istartswith=search_param)
             )
 
         if drone_category and order_status and user_id:
             drone_category_ids = [int(category_id) for category_id in drone_category]
+            order_status_ids = [int(status_id) for status_id in order_status.split(',')]
             orders = orders.filter(
-                Q(order_status__status_name=order_status) &
+                Q(order_status__id__in=order_status_ids) &
                 Q(user_id__id=user_id) &
                 Q(drone_id__drone_category__id__in=drone_category_ids)
             )
 
         if drone_category and order_status:
             drone_category_ids = [int(category_id) for category_id in drone_category]
+            order_status_ids = [int(status_id) for status_id in order_status.split(',')]
             orders = orders.filter(
-                Q(order_status__status_name=order_status) &
+                Q(order_status__id__in=order_status_ids) &
                 Q(drone_id__drone_category__id__in=drone_category_ids)
             )
         return self.paginate_response(request, orders, page_number, data_per_page)
@@ -2224,6 +2220,144 @@ class MydronesAPI(APIView):
             return request.build_absolute_uri(
                 f"?page_number={paginated_data.previous_page_number}&data_per_page={paginated_data.paginator.per_page}")
         return None
+# class MydronesAPI(APIView):
+#     def get(self, request):
+#         user_id = request.query_params.get('user_id')
+#         id_param = request.query_params.get('id')
+#         page_number = request.query_params.get('page_number')
+#         data_per_page = request.query_params.get('data_per_page')
+#         pagination = request.query_params.get('pagination')
+#         search_param = request.query_params.get('search', '')
+#         drone_category_param = request.query_params.get('drone_category', '')
+#         drone_category = drone_category_param.split(',') if drone_category_param else []
+#         order_status = request.query_params.get('order_status', '')
+#
+#         orders = Order.objects.all().order_by('-id')
+#         # orders = Order.objects.exclude(order_status__isnull=True).order_by('-id')
+#
+#         if search_param:
+#             orders = orders.filter(
+#                 Q(drone_id__drone_name__icontains=search_param) |
+#                 Q(order_id__icontains=search_param) |
+#                 Q(quantity__icontains=search_param) |
+#                 Q(order_status__status_name__icontains=search_param) |
+#                 Q(drone_id__drone_category__category_name__icontains=search_param) |
+#                 Q(drone_id__market_price__icontains=search_param) |
+#                 Q(drone_id__our_price__icontains=search_param) |
+#                 Q(drone_id__drone_specification__icontains=search_param) |
+#                 Q(drone_id__sales_status__icontains=search_param) |
+#                 Q(created_date_time__icontains=search_param) |
+#                 Q(updated_date_time__icontains=search_param)
+#             )
+#         if drone_category:
+#             drone_category_ids = [int(category_id) for category_id in drone_category]
+#             orders = orders.filter(drone_id__drone_category__id__in=drone_category_ids).order_by('-id')
+#
+#         if order_status:
+#             orders = orders.filter(order_status__status_name=order_status)
+#
+#         if user_id:
+#             orders = orders.filter(user_id__id=user_id)
+#
+#         if search_param and drone_category and order_status and user_id:
+#             drone_category_ids = [int(category_id) for category_id in drone_category]
+#             orders = orders.filter(
+#                 Q(order_status__status_name=order_status) &
+#                 Q(drone_id__drone_name__icontains=search_param) &
+#                 Q(user_id__id=user_id) &
+#                 Q(drone_id__drone_category__id__in=drone_category_ids)
+#             )
+#         if search_param and drone_category and order_status:
+#             drone_category_ids = [int(category_id) for category_id in drone_category]
+#             orders = orders.filter(
+#                 Q(order_status__status_name=order_status) &
+#                 Q(drone_id__drone_name__icontains=search_param) &
+#                 Q(drone_id__drone_category__id__in=drone_category_ids)
+#             )
+#         if search_param and drone_category:
+#             drone_category_ids = [int(category_id) for category_id in drone_category]
+#             orders = orders.filter(
+#                 Q(drone_id__drone_name__icontains=search_param) &
+#                 Q(drone_id__drone_category__id__in=drone_category_ids)
+#             )
+#
+#         if search_param and drone_category and user_id:
+#             drone_category_ids = [int(category_id) for category_id in drone_category]
+#             orders = orders.filter(
+#                 Q(drone_id__drone_name__icontains=search_param) &
+#                 Q(user_id__id=user_id) &
+#                 Q(drone_id__drone_category__id__in=drone_category_ids)
+#             )
+#
+#         if search_param and order_status:
+#             orders = orders.filter(
+#                 Q(order_status__status_name=order_status) &
+#                 Q(drone_id__drone_name__icontains=search_param)
+#             )
+#
+#         if search_param and order_status and user_id:
+#             orders = orders.filter(
+#                 Q(order_status__status_name=order_status) &
+#                 Q(user_id__id=user_id) &
+#                 Q(drone_id__drone_name__icontains=search_param)
+#             )
+#
+#         if drone_category and order_status and user_id:
+#             drone_category_ids = [int(category_id) for category_id in drone_category]
+#             orders = orders.filter(
+#                 Q(order_status__status_name=order_status) &
+#                 Q(user_id__id=user_id) &
+#                 Q(drone_id__drone_category__id__in=drone_category_ids)
+#             )
+#
+#         if drone_category and order_status:
+#             drone_category_ids = [int(category_id) for category_id in drone_category]
+#             orders = orders.filter(
+#                 Q(order_status__status_name=order_status) &
+#                 Q(drone_id__drone_category__id__in=drone_category_ids)
+#             )
+#         return self.paginate_response(request, orders, page_number, data_per_page)
+#
+#     def paginate_response(self, request, queryset, page_number, data_per_page):
+#         paginator = Paginator(queryset, data_per_page)
+#
+#         try:
+#             paginated_data = paginator.page(page_number)
+#         except EmptyPage:
+#             return Response({"message": "No results found for the given page number"}, status=404)
+#
+#         serialized_data = OrderSerializer(paginated_data, many=True).data
+#         len_of_data = paginator.count
+#
+#         return Response({
+#             'result': {
+#                 'status': 'GET ALL with pagination',
+#                 'pagination': {
+#                     'current_page': paginated_data.number,
+#                     'number_of_pages': paginator.num_pages,
+#                     'next_url': self.get_next_url(request, paginated_data),
+#                     'previous_url': self.get_previous_url(request, paginated_data),
+#                     'has_next': paginated_data.has_next(),
+#                     'has_previous': paginated_data.has_previous(),
+#                     'has_other_pages': paginated_data.has_other_pages(),
+#                     'len_of_data': len_of_data,
+#                 },
+#                 'data': serialized_data,
+#             },
+#
+#         })
+#
+#     def get_next_url(self, request, paginated_data):
+#         if paginated_data.has_next():
+#             return request.build_absolute_uri(
+#                 f"?page_number={paginated_data.next_page_number}&data_per_page={paginated_data.paginator.per_page}")
+#         return None
+#
+#     def get_previous_url(self, request, paginated_data):
+#         if paginated_data.has_previous():
+#             return request.build_absolute_uri(
+#                 f"?page_number={paginated_data.previous_page_number}&data_per_page={paginated_data.paginator.per_page}")
+#         return None
 
 
 @method_decorator([authorization_required], name='dispatch')
