@@ -8664,6 +8664,7 @@ class EwayBill(View):
                 decrypted_data = self.decrypt_data(response.json().get('Data'), sek_key)
 
                 response_data = {
+                    'message':"Ewaybill generated successfully",
                     # 'Error_details':error_details,
                     'ewaybill': response.json(),
                     'sek': sek_key,
