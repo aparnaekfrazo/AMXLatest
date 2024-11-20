@@ -5480,7 +5480,7 @@ class AddItemAPI(APIView):
         if not updated_dronedetails:
             # If all dronedetails are being deleted, don't delete the main id
             response_data = {
-                'message': 'Drones are deleted successfully!',
+                'result': 'Drone item deleted successfully',
                 'item_id': item.id,
                 'dronedetails': updated_dronedetails,
                 'discount_amount_after_deletion': discount_amount_after_deletion,
@@ -5496,7 +5496,7 @@ class AddItemAPI(APIView):
             return Response(response_data, status=status.HTTP_200_OK)
 
         response_data = {
-            'message': 'Drones are deleted successfully!',
+            'message': 'Drone item deleted successfully!',
             'item_id': item.id,
             'dronedetails': updated_dronedetails,
             'discount_amount_after_deletion': discount_amount_after_deletion,
@@ -9638,7 +9638,7 @@ class AddCustomItemAPI(APIView):
 
                 # Prepare response data without serializer
                 response_data = {
-                    'message': f'Items with item_names {item_names} deleted successfully for item_id {item_id}!',
+                    'result': f'custom item deleted successfully',
                     'item_data': {
                         'amount_to_pay': item.amount_to_pay,
                         'sum_of_item_total_price': item.sum_of_item_total_price,
