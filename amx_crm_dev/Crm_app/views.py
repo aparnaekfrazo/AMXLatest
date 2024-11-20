@@ -5552,7 +5552,7 @@ class AddDiscountAPI(APIView):
         item.save()
 
         response_data = {
-            'message': 'Discount is applied successfully!',
+            'result': 'Discount is applied successfully!',
             'item_id': item.id,
             'signature_url': item.signature.url if item.signature else None
 
@@ -9655,7 +9655,7 @@ class AddCustomItemAPI(APIView):
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-# @method_decorator([authorization_required], name='dispatch')
+@method_decorator([authorization_required], name='dispatch')
 class AddCustomInvoiceSignature(APIView):
     def post(self, request, item_id):
         item = get_object_or_404(CustomInvoice, id=item_id)
@@ -9689,7 +9689,7 @@ class AddCustomInvoiceSignature(APIView):
         item.save()
 
         response_data = {
-            'message': 'Discount updated successfully',
+            'result': 'Discount updated successfully',
             'item_id': item.id,
             'signature_url': item.signature.url if item.signature else None
         }
