@@ -4011,7 +4011,7 @@ class CustomerCreateAPIView(APIView):
 
         try:
             new_user.save()
-            return Response({"message": "Customer created successfully"}, status=status.HTTP_201_CREATED)
+            return Response({"message": "Customer details created successfully"}, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -5791,7 +5791,7 @@ class CustomerCreateOrginizationAPIView(APIView):
 
         try:
             new_user.save()
-            return Response({"message": "Customer created successfully", "customer_id": new_user.id},
+            return Response({"message": "Customer details created successfully", "customer_id": new_user.id},
                             status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -6061,7 +6061,7 @@ class CustomerCreateIndividualAPIView(APIView):
 
         try:
             new_user.save()
-            return Response({"message": "Customer created successfully", "customer_id": new_user.id},
+            return Response({"message": "Customer details created successfully", "customer_id": new_user.id},
                             status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
