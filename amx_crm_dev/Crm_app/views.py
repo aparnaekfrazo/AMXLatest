@@ -656,7 +656,7 @@ class DroneAPIView(APIView):
         # Retrieve query parameters
         page_number = request.query_params.get('page_number')
         data_per_page = request.query_params.get('data_per_page')
-        search_param = request.query_params.get('search', '')
+        search_param = request.query_params.get('search', '').strip()
         drone_category_param = request.query_params.get('drone_category', '')
         drone_category = drone_category_param.split(',') if drone_category_param else []
         sales_status = request.query_params.get('sales_status', '')
@@ -666,7 +666,10 @@ class DroneAPIView(APIView):
 
         # Apply filters
         if search_param:
-            drones = drones.filter(drone_name__istartswith=search_param)
+            # drones = drones.filter(drone_name__istartswith=search_param)
+            search_terms = search_param.split()  # Split search into individual words
+            for term in search_terms:
+                drones = drones.filter(Q(drone_name__icontains=term))
             # drones = drones.filter(
             #     Q(drone_name__icontains=search_param) |
             #     # Q(drone_category__name__icontains=search_param) |  # Assuming drone_category has a 'name' field
