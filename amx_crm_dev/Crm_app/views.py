@@ -14465,12 +14465,12 @@ class SlotListView(APIView):
                 )
 
             # Check if any of the resulting slots have students
-            student_count = slots.annotate(student_count=Count('slotstudentrelation'))
-            if student_count.filter(student_count__gt=0).exists():
-                return Response(
-                    {"message": f"No slots found for the search term: {search}"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+            # student_count = slots.annotate(student_count=Count('slotstudentrelation'))
+            # if student_count.filter(student_count__gt=0).exists():
+            #     return Response(
+            #         {"message": f"No slots found for the search term: {search}"},
+            #         status=status.HTTP_400_BAD_REQUEST
+            #     )
 
             # Annotate slots and filter out those with students
         slots = slots.annotate(student_count=Count('slotstudentrelation'))
