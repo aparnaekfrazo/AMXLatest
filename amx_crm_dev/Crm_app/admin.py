@@ -174,4 +174,9 @@ class PayeeStudentAdmin(admin.ModelAdmin):
         'stupayment_status','paylinkdate','created_date_time', 'updated_date_time'
     ]
 
+@admin.register(AuTokenn)
+class tokennAdmin(admin.ModelAdmin):
+    list_display = [
+        'id', 'access_token','created_at','expires_at'
+    ]
 

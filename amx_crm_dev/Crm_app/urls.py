@@ -70,8 +70,8 @@ urlpatterns = [
     path('categories/', CustomerCategoryAPI.as_view(), name='category-list'),
     path('categories/<int:category_id>/', CustomerCategoryAPI.as_view(), name='category-detail'),
     path('getpartnerdrone/', GetPartnerDronesAPI.as_view(), name='getdrone'),
-    path('auth_token/',AuthAPIView.as_view(),name='Auth-Token'),
-    path('company_details/<str:params>/',GetCompanyDetailsAPIView.as_view(),name='Company_details'),
+    path('auth_tokenn/',AuthAPIView.as_view(),name='Auth-Token'),
+    path('company_detailss/<str:params>/',GetCompanyDetailsAPIView.as_view(),name='Company_details'),
     path('additem/',AddItemAPI.as_view(),name='Add-item'),
     path('additem/<int:item_id>/', AddItemAPI.as_view(), name='update item with id'),
     path('items/<int:item_id>/delete-drones/', AddItemAPI.as_view(), name='delete item with id'),
@@ -166,6 +166,9 @@ urlpatterns = [
     # Other URLs
     path('s/', SuperAdminOrderSummary.as_view(), name='superadmin-order-summary'),
     path('payee-student/<int:slot_id>/', DeletePayeeStudent.as_view(), name='delete_payee_student'),
+path('auth_token/', AuthenticateAPIView.as_view(), name='authenticate'),
+    path('company_details/<str:params>/', GenerateCompanydetailsGST.as_view(),
+         name='Collecting companydetails after entering the gstn'),
 
 ]
 

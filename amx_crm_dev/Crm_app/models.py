@@ -510,3 +510,9 @@ class PayUrl(models.Model):
     def __str__(self):
         return str(self.payment_link_price)
 
+
+class AuTokenn(models.Model):
+    access_token = models.TextField(null=True)
+    created_at = models.DateTimeField(auto_now_add=True,null=True)
+    expires_at = models.DateTimeField(null=True)
+

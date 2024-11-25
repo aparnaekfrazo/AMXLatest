@@ -23473,3 +23473,144 @@ class SuperAdminOrderSummary(APIView):
 #         return Response({'error': 'Missing user ID or role name.'}, status=status.HTTP_400_BAD_REQUEST)
 
 
+from datetime import datetime, timedelta
+
+
+class AuthenticateAPIView(APIView):
+    def post(self, request, *args, **kwargs):
+        try:
+            # External API URL
+            url = "https://api.sandbox.co.in/authenticate"
+
+            # Headers for the API request
+            headers = {
+                "x-api-key": "key_live_g6fJTgSaRdjroKURKDuQ8tBj0XVbwOgG",
+                "x-api-secret": "secret_live_4D2sHDoVcEaEfnCJykYfzmywTkgsH2QW",
+                "x-api-version": "1.0",
+                "Content-Type": "application/json"
+            }
+
+            # Forward the request body to the external API
+            payload = request.data  # Ensure the client sends the payload as JSON
+
+            # Make the POST request to the external API
+            response = requests.post(url, json=payload, headers=headers)
+
+            # Check the response status code
+            if response.status_code == 200:
+                data = response.json()  # Parse the response
+
+                # Extract the token from the response data
+                token = data.get("access_token")  # Assuming the response contains 'token'
+
+                # Check if the token is present
+                if not token:
+                    return Response({"error": "Token not found in the response"}, status=status.HTTP_400_BAD_REQUEST)
+
+                # Set the expiry time (1 year from now)
+                expiry_time = datetime.now() + timedelta(days=365)
+
+                # Save token to the database (AuTokenn model)
+                AuTokenn.objects.create(access_token=token, expires_at=expiry_time)
+
+                # Return the token as part of the response
+                return Response({"message": "Token saved successfully!", "token": token}, status=status.HTTP_200_OK)
+
+            else:
+                # Handle non-200 status codes
+                return Response(
+                    {"error": f"API returned status {response.status_code}", "details": response.text},
+                    status=response.status_code
+                )
+        except Exception as e:
+            # Handle any exceptions that occur
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+import string
+
+class GenerateCompanydetailsGST(APIView):
+    def clean_string(self, input_string):
+        # Remove non-printable ASCII characters and control characters
+        printable_chars = set(string.printable)
+        cleaned_string = ''.join(filter(lambda x: x in printable_chars, input_string))
+        return cleaned_string
+
+    def extract_pan_number(self, gstin):
+        # Assuming GSTIN is of 15 characters, remove the first 2 and last 3 characters to get the PAN number
+        return gstin[2:-3]
+
+    def post(self, request, params, *args, **kwargs):
+        try:
+            # Fetch the access_token from the AuTokenn table
+            token = AuTokenn.objects.first()  # Assuming only one record
+            if token:
+                access_token = token.access_token
+            else:
+                access_token = None  # Handle the case where there is no token
+
+            # Return access_token to check its value (Optional, for debugging purposes)
+            if access_token:
+                print(f"Access Token: {access_token}")
+            else:
+                return Response({"error": "No access token found."}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Use the GSTIN from the URL parameter
+            gstin = params
+            if not gstin:
+                return Response({"error": "GSTIN is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Set the URL for the API call
+            url = "https://api.sandbox.co.in/gst/compliance/public/gstin/search"
+
+            # Set the headers, dynamically using the access_token retrieved from the table (without "Bearer")
+            headers = {
+                "Authorization": access_token if access_token else "",
+                "x-api-key": "key_live_g6fJTgSaRdjroKURKDuQ8tBj0XVbwOgG",
+                "x-api-version": "1.0",
+                "Content-Type": "application/json",
+            }
+
+            # Create the body for the POST request
+            body = {"gstin": gstin}
+
+            # Make the POST request to the external API
+            response = requests.post(url, json=body, headers=headers)
+
+            # Check if the response was successful
+            if response.status_code == 200:
+                response_data = response.json()
+                if "data" in response_data and "data" in response_data["data"]:
+                    company_data = response_data["data"]["data"]
+
+                    # Extract the required fields
+                    pan_number = self.extract_pan_number(company_data["gstin"])
+                    company_details = {
+                        "pan_number": pan_number,
+                        "Gstin": self.clean_string(company_data.get("gstin", "")),
+                        "TradeName": self.clean_string(company_data.get("tradeNam", "")),
+                        "LegalName": self.clean_string(company_data.get("lgnm", "")),
+                        "AddrBnm": self.clean_string(company_data["pradr"]["addr"].get("bnm", "")),
+                        "AddrBno": self.clean_string(company_data["pradr"]["addr"].get("bno", "")),
+                        "AddrFlno": self.clean_string(company_data["pradr"]["addr"].get("flno", "")),
+                        "AddrSt": self.clean_string(company_data["pradr"]["addr"].get("st", "")),
+                        "AddrLoc": self.clean_string(company_data["pradr"]["addr"].get("loc", "")),
+                        "StateCode": self.clean_string(company_data["pradr"]["addr"].get("stcd", "")),
+                        "AddrPncd": self.clean_string(company_data["pradr"]["addr"].get("pncd", "")),
+                        "TxpType": self.clean_string(company_data.get("dty", "")),
+                        "Status": self.clean_string(company_data.get("sts", "")),
+                        "BlkStatus": self.clean_string(company_data.get("einvoiceStatus", ""))
+                    }
+
+                    return Response({"companydetails": company_details}, status=status.HTTP_200_OK)
+                else:
+                    return Response({"error": "Invalid response format."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            else:
+                return Response(
+                    {"error": f"Failed to retrieve data. Status code: {response.status_code}"},
+                    status=response.status_code,
+                )
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
