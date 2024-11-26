@@ -16241,7 +16241,7 @@ def generate_payment_links_view(request):
                 except Student.DoesNotExist:
                     pass  # Handle the case where the student with given ID doesn't exist
 
-        return Response({'message': 'Email for payment sent successfully', 'payment_links': payment_links},
+        return Response({'message': 'Payment link sent to email successfully', 'payment_links': payment_links},
                         status=status.HTTP_200_OK)
 
     except Exception as e:
