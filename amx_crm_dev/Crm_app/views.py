@@ -605,7 +605,7 @@ class DroneCategoryAPIView(APIView):
             else:
                 return Response({'message': 'Status not found for the specified id'}, status=404)
         else:
-            data = DroneCategory.objects.all().values()
+            data = DroneCategory.objects.all().order_by('-updated_date_time').values()
             return Response(data)
 
     def post(self, request):
