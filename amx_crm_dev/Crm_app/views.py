@@ -143,7 +143,7 @@ class PartnerAPIView(APIView):
             # users = CustomUser.objects.filter(
             #     Q(role_id__role_name="Partner") | Q(role_id__role_name="Super_admin")).order_by('-id')
             users = CustomUser.objects.filter(
-                Q(role_id__role_name="Partner")).order_by('-id')
+                Q(role_id__role_name="Partner")).order_by('-updated_date_time')
 
             if search_param:
                 users = users.filter(
@@ -202,7 +202,7 @@ class PartnerAPIView(APIView):
                     # users = CustomUser.objects.filter(
                     #     Q(role_id__role_name="Partner") | Q(role_id__role_name="Super_admin")).order_by('-id')
                     users = CustomUser.objects.filter(
-                        Q(role_id__role_name="Partner")).order_by('-id')
+                        Q(role_id__role_name="Partner")).order_by('-updated_date_time')
 
                     if search_param:
                         users = users.filter(
@@ -662,7 +662,7 @@ class DroneAPIView(APIView):
         sales_status = request.query_params.get('sales_status', '')
 
         # Base queryset
-        drones = Drone.objects.all()
+        drones = Drone.objects.all().order_by('-updated_date_time')
 
         # Apply filters
         if search_param:
