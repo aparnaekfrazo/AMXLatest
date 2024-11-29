@@ -9721,7 +9721,7 @@ class AddCustomInvoiceSignature(APIView):
         item.save()
 
         response_data = {
-            'message': 'Discount updated successfully',
+            'result': 'Discount updated successfully',
             'item_id': item.id,
 
         }
