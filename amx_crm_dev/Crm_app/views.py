@@ -979,7 +979,7 @@ class SalesStatusAPIview(APIView):
         if drone_ids:
             drones = Drone.objects.filter(id__in=drone_ids)
             drones.update(sales_status=sales_status)
-            return Response({"message": "Selected drones' sales status updated successfully"},
+            return Response({"message": "Selected drones' sales listing status updated successfully."},
                             status=status.HTTP_200_OK)
         else:
 
