@@ -4272,7 +4272,7 @@ def remove_padding(data):
     return data[:-pad_length]
 
 
-@method_decorator(csrf_exempt, name='dispatch')
+# @method_decorator(csrf_exempt, name='dispatch')
 class AuthAPIView(APIView):
     @csrf_exempt
     def post(self, request):
@@ -4340,7 +4340,7 @@ def decrypt_aes_256_ecb(data, key):
     return decrypted_data
 
 
-@method_decorator([authorization_required], name='dispatch')
+# @method_decorator([authorization_required], name='dispatch')
 class GetCompanyDetailsAPIView(generics.RetrieveAPIView):
     def clean_string(self, input_string):
         # Remove non-printable ASCII characters and control characters
