@@ -4287,7 +4287,7 @@ class AuthAPIView(APIView):
         }
 
         data = {
-            "Data": "mT7Hse8LOO3fUl0DhDaJF4sffYqNT4ReWP752IuwjJR6XN6vqvL7TZ9rgHoVi86i+GSBXwBLuwLrENsu0RHUjWlegouTtEY/PQdzAIvdZz11IseJGHVbTT/zN5n4p7+hy1XbOmtOdZofJ53scISzOevHr/LGxodp0UarYooLV9R/J2Ao9FypePXSKN4WrcAfWklm26/FJmSTJyezluUMfMajSyfjLZigrg9aw/0mSK///cFzrJg2Ucm9npSxfA4K0iofO/GYCRDwS4YWKFa1jzpZ5R6p3nbYlZQqWx7CjwEoBSZULV1FAc7m14hxJI4rsU3TfkwpCHR95I2aNJrdFA=="
+            "Data": "Oft0h7hQSfKT7x8GiT6W3cZS86yBU4uGvhHsf2TrjK9Odi2hRmp1Tfm7SuK8f07P9Si/z8YopwfrVOguvDP4YjDUCn3NVie99JE6RIK/+LzoQfN/oeovwxRJfbp6g9pU9BVu23iosF43QoAb1ldgayxzNOHoP4Ru2UfZrmtmetyjSKXiyk1NzgqsBPcwFHIEE9+U3o/t3wtyxuc9HmE8m4wEiutQrQbgp5apSj0QSGHzdqo0JPCNdAg4FPDSXPnnA4AxE05reOdaUttV4zEk/vhIhPl9jmW6suAfctLVvsNvOCanip1hxl+lH2DetCSPybwiNaqOzUnRKYWgJSGhFA=="
         }
         response = requests.post(url, headers=headers, data=json.dumps(data))
 
@@ -4298,7 +4298,7 @@ class AuthAPIView(APIView):
             existing_record = AuthToken.objects.first()
 
             if existing_record:
-                provided_key = "bwqMewBhiNquDylcx67N1iXgBIvPF3PFKstOEsWZ7LI="  # app key
+                provided_key = "lhSMzc4y7IJ2zTB0C8GB+saH5/Ym8xskAmql3A2g+5g="  # app key
                 encrypted_sek = data.get("Sek")
                 decrypted_sek = decrypt_by_symmetric_key(encrypted_sek, provided_key)
                 base64_decrypted_sek = base64.b64encode(decrypted_sek).decode('utf-8')
@@ -4310,7 +4310,7 @@ class AuthAPIView(APIView):
                 existing_record.token_expiry = data.get("TokenExpiry")
                 existing_record.save()
             else:
-                provided_key = "bwqMewBhiNquDylcx67N1iXgBIvPF3PFKstOEsWZ7LI="  # app key
+                provided_key = "lhSMzc4y7IJ2zTB0C8GB+saH5/Ym8xskAmql3A2g+5g="  # app key
                 encrypted_sek = data.get("Sek")
                 decrypted_sek = decrypt_by_symmetric_key(encrypted_sek, provided_key)
                 base64_decrypted_sek = base64.b64encode(decrypted_sek).decode('utf-8')
@@ -4361,7 +4361,7 @@ class GetCompanyDetailsAPIView(generics.RetrieveAPIView):
                 params = self.kwargs.get('params')  # Get the parameter from the URL
 
                 # Construct the URL with the received params
-                url = f"https://einv-apisandbox.nic.in/eivital/v1.03/Master/gstin/{params}/"
+                url = f"https://einv1api.gstsandbox.nic.in/eivital/v1.04/Master/gstin/{params}/"
 
                 headers = {
                     "client-id": auth_token.client_id,
