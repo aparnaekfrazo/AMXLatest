@@ -4436,6 +4436,9 @@ class GetCompanyDetailsAPIView(generics.RetrieveAPIView):
             if not auth_token:
                 return Response({"error": "No AuthToken found."}, status=status.HTTP_404_NOT_FOUND)
 
+            if not auth_token.sek:
+                return Response({"error": "SEK is missing in AuthToken."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
             sek = base64.b64decode(auth_token.sek)
             params = self.kwargs.get('params')
             url = f"https://einv1api.gstsandbox.nic.in/eivital/v1.04/Master/gstin/{params}/"
@@ -4456,23 +4459,25 @@ class GetCompanyDetailsAPIView(generics.RetrieveAPIView):
                 )
 
             ewbres = response.json()
+            if "Data" not in ewbres or not ewbres["Data"]:
+                return Response({"error": "Invalid response data from API."},
+                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
             encrypted_data = base64.b64decode(ewbres["Data"])
             decrypted_data = decrypt_aes_256_ecb(encrypted_data, sek)
-            decrypted_string = decrypted_data.decode("utf-8")
+            if not decrypted_data:
+                return Response({"error": "Decryption failed."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-            # Clean and validate the decrypted string
-            print(f"Raw decrypted string: {repr(decrypted_string)}")
+            decrypted_string = decrypted_data.decode("utf-8")
             cleaned_decrypted_string = self.clean_string(decrypted_string).strip()
 
             # Extract the first valid JSON object
             import re
             match = re.search(r"\{.*\}", cleaned_decrypted_string)
-            if match:
-                cleaned_decrypted_string = match.group()
-            else:
+            if not match:
                 return Response({"error": "No valid JSON object found."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-            print(f"Cleaned string: {repr(cleaned_decrypted_string)}")
+            cleaned_decrypted_string = match.group()
 
             # Parse the JSON and include PAN number
             pan_number = self.extract_pan_number(params)
