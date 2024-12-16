@@ -526,6 +526,61 @@ from django.utils import timezone
 from datetime import timedelta
 
 
+# class LoginAPIView(APIView):
+#     def post(self, request):
+#         data = request.data
+#         username = data.get('username')
+#         password = data.get('password')
+#
+#         if not (username and password):
+#             return Response({"message": "Missing required field"}, status=status.HTTP_400_BAD_REQUEST)
+#
+#         user = CustomUser.objects.filter(Q(username=username) & Q(password=password)).first()
+#
+#         if user:
+#             user_name = user.username
+#             user_id = user.id
+#             role = user.role_id.role_name
+#             role_id = user.role_id.id
+#             email = user.email
+#             mobile_number = user.mobile_number
+#             firstname = user.first_name
+#             lastname = user.last_name
+#
+#             auth_token = jwt.encode(
+#                 {'user_id': user_id, 'name': user_name, 'exp': timezone.now() + timedelta(days=5)},
+#                 str(settings.JWT_SECRET_KEY), algorithm="HS256")
+#
+#             authorization = "Bearer " + str(auth_token)
+#
+#             if role == "Super_admin":
+#                 message = 'Super_admin login successful'
+#             elif role == "Partner":
+#                 message = 'Partner login successful'
+#             else:
+#                 message = 'Login successful'
+#
+#             response = {
+#                 'result': {
+#                     'user_info': {
+#                         'username': user_name,
+#                         'user_id': user_id,
+#                         'token': authorization,
+#                         "user_role": role,
+#                         "user_role_id": role_id,
+#                         "user_email": email,
+#                         "mobile_number": mobile_number,
+#                         "firstname": firstname,
+#                         "lastname": lastname
+#                     },
+#                     'message': message
+#                 }
+#             }
+#
+#             return Response(response, status=status.HTTP_200_OK)
+#
+#         return Response({'result': {'error': 'Invalid credentials'}}, status=status.HTTP_401_UNAUTHORIZED)
+
 class LoginAPIView(APIView):
     def post(self, request):
         data = request.data
@@ -554,6 +609,27 @@ class LoginAPIView(APIView):
             authorization = "Bearer " + str(auth_token)
 
             if role == "Super_admin":
+                # karthik's code
+                # Sending a login request to Flydro to retrieve a flydro_token for accessing Flydro APIs
+                flydro_url = "https://flydro.in/api/flydro_login/"
+                payload = {
+                    "username": username,
+                    "password": password,
+                }
+                headers = {
+                    "Content-Type": "application/json",
+                }
+
+                try:
+                    flydro_token = requests.post(flydro_url, json=payload, headers=headers)
+                    if flydro_token.status_code == 200:
+                        flydro_token = flydro_token.json()
+                    else:
+                        flydro_token = {"error": "Failed to authenticate with Flydro"}
+                except requests.exceptions.RequestException as e:
+                    flydro_token = {"error": str(e)}
+
+                # Aparna's code
                 message = 'Super_admin login successful'
             elif role == "Partner":
                 message = 'Partner login successful'
@@ -571,7 +647,8 @@ class LoginAPIView(APIView):
                         "user_email": email,
                         "mobile_number": mobile_number,
                         "firstname": firstname,
-                        "lastname": lastname
+                        "lastname": lastname,
+                        "flydro_token": flydro_token
                     },
                     'message': message
                 }
