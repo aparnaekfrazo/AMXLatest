@@ -4432,49 +4432,102 @@ class GetCompanyDetailsAPIView(generics.RetrieveAPIView):
     def get(self, request, *args, **kwargs):
         try:
             auth_token = AuthToken.objects.first()
-            if auth_token:
-                sek = base64.b64decode(auth_token.sek)  # Assuming 'sek' is stored in base64
-
-                params = self.kwargs.get('params')  # Get the parameter from the URL
-
-                # Construct the URL with the received params
-                url = f"https://einv1api.gstsandbox.nic.in/eivital/v1.04/Master/gstin/{params}/"
-
-                headers = {
-                    "client-id": auth_token.client_id,
-                    "client-secret": "76KkYyE3SGguAaOocIWw",
-                    "gstin": "29AAGCE4783K1Z1",
-                    "user_name": auth_token.user_name,
-                    "authtoken": auth_token.auth_token,
-                }
-
-                response = requests.get(url, headers=headers)
-
-                if response.status_code == 200:
-                    ewbres = response.json()
-                    encrypted_data = base64.b64decode(ewbres["Data"])
-                    decrypted_data = decrypt_aes_256_ecb(encrypted_data, sek)
-                    decrypted_string = decrypted_data.decode("utf-8")
-
-                    # Clean the decrypted string
-                    cleaned_decrypted_string = self.clean_string(decrypted_string)
-
-                    # Extract PAN number from the GSTIN
-                    pan_number = self.extract_pan_number(params)
-
-                    # Include PAN number inside 'companydetails' key
-                    company_details = {'pan_number': pan_number, **json.loads(cleaned_decrypted_string)}
-
-                    return Response({'companydetails': company_details}, status=status.HTTP_200_OK)
-                else:
-                    return Response(
-                        {"error": f"Failed to retrieve data. Status code: {response.status_code}"},
-                        status=response.status_code,
-                    )
-            else:
+            if not auth_token:
                 return Response({"error": "No AuthToken found."}, status=status.HTTP_404_NOT_FOUND)
+
+            sek = base64.b64decode(auth_token.sek)
+            params = self.kwargs.get('params')
+            url = f"https://einv1api.gstsandbox.nic.in/eivital/v1.04/Master/gstin/{params}/"
+
+            headers = {
+                "client-id": auth_token.client_id,
+                "client-secret": "76KkYyE3SGguAaOocIWw",
+                "gstin": "29AAGCE4783K1Z1",
+                "user_name": auth_token.user_name,
+                "authtoken": auth_token.auth_token,
+            }
+
+            response = requests.get(url, headers=headers)
+            if response.status_code != 200:
+                return Response(
+                    {"error": f"Failed to retrieve data. Status code: {response.status_code}"},
+                    status=response.status_code,
+                )
+
+            ewbres = response.json()
+            encrypted_data = base64.b64decode(ewbres["Data"])
+            decrypted_data = decrypt_aes_256_ecb(encrypted_data, sek)
+            decrypted_string = decrypted_data.decode("utf-8")
+
+            # Clean and validate the decrypted string
+            print(f"Raw decrypted string: {repr(decrypted_string)}")
+            cleaned_decrypted_string = self.clean_string(decrypted_string).strip()
+
+            # Extract the first valid JSON object
+            import re
+            match = re.search(r"\{.*\}", cleaned_decrypted_string)
+            if match:
+                cleaned_decrypted_string = match.group()
+            else:
+                return Response({"error": "No valid JSON object found."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            print(f"Cleaned string: {repr(cleaned_decrypted_string)}")
+
+            # Parse the JSON and include PAN number
+            pan_number = self.extract_pan_number(params)
+            company_details = {'pan_number': pan_number, **json.loads(cleaned_decrypted_string)}
+
+            return Response({'companydetails': company_details}, status=status.HTTP_200_OK)
+
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    # def get(self, request, *args, **kwargs):
+    #     try:
+    #         auth_token = AuthToken.objects.first()
+    #         if auth_token:
+    #             sek = base64.b64decode(auth_token.sek)  # Assuming 'sek' is stored in base64
+    #
+    #             params = self.kwargs.get('params')  # Get the parameter from the URL
+    #
+    #             # Construct the URL with the received params
+    #             url = f"https://einv1api.gstsandbox.nic.in/eivital/v1.04/Master/gstin/{params}/"
+    #
+    #             headers = {
+    #                 "client-id": auth_token.client_id,
+    #                 "client-secret": "76KkYyE3SGguAaOocIWw",
+    #                 "gstin": "29AAGCE4783K1Z1",
+    #                 "user_name": auth_token.user_name,
+    #                 "authtoken": auth_token.auth_token,
+    #             }
+    #
+    #             response = requests.get(url, headers=headers)
+    #
+    #             if response.status_code == 200:
+    #                 ewbres = response.json()
+    #                 encrypted_data = base64.b64decode(ewbres["Data"])
+    #                 decrypted_data = decrypt_aes_256_ecb(encrypted_data, sek)
+    #                 decrypted_string = decrypted_data.decode("utf-8")
+    #
+    #                 # Clean the decrypted string
+    #                 cleaned_decrypted_string = self.clean_string(decrypted_string)
+    #
+    #                 # Extract PAN number from the GSTIN
+    #                 pan_number = self.extract_pan_number(params)
+    #
+    #                 # Include PAN number inside 'companydetails' key
+    #                 company_details = {'pan_number': pan_number, **json.loads(cleaned_decrypted_string)}
+    #
+    #                 return Response({'companydetails': company_details}, status=status.HTTP_200_OK)
+    #             else:
+    #                 return Response(
+    #                     {"error": f"Failed to retrieve data. Status code: {response.status_code}"},
+    #                     status=response.status_code,
+    #                 )
+    #         else:
+    #             return Response({"error": "No AuthToken found."}, status=status.HTTP_404_NOT_FOUND)
+    #     except Exception as e:
+    #         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 import hashlib
