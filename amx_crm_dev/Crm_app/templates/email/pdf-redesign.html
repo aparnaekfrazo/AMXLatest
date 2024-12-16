@@ -144,9 +144,18 @@ p.long-text-readability{
                                     <h3><b>Invoice Date:</b> {{ invoice_data.updated_date_time|date:"d/m/Y H:i A"|default:'N/A'}} </h3>
                                     <h3><b>Invoice Number:</b> {{ invoice_data.invoice_number|default:'N/A'}} </h3>
                                     <h3><b>Place Of Supply:</b> {{invoice_data.owner_billing_state |default:''}} ({{invoice_data.owner_billing_state_code |default:''}})</h3>
-                                  <h3><b>E-way Bill Number:</b> {{invoice_data.EwbNo|default:'N/A'}}</h3>
-                                  <h3><b>E-way Bill Date:</b> {{invoice_data.EwbDt|default:'N/A'}}</h3>
-                                  <h3><b>E-way Valid Till:</b> {{invoice_data.EwbValidTill |default:'N/A'}}</h3>
+<!--                                  <h3><b>E-way Bill Number:</b> {{invoice_data.EwbNo|default:'N/A'}}</h3>-->
+<!--                                  <h3><b>E-way Bill Date:</b> {{invoice_data.EwbDt|default:'N/A'}}</h3>-->
+<!--                                  <h3><b>E-way Valid Till:</b> {{invoice_data.EwbValidTill |default:'N/A'}}</h3>-->
+                                    {% if invoice_data.EwbNo %}
+                    <p><b>E-way Bill Number: </b><span>{{ invoice_data.EwbNo }}</span></p>
+                {% endif %}
+                {% if invoice_data.EwbDt %}
+                    <p><b>E-way Bill Date: </b><span>{{ invoice_data.EwbDt }}</span></p>
+                {% endif %}
+                {% if invoice_data.EwbValidTill %}
+                    <p><b>E-way Valid Till: </b><span>{{ invoice_data.EwbValidTill }}</span></p>
+                {% endif %}
                                 </div>
                             </div>
                             <div class="row d-flex black-border my-2">
