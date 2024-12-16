@@ -608,6 +608,7 @@ class LoginAPIView(APIView):
 
             authorization = "Bearer " + str(auth_token)
 
+            flydro_token = None
             if role == "Super_admin":
                 # karthik's code
                 # Sending a login request to Flydro to retrieve a flydro_token for accessing Flydro APIs
