@@ -265,10 +265,25 @@ p.long-text-readability{
                                         <img src="https://amx-crm-dev.thestorywallcafe.com/{{invoice_data.qr_code_path}} " class="qrcode" style="height: 150px; width: 150px;">
                                     </div>
                                     <div class="col-8">
-                                        <p class="long-text-readability"><span><b>IRN: </b></span>{{invoice_data.Irn|default:'N/A'}}</p>
-                                        <p><b>Ack No: </b><span>{{invoice_data.AckNo|default:'N/A'}}</span> </p>
-<!--                                        <p><b>Ack Date: </b><span>{{invoice_data.AckDt|date:"Y/m/d H:i A"|default:'N/A'}}</span> </p>-->
-                                        <p><b>Ack Date: </b><span>{{ invoice_data.AckDt|default:'N/A' }}</span></p>
+<!--                                        <p class="long-text-readability"><span><b>IRN: </b></span>{{invoice_data.Irn|default:'N/A'}}</p>-->
+<!--                                        <p><b>Ack No: </b><span>{{invoice_data.AckNo|default:'N/A'}}</span> </p>-->
+<!--&lt;!&ndash;                                        <p><b>Ack Date: </b><span>{{invoice_data.AckDt|date:"Y/m/d H:i A"|default:'N/A'}}</span> </p>&ndash;&gt;-->
+<!--                                        <p><b>Ack Date: </b><span>{{ invoice_data.AckDt|default:'N/A' }}</span></p>-->
+                                        <!-- Conditionally display IRN -->
+            {% if invoice_data.Irn and invoice_data.Irn != 'N/A' %}
+                <p class="long-text-readability"><span><b>IRN: </b></span>{{ invoice_data.Irn }}</p>
+            {% endif %}
+
+            <!-- Conditionally display Ack No -->
+            {% if invoice_data.AckNo and invoice_data.AckNo != 'N/A' %}
+                <p><b>Ack No: </b><span>{{ invoice_data.AckNo }}</span></p>
+            {% endif %}
+
+            <!-- Conditionally display Ack Date -->
+            {% if invoice_data.AckDt and invoice_data.AckDt != 'N/A' %}
+                <p><b>Ack Date: </b><span>{{ invoice_data.AckDt }}</span></p>
+            {% endif %}
+
 
 
 
