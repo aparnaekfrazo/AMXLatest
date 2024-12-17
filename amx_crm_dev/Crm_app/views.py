@@ -11549,6 +11549,10 @@ class MyAPIView(APIView):
                             EwbNo = e_waybill['EwbNo']
                         if 'EwbDt' in e_waybill:
                             EwbDt = e_waybill['EwbDt']
+                            if isinstance(EwbDt, str):
+                                EwbDt = datetime.strptime(EwbDt, '%Y-%m-%d %H:%M:%S')
+                                # Now format it as 'YYYY-MM-DD' to get only the date part
+                            EwbDt = EwbDt.strftime('%Y-%m-%d')
                         if 'EwbValidTill' in e_waybill:
                             EwbValidTill = e_waybill['EwbValidTill']
 
