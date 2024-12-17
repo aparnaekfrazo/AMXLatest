@@ -11464,7 +11464,6 @@ class MyAPIView(APIView):
         qr_code_path=None
         # Check if invoice_number is provided
         if invoice_number:
-            print(invoice_number,"eeeeeeee")
             try:
                 # Try to find the invoice_number in AddItem
                 add_item = AddItem.objects.get(invoice_number=invoice_number)
@@ -11517,7 +11516,6 @@ class MyAPIView(APIView):
                         })
 
                 einvoice = add_item.einvoice_set.first()
-                print('einvoice--------------------', einvoice)
                 api_response = {}
                 e_waybill = {}
 
@@ -11750,6 +11748,7 @@ class MyAPIView(APIView):
                 total_price_before_tax = 0
                 total_tax = 0
                 price_after_discount=0
+                sum_of_discount_amount = float(invoice_data.get("sum_of_discount_amount", 0))
                 for drone in formatted_drones:
                     total_price_before_tax += float(drone["item_total_price"])
                     total_tax += float(drone["tax_percentage_total"])
@@ -11758,14 +11757,17 @@ class MyAPIView(APIView):
                 context = {
                     'invoice_data': invoice_data,
                     'dronedetails': formatted_drones,  # Append the entire list of formatted drones to the context
-                    'total': total_price_before_tax+total_tax,
-                    'total_amount_inwords':num2words_inr(total_price_before_tax+total_tax),
+                    # 'total': total_price_before_tax+total_tax,
+                    # 'total_amount_inwords':num2words_inr(total_price_before_tax+total_tax),
+                    'total': (total_price_before_tax + total_tax) - sum_of_discount_amount,
+
+                    'total_amount_inwords': num2words_inr(
+                        (total_price_before_tax + total_tax) - sum_of_discount_amount),
                     'total_tax':total_tax,
                     'total_tax_words' : num2words_inr(total_tax),
                     # 'total_tax_words':total_tax_words,
                     'price_after_discount':price_after_discount
                 }
-                print(context,"lllll")
                 # print(context,"cccccc")
                 # context = {
                 #     'invoice_data': add_item,
@@ -11808,7 +11810,6 @@ class MyAPIView(APIView):
                                 'price_after_discount': drone_detail.get('price_after_discount', None),
                                 # Add other drone fields as needed
                             })
-                    print(invoice_data,"pppppppppp")
 
                     einvoice = custom_invoice.einvoice_set.first()
 
@@ -11989,7 +11990,6 @@ class MyAPIView(APIView):
                         'EwbDt': EwbDt,
                         'EwbValidTill': EwbValidTill,
                     })
-                    print(invoice_data,"iiiiiiiii")
                     dronedetails = custom_invoice.custom_item_details
 
                     dronedetails = custom_invoice.custom_item_details  # Assuming this retrieves a list of drone details
@@ -12049,6 +12049,7 @@ class MyAPIView(APIView):
                     total_price_before_tax = 0
                     total_tax = 0
                     price_after_discount = 0
+                    sum_of_discount_amount = float(invoice_data.get("sum_of_discount_amount", 0))
                     for drone in formatted_drones:
                         total_price_before_tax += float(drone["item_total_price"])
                         total_tax += float(drone["tax_percentage_total"])
@@ -12057,8 +12058,11 @@ class MyAPIView(APIView):
                     context = {
                         'invoice_data': invoice_data,
                         'dronedetails': formatted_drones,  # Append the entire list of formatted drones to the context
-                        'total': total_price_before_tax + total_tax,
-                        'total_amount_inwords': num2words_inr(total_price_before_tax + total_tax),
+                        # 'total': total_price_before_tax + total_tax,
+                        # 'total_amount_inwords': num2words_inr(total_price_before_tax + total_tax),
+                        'total': (total_price_before_tax + total_tax) - sum_of_discount_amount,
+                        'total_amount_inwords': num2words_inr(
+                            (total_price_before_tax + total_tax) - sum_of_discount_amount),
                         'total_tax': total_tax,
                         'total_tax_words': num2words_inr(total_tax),
                         'price_after_discount': price_after_discount
