@@ -12109,7 +12109,7 @@ class FilterForSuperadmin(View):
             invoice_status = request.GET.get('invoice_status', None)
             customer_ids = request.GET.get('customer_ids', None)
             owner_ids = request.GET.get('partner_ids', None)
-            search_invoice_number = request.GET.get('search_invoice_number', None)
+            search_invoice_number = request.GET.get('search_invoice_number', None).strip()
             query_key = request.GET.get('key', None)
 
             if customer_ids:
