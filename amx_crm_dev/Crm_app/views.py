@@ -136,7 +136,7 @@ class PartnerAPIView(APIView):
         # Retrieve query parameters
         page_number = request.query_params.get('page_number')
         data_per_page = request.query_params.get('data_per_page')
-        search_param = request.GET.get('search', '')
+        search_param = request.GET.get('search', '').strip()
 
         if page_number and data_per_page:
             # Paginated response
@@ -2175,7 +2175,7 @@ class MydronesAPI(APIView):
         page_number = request.query_params.get('page_number')
         data_per_page = request.query_params.get('data_per_page')
         pagination = request.query_params.get('pagination')
-        search_param = request.query_params.get('search', '')
+        search_param = request.query_params.get('search', '').strip()
         drone_category_param = request.query_params.get('drone_category', '')
         drone_category = drone_category_param.split(',') if drone_category_param else []
         order_status = request.query_params.get('order_status', '')
@@ -2721,7 +2721,7 @@ class OrderStatusView(APIView):
             page_number = request.query_params.get('page_number')
             data_per_page = request.query_params.get('data_per_page')
             pagination = request.query_params.get('pagination')
-            search_param = request.query_params.get('search', '')
+            search_param = request.query_params.get('search', '').strip()
             drone_category = request.query_params.get('drone_category')
             drone_category = drone_category.split(',') if drone_category else []
             order_status = request.query_params.get('order_status')
@@ -4101,7 +4101,7 @@ class CustomerCreateAPIView(APIView):
         customer_id = self.request.query_params.get('customer_id')
         invoice_id = self.request.query_params.get('invoice_type_id')
         category_id = self.request.query_params.get('customer_type_id')
-        search = self.request.query_params.get('search')
+        search = self.request.query_params.get('search').strip()
         query_key = request.GET.get('key', None)
         partner_ids = request.GET.get('partner_ids', None)
 
