@@ -4101,7 +4101,8 @@ class CustomerCreateAPIView(APIView):
         customer_id = self.request.query_params.get('customer_id')
         invoice_id = self.request.query_params.get('invoice_type_id')
         category_id = self.request.query_params.get('customer_type_id')
-        search = self.request.query_params.get('search').strip()
+        # search = self.request.query_params.get('search').strip()
+        search = self.request.query_params.get('search', '').strip() if self.request.query_params.get('search') else ''
         query_key = request.GET.get('key', None)
         partner_ids = request.GET.get('partner_ids', None)
 
