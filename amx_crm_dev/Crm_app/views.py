@@ -2731,22 +2731,7 @@ class OrderStatusView(APIView):
             orders = Order.objects.exclude(order_status__isnull=True).order_by('-id')
 
             if search_param:
-                orders = orders.filter(
-                    Q(drone_id__drone_name__icontains=search_param) |
-                    Q(order_id__icontains=search_param) |
-                    Q(user_id__username__icontains=search_param) |
-                    Q(order_status__id__icontains=search_param) |
-                    Q(quantity__icontains=search_param) |
-                    Q(order_status__status_name__icontains=search_param) |
-                    Q(drone_id__drone_category__id__icontains=search_param) |
-                    Q(drone_id__drone_category__category_name__icontains=search_param) |
-                    Q(drone_id__market_price__icontains=search_param) |
-                    Q(drone_id__our_price__icontains=search_param) |
-                    Q(drone_id__drone_specification__icontains=search_param) |
-                    Q(drone_id__sales_status__icontains=search_param) |
-                    Q(created_date_time__icontains=search_param) |
-                    Q(updated_date_time__icontains=search_param)
-                )
+                orders = orders.filter(drone_id__drone_name__icontains=search_param)
             if drone_category:
                 drone_category_ids = [int(category_id) for category_id in drone_category]
                 orders = orders.filter(drone_id__drone_category__id__in=drone_category_ids).order_by('-id')
