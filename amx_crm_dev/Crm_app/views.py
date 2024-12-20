@@ -4532,25 +4532,63 @@ import inflect
 from django.shortcuts import get_object_or_404
 from num2words import num2words
 
+from num2words import num2words
+
+MAX_AMOUNT = 10**10  # num2words can't handle numbers >= 10 billion
 
 def num2words_inr(amount):
-    # Split amount into rupees and paise
-    rupees, paise = str(float(amount)).split(".")
+    """
+    Convert a numeric amount into words in the Indian numbering format.
+    Handles both rupees and paise.
+    """
 
-    # Convert paise to words if rupees is zero
-    if int(rupees) == 0 and int(paise) > 0:
-        paise_in_words = num2words(int(paise), lang='en_IN') + " paise"
-        return paise_in_words
+    try:
+        # Ensure amount is a valid number and round to 2 decimal places
+        amount = Decimal(str(amount)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
-    # Convert rupees to words
-    rupees_in_words = num2words(int(rupees), lang='en_IN') + " rupees"
+        # If amount exceeds the maximum allowed limit after rounding, return an error
+        if abs(amount) >= MAX_AMOUNT:
+            return "Amount exceeds conversion limit"
 
-    # Convert paise to words, if any
-    if int(paise) > 0:
-        paise_in_words = num2words(int(paise), lang='en_IN') + " paise"
-        return f"{rupees_in_words} and {paise_in_words}"
-    else:
-        return rupees_in_words
+        # Split the amount into rupees and paise
+        rupees, paise = divmod(amount, 1)
+        rupees = int(rupees)
+        paise = int(paise * 100)  # Convert fractional part to integer paise
+
+        # Convert rupees to words
+        rupees_in_words = num2words(rupees, lang='en_IN') + " rupees" if rupees != 0 else ""
+
+        # Convert paise to words, if any
+        if paise > 0:
+            paise_in_words = num2words(paise, lang='en_IN') + " paise"
+            if rupees_in_words:
+                return f"{rupees_in_words} and {paise_in_words}"
+            return paise_in_words
+        return rupees_in_words or "zero rupees"
+
+    except ValueError:
+        return "Invalid amount"
+    except OverflowError as e:
+        return f"Error converting number to words: {str(e)}"
+
+# def num2words_inr(amount):
+#     # Split amount into rupees and paise
+#     rupees, paise = str(float(amount)).split(".")
+#
+#     # Convert paise to words if rupees is zero
+#     if int(rupees) == 0 and int(paise) > 0:
+#         paise_in_words = num2words(int(paise), lang='en_IN') + " paise"
+#         return paise_in_words
+#
+#     # Convert rupees to words
+#     rupees_in_words = num2words(int(rupees), lang='en_IN') + " rupees"
+#
+#     # Convert paise to words, if any
+#     if int(paise) > 0:
+#         paise_in_words = num2words(int(paise), lang='en_IN') + " paise"
+#         return f"{rupees_in_words} and {paise_in_words}"
+#     else:
+#         return rupees_in_words
 
 
 @method_decorator([authorization_required], name='dispatch')
@@ -11436,8 +11474,8 @@ class MyAPIView(APIView):
 
     def get(self, request, invoice_number=None, *args, **kwargs):
         # Your HTML template path
-        html_template_path = '/amx-crm-dev/django/amx_crm_dev/Crm_app/templates/email/pdf-redesign.html'
-        # html_template_path = '/home/user/Documents/AMX_LATESTLOCAL/AMXLatest/amx_crm_dev/Crm_app/templates/email/pdf-redesign.html'
+        # html_template_path = '/amx-crm-dev/django/amx_crm_dev/Crm_app/templates/email/pdf-redesign.html'
+        html_template_path = '/home/user/Documents/AMX_LATESTLOCAL/AMXLatest/amx_crm_dev/Crm_app/templates/email/pdf-redesign.html'
         #base_url = 'https://amx-crm.thestorywallcafe.com'
         base_url = settings.CRM_PORTAL_DOMAIN
         invoice_data = {}
@@ -11737,26 +11775,28 @@ class MyAPIView(APIView):
 
                 total_price_before_tax = 0
                 total_tax = 0
-                price_after_discount=0
+                price_after_discount = 0
                 sum_of_discount_amount = float(invoice_data.get("sum_of_discount_amount", 0))
+
+                # Accumulate totals
                 for drone in formatted_drones:
                     total_price_before_tax += float(drone["item_total_price"])
                     total_tax += float(drone["tax_percentage_total"])
                     price_after_discount += float(drone["price_after_discount"])
+
+                # Round the total value to two decimal places (change here)
+                total_amount = total_price_before_tax + total_tax - sum_of_discount_amount
+                total_amount_rounded = Decimal(str(total_amount)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
                 # Prepare the context
                 context = {
                     'invoice_data': invoice_data,
                     'dronedetails': formatted_drones,  # Append the entire list of formatted drones to the context
-                    # 'total': total_price_before_tax+total_tax,
-                    # 'total_amount_inwords':num2words_inr(total_price_before_tax+total_tax),
-                    'total': (total_price_before_tax + total_tax) - sum_of_discount_amount,
-
-                    'total_amount_inwords': num2words_inr(
-                        (total_price_before_tax + total_tax) - sum_of_discount_amount),
-                    'total_tax':total_tax,
-                    'total_tax_words' : num2words_inr(total_tax),
-                    # 'total_tax_words':total_tax_words,
-                    'price_after_discount':price_after_discount
+                    'total': total_amount_rounded,  # Change here: using rounded total
+                    'total_amount_inwords': num2words_inr(total_amount_rounded),  # Change here: passing rounded total
+                    'total_tax': total_tax,
+                    'total_tax_words': num2words_inr(total_tax),
+                    'price_after_discount': price_after_discount
                 }
                 # print(context,"cccccc")
                 # context = {
@@ -12035,28 +12075,53 @@ class MyAPIView(APIView):
                                 # Append the formatted drone detail to the list
                                 formatted_drones.append(formatted_drone_detail)
 
-
                     total_price_before_tax = 0
                     total_tax = 0
                     price_after_discount = 0
                     sum_of_discount_amount = float(invoice_data.get("sum_of_discount_amount", 0))
+
+                    # Accumulate totals
                     for drone in formatted_drones:
                         total_price_before_tax += float(drone["item_total_price"])
                         total_tax += float(drone["tax_percentage_total"])
                         price_after_discount += float(drone["price_after_discount"])
+
+                    # Round the total value to two decimal places (change here)
+                    total_amount = total_price_before_tax + total_tax - sum_of_discount_amount
+                    total_amount_rounded = Decimal(str(total_amount)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
                     # Prepare the context
                     context = {
                         'invoice_data': invoice_data,
                         'dronedetails': formatted_drones,  # Append the entire list of formatted drones to the context
-                        # 'total': total_price_before_tax + total_tax,
-                        # 'total_amount_inwords': num2words_inr(total_price_before_tax + total_tax),
-                        'total': (total_price_before_tax + total_tax) - sum_of_discount_amount,
-                        'total_amount_inwords': num2words_inr(
-                            (total_price_before_tax + total_tax) - sum_of_discount_amount),
+                        'total': total_amount_rounded,  # Change here: using rounded total
+                        'total_amount_inwords': num2words_inr(total_amount_rounded),
+                        # Change here: passing rounded total
                         'total_tax': total_tax,
                         'total_tax_words': num2words_inr(total_tax),
                         'price_after_discount': price_after_discount
                     }
+                    # total_price_before_tax = 0
+                    # total_tax = 0
+                    # price_after_discount = 0
+                    # sum_of_discount_amount = float(invoice_data.get("sum_of_discount_amount", 0))
+                    # for drone in formatted_drones:
+                    #     total_price_before_tax += float(drone["item_total_price"])
+                    #     total_tax += float(drone["tax_percentage_total"])
+                    #     price_after_discount += float(drone["price_after_discount"])
+                    # # Prepare the context
+                    # context = {
+                    #     'invoice_data': invoice_data,
+                    #     'dronedetails': formatted_drones,  # Append the entire list of formatted drones to the context
+                    #     # 'total': total_price_before_tax + total_tax,
+                    #     # 'total_amount_inwords': num2words_inr(total_price_before_tax + total_tax),
+                    #     'total': (total_price_before_tax + total_tax) - sum_of_discount_amount,
+                    #     'total_amount_inwords': num2words_inr(
+                    #         (total_price_before_tax + total_tax) - sum_of_discount_amount),
+                    #     'total_tax': total_tax,
+                    #     'total_tax_words': num2words_inr(total_tax),
+                    #     'price_after_discount': price_after_discount
+                    # }
 
 
                 except CustomInvoice.DoesNotExist:
@@ -23745,3 +23810,6 @@ class GenerateCompanydetailsGST(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+# def Mytem(request):
+#
+#     return render(request, 'email/pdf-redesign.html')
