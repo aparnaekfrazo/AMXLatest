@@ -117,7 +117,7 @@ class Drone(models.Model):
     # drone_category = models.ForeignKey(DroneCategory, on_delete=models.SET_NULL, null=True, blank=True)
     drone_category = models.ForeignKey(DroneCategory, on_delete=models.PROTECT, null=True, blank=True)
     units = models.ForeignKey(UnitPriceList, on_delete=models.PROTECT, null=True, blank=True)
-    drone_specification = models.CharField(max_length=50, null=True, blank=True)
+    drone_specification = models.TextField(null=True, blank=True)
     market_price = models.CharField(max_length=100, null=True, blank=True)
     our_price = models.DecimalField(max_digits=10, decimal_places=2,null=True, blank=True)
     hsn_number=models.CharField(max_length=100, null=True, blank=True)
