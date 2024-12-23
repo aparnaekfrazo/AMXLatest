@@ -7471,7 +7471,9 @@ class MyApiView(APIView):
                             formatted_payload = json.loads(json.dumps(item.invoice_payload, separators=(',', ':')))
 
                             # Prepare the data for the API request
-                            api_url = "https://einv-apisandbox.nic.in/eicore/v1.03/Invoice"
+                            # api_url = "https://einv-apisandbox.nic.in/eicore/v1.03/Invoice"
+                            api_url = "https://einv1api.gstsandbox.nic.in/eicore/v1.03/Invoice"
+
                             headers = {
                                 "client-id": auth_token.client_id,
                                 "client-secret": "76KkYyE3SGguAaOocIWw",
@@ -7679,7 +7681,7 @@ class MyApiView(APIView):
                             formatted_payload = json.loads(json.dumps(custom.invoice_payload, separators=(',', ':')))
 
                             # Prepare the data for the API request
-                            api_url = "https://einv-apisandbox.nic.in/eicore/v1.03/Invoice"
+                            api_url = "https://einv1api.gstsandbox.nic.in/eicore/v1.03/Invoice"
                             headers = {
                                 "client-id": auth_token.client_id,
                                 "client-secret": "76KkYyE3SGguAaOocIWw",
@@ -7938,7 +7940,7 @@ class MyApiView(APIView):
                             formatted_payload = json.loads(json.dumps(item.invoice_payload, separators=(',', ':')))
 
                             # Prepare the data for the API request
-                            api_url = "https://einv-apisandbox.nic.in/eicore/v1.03/Invoice"
+                            api_url = "https://einv1api.gstsandbox.nic.in/eicore/v1.03/Invoice"
                             headers = {
                                 "client-id": auth_token.client_id,
                                 "client-secret": "76KkYyE3SGguAaOocIWw",
@@ -8089,7 +8091,7 @@ class MyApiView(APIView):
                             formatted_payload = json.loads(json.dumps(custom.invoice_payload, separators=(',', ':')))
 
                             # Prepare the data for the API request
-                            api_url = "https://einv-apisandbox.nic.in/eicore/v1.03/Invoice"
+                            api_url = "https://einv1api.gstsandbox.nic.in/eicore/v1.03/Invoice"
                             headers = {
                                 "client-id": auth_token.client_id,
                                 "client-secret": "76KkYyE3SGguAaOocIWw",
