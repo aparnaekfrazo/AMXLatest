@@ -8802,7 +8802,8 @@ class EwayBill(View):
             add_item.ewaybill_payload = data
             add_item.save()
 
-            api_url = "https://einv-apisandbox.nic.in/eiewb/v1.03/ewaybill"
+            # api_url = "https://einv-apisandbox.nic.in/eiewb/v1.03/ewaybill"
+            api_url = "https://einv1api.gstsandbox.nic.in/eiewb/v1.03/ewaybill"
             headers = {
                 "client-id": auth_token.client_id,
                 "client-secret": "76KkYyE3SGguAaOocIWw",
