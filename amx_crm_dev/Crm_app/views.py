@@ -4341,7 +4341,9 @@ class AuthAPIView(APIView):
     @csrf_exempt
     def post(self, request):
         csrf_token = get_token(request)
-        url = "https://einv-apisandbox.nic.in/eivital/v1.04/auth/"
+        # url = "https://einv-apisandbox.nic.in/eivital/v1.04/auth/"
+        url = "https://einv1api.gstsandbox.nic.in/eivital/v1.04/auth"
+
         headers = {
             "client_id": "AAGCE29TXPDW932",
             "client_secret": "76KkYyE3SGguAaOocIWw",
@@ -4351,7 +4353,7 @@ class AuthAPIView(APIView):
         }
 
         data = {
-            "Data": "aQ8lqU26ZCvFmJvW+ToBxDPhYeOXZfTZKXSNn75rzGEB53pmjIMSACMr9E89OE6kw4B56vMl9dz/Aai8/P8f8B1DH33fTZeHvPgLUnSIchHuqNW/RX+1r9QoDaOgFaZJqOvFxgjY1DkFRGROiHHlKa9rWrvU5FcD4PwCUcF8+6LotEnNaHbtTafg7IPKhhI0ufzKZz8Y4d2GsmEMYyLA0JbtJscBPTSRcB7St8kXrLwX7VdbgCTLYv6SCmbZ0IWnmVTTD2+/50xD/FKxWW6EVl0ZYdjhkkCOdkvVqLiNhh1nTc1mDOkFzt5nDHjawlxosqWVL/3vRgvfHe+Y+KdrIQ=="
+            "Data": "kvNXiw10UtV9LSFh0s9qPVGmkaKd0IG6EUDM4UaiIuFrL4NHtmJMVMGCBT5aA8xSeNuHEWOTOUHc/3CvBIvqqtb43qqyPgJGb0tM13SlaHd6Rp26VQhLSSD416wloM3TV4U/AoEayhbifI0O3jg9rMK+lGTxgQRGpuDEMxH84JFlZ8j9yMfpVf+xj0WZScjlxHoYvqpML+O+8VE6oAAp6syIfA3OOuumal6IXgBXfYNjjZeJbJyiHCG8AoZ3V10rkp3iLzNczn9I5oEiKeV8ogXlykrRQ8ah5WTWjqUCjuLruUYzeVgn1IrFGt9AdNE9v5/tTJUpdI7KGfqHn9Eh+Q=="
         }
         response = requests.post(url, headers=headers, data=json.dumps(data))
 
@@ -4362,7 +4364,7 @@ class AuthAPIView(APIView):
             existing_record = AuthToken.objects.first()
 
             if existing_record:
-                provided_key = "6vdRP2bFeXjR4Oxd3wSOlBrILXGpiTP86zwJZugYugo="  # app key
+                provided_key = "skxn5m5f4I32wYp0e2co8j8eAjUon6O/tJ2ay5X/JUM="  # app key
                 encrypted_sek = data.get("Sek")
                 decrypted_sek = decrypt_by_symmetric_key(encrypted_sek, provided_key)
                 base64_decrypted_sek = base64.b64encode(decrypted_sek).decode('utf-8')
@@ -4374,7 +4376,7 @@ class AuthAPIView(APIView):
                 existing_record.token_expiry = data.get("TokenExpiry")
                 existing_record.save()
             else:
-                provided_key = "6vdRP2bFeXjR4Oxd3wSOlBrILXGpiTP86zwJZugYugo="  # app key
+                provided_key = "skxn5m5f4I32wYp0e2co8j8eAjUon6O/tJ2ay5X/JUM="  # app key
                 encrypted_sek = data.get("Sek")
                 decrypted_sek = decrypt_by_symmetric_key(encrypted_sek, provided_key)
                 base64_decrypted_sek = base64.b64encode(decrypted_sek).decode('utf-8')
