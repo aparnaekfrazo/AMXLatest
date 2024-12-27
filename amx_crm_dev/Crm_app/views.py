@@ -7400,7 +7400,7 @@ class MyApiView(APIView):
                                     "TaxSch": "GST",
                                     "SupTyp": "B2B",
                                     "RegRev": "Y",
-                                    "EcmGstin": "29AAGCE4783K1Z1",
+                                    "EcmGstin": None,
                                     "IgstOnIntra": "N"
                                 },
                                 "DocDtls": {
@@ -7610,7 +7610,7 @@ class MyApiView(APIView):
                                     "TaxSch": "GST",
                                     "SupTyp": "B2B",
                                     "RegRev": "Y",
-                                    "EcmGstin": "29AAGCE4783K1Z1",
+                                    "EcmGstin": None,
                                     "IgstOnIntra": "N"
                                 },
                                 "DocDtls": {
@@ -7863,7 +7863,7 @@ class MyApiView(APIView):
                                     "TaxSch": "GST",
                                     "SupTyp": "B2B",
                                     "RegRev": "Y",
-                                    "EcmGstin": "29AAGCE4783K1Z1",
+                                    "EcmGstin": None,
                                     "IgstOnIntra": "N"
                                 },
                                 "DocDtls": {
@@ -8015,7 +8015,7 @@ class MyApiView(APIView):
                                     "TaxSch": "GST",
                                     "SupTyp": "B2B",
                                     "RegRev": "Y",
-                                    "EcmGstin": "29AAGCE4783K1Z1",
+                                    "EcmGstin": None,
                                     "IgstOnIntra": "N"
                                 },
                                 "DocDtls": {
