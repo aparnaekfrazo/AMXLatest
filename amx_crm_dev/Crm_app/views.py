@@ -16343,8 +16343,13 @@ def generate_payment_links_view(request):
                     payee_email = payee.payee_email
                     recipient_name = payee.payee_name
 
+                    if payee.stupayment_status == 'Success':
+                        # If the payment is already successful, throw an error message
+                        return Response({'message': 'Payment has already been made. No new link will be generated.'},
+                                        status=status.HTTP_400_BAD_REQUEST)
+
                     # Check if payment link already exists and email matches
-                    if payee.testemail == payee_email and payee.stupayment_status == 'Pending':
+                    elif payee.testemail == payee_email and payee.stupayment_status == 'Pending':
                         # Use existing order ID and payment link
                         payment_link = payee.payment_url
                     else:
@@ -16399,6 +16404,12 @@ def generate_payment_links_view(request):
                 try:
                     # Retrieve student details
                     student = Student.objects.get(id=student_id)
+
+                    if student.stupayment_status == 'Success':
+                        # If the payment is already successful, throw an error message
+                        return Response({
+                                            'message': f'Payment has already been made for student ID {student_id}. No new link will be generated.'},
+                                        status=status.HTTP_400_BAD_REQUEST)
 
                     # Check if payment link already exists and emails match
                     if student.testemail == student.student_email and student.stupayment_status == 'Pending':
