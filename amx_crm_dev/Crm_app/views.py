@@ -14678,7 +14678,8 @@ class SlotListView(APIView):
         slots = slots.filter(student_count=0)
 
         # Now slice to get the latest batch
-        slots = slots.order_by('-id')[:1]
+        # slots = slots.order_by('-id')[:1]
+        slots = slots.order_by('-id')
 
         serializer = SlotSerializer(slots, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
