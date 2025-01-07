@@ -5103,6 +5103,8 @@ class AddItemAPI(APIView):
 
                 all_serial_numbers.update(serial_numbers)
                 price_after_discount = round(item_total_price - discount_amount, 2)
+                item_total_price = Decimal(item_total_price)
+                discount_amount = Decimal(discount_amount)
                 # igst_percentage = round((igst / 100) * (item_total_price - discount_amount), 2)
                 # cgst_percentage = round((cgst / 100) * (item_total_price - discount_amount), 2)
                 # sgst_percentage = round((sgst / 100) * (item_total_price - discount_amount), 2)
