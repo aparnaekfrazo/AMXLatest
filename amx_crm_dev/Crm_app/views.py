@@ -5282,6 +5282,7 @@ class AddItemAPI(APIView):
     def calculate_item_total_price(self, price, quantity):
         return str(round(Decimal(price) * Decimal(quantity), 2))
 
+
     def put(self, request, item_id):
         def check_unique_serial_numbers(new_items):
             serial_numbers_set = set()
@@ -5296,6 +5297,12 @@ class AddItemAPI(APIView):
             return True
 
         item = get_object_or_404(AddItem, id=item_id)
+        customer = item.customer_id
+        owner = item.owner_id
+
+        # Retrieve shipping_state_code for customer and owner
+        customer_shipping_state_code = customer.shipping_state_code if customer else None
+        owner_shipping_state_code = owner.billing_state_code if owner else None
         inventory_partner = item.owner_id
         dic_item = item.dronedetails
         data = request.data
@@ -5341,6 +5348,19 @@ class AddItemAPI(APIView):
                     # Drone not in dronedetails, check in DroneOwnership
                     if item.owner_id.role_id.role_name == 'Super_admin':
                         # If owner is Super_admin, just add the new drone to dronedetails
+
+                        # owner_shipping_address = j.get('owner_shipping_address')  # Add this field to your payload
+                        # customer_shipping_address = j.get('customer_shipping_address')  # Add this field to your payload
+
+                        if customer_shipping_state_code == owner_shipping_state_code:
+                            sgst_value = j.get('sgst', 0)
+                            cgst_value = j.get('cgst', 0)
+                            igst_value = 0
+                        else:
+                            sgst_value = 0
+                            cgst_value = 0
+                            igst_value = j.get('igst', 0)
+
                         new_drone = {
                             'drone_id': j['drone_id'],
                             'quantity': j['quantity'],
@@ -5349,9 +5369,9 @@ class AddItemAPI(APIView):
                             'hsn_number': j['hsn_number'],
                             'units': j['units'],
                             'discount': j.get('discount', 0),
-                            'igst': j.get('igst', 0),
-                            'cgst': j.get('cgst', 0),
-                            'sgst': j.get('sgst', 0),
+                            'igst': igst_value,
+                            'cgst': cgst_value,
+                            'sgst': sgst_value,
                             'updated_datetime': timezone.now().isoformat(),
                         }
                         # Calculate additional fields for the new drone
@@ -5386,6 +5406,14 @@ class AddItemAPI(APIView):
                         # Drone not in dronedetails, check in DroneOwnership
                         try:
                             owner = DroneOwnership.objects.get(user=item.owner_id, drone=j['drone_id'])
+                            if customer_shipping_state_code == owner_shipping_state_code:
+                                sgst_value = j.get('sgst', 0)
+                                cgst_value = j.get('cgst', 0)
+                                igst_value = 0
+                            else:
+                                sgst_value = 0
+                                cgst_value = 0
+                                igst_value = j.get('igst', 0)
                             new_drone = {
                                 'drone_id': j['drone_id'],
                                 'quantity': j['quantity'],
@@ -5394,9 +5422,9 @@ class AddItemAPI(APIView):
                                 'serial_numbers': j['serial_numbers'],
                                 'hsn_number': j['hsn_number'],
                                 'discount': j.get('discount', 0),
-                                'igst': j.get('igst', 0),
-                                'cgst': j.get('cgst', 0),
-                                'sgst': j.get('sgst', 0),
+                                'igst': igst_value,
+                                'cgst': cgst_value,
+                                'sgst': sgst_value,
                                 'updated_datetime': timezone.now().isoformat(),
 
                             }
@@ -5573,6 +5601,298 @@ class AddItemAPI(APIView):
                 'items_data': new_items
             }
             return Response(response_data, status=status.HTTP_200_OK)
+
+    # def put(self, request, item_id):
+    #     def check_unique_serial_numbers(new_items):
+    #         serial_numbers_set = set()
+    #
+    #         for entry in new_items:
+    #             for serial_number in entry['serial_numbers']:
+    #                 if serial_number in serial_numbers_set:
+    #                     return False  # Duplicate serial number found
+    #                 else:
+    #                     serial_numbers_set.add(serial_number)
+    #
+    #         return True
+    #
+    #     item = get_object_or_404(AddItem, id=item_id)
+    #     inventory_partner = item.owner_id
+    #     dic_item = item.dronedetails
+    #     data = request.data
+    #     new_items = data.get('items', [])
+    #     update_list = []
+    #     add_list = []
+    #     total_price_with_additional_percentages = Decimal('0.00')
+    #
+    #     all_serial = []
+    #
+    #     all_items_except_given_id = AddItem.objects.exclude(id=item_id).values('id', 'dronedetails')
+    #     for item_data in all_items_except_given_id:
+    #         for drone_detail in item_data['dronedetails']:
+    #             serial_numbers = drone_detail.get('serial_numbers', [])
+    #             all_serial.extend(serial_numbers)
+    #
+    #     print("All Serial Numbers:", all_serial)
+    #
+    #     if not check_unique_serial_numbers(new_items):
+    #         return Response({'message': f"Serial numbers must be unique with all drone entry"},
+    #                         status=status.HTTP_400_BAD_REQUEST)
+    #     else:
+    #         pass
+    #
+    #     with transaction.atomic():
+    #         duplicate_serial = []
+    #         for j in new_items:
+    #             for serial_number in j.get('serial_numbers', []):
+    #                 if serial_number in all_serial:
+    #                     duplicate_serial.append(serial_number)
+    #                     # Return a response with an error message
+    #                     # return Response({'message': f"Serial number '{serial_number}' already exists in other items."},
+    #                     #                 status=status.HTTP_400_BAD_REQUEST)
+    #             if duplicate_serial:
+    #                 error_message = f"Serial numbers {', '.join(map(repr, duplicate_serial))} already exist in other items."
+    #                 return Response({'message': error_message}, status=status.HTTP_400_BAD_REQUEST)
+    #
+    #             drone_exists = any(drone['drone_id'] == j['drone_id'] for drone in item.dronedetails)
+    #             drone_id = j.get('drone_id')
+    #             drone_name = Drone.objects.filter(id=drone_id).first().drone_name if drone_id else 'Unknown Drone'
+    #
+    #             if not drone_exists:
+    #                 # Drone not in dronedetails, check in DroneOwnership
+    #                 if item.owner_id.role_id.role_name == 'Super_admin':
+    #                     # If owner is Super_admin, just add the new drone to dronedetails
+    #                     new_drone = {
+    #                         'drone_id': j['drone_id'],
+    #                         'quantity': j['quantity'],
+    #                         'price': j['price'],
+    #                         'serial_numbers': j['serial_numbers'],
+    #                         'hsn_number': j['hsn_number'],
+    #                         'units': j['units'],
+    #                         'discount': j.get('discount', 0),
+    #                         'igst': j.get('igst', 0),
+    #                         'cgst': j.get('cgst', 0),
+    #                         'sgst': j.get('sgst', 0),
+    #                         'updated_datetime': timezone.now().isoformat(),
+    #                     }
+    #                     # Calculate additional fields for the new drone
+    #                     new_drone["item_total_price"] = self.calculate_item_total_price(new_drone["price"],
+    #                                                                                     new_drone["quantity"])
+    #                     new_drone["discount_amount"] = round((new_drone["discount"] / 100) * (
+    #                         new_drone["quantity"]) * (new_drone["price"]), 2)
+    #                     new_drone["price_after_discount"] = round((new_drone["quantity"]) * (new_drone["price"]) - (
+    #                             new_drone["discount"] / 100) * (
+    #                                                                   new_drone["quantity"]) * (
+    #                                                                   new_drone["price"]), 2)
+    #                     new_drone["igst_percentage"] = round((new_drone["igst"] / 100) * (
+    #                             (new_drone["quantity"]) * (new_drone["price"]) - (
+    #                             new_drone["discount"] / 100) * (
+    #                                 new_drone["quantity"]) * (new_drone["price"])), 2)
+    #                     new_drone["cgst_percentage"] = round((new_drone["cgst"] / 100) * (
+    #                             (new_drone["quantity"]) * (new_drone["price"]) - (
+    #                             new_drone["discount"] / 100) * (
+    #                                 new_drone["quantity"]) * (new_drone["price"])), 2)
+    #                     new_drone["sgst_percentage"] = round((new_drone["sgst"] / 100) * (
+    #                             (new_drone["quantity"]) * (new_drone["price"]) - (
+    #                             new_drone["discount"] / 100) * (
+    #                                 new_drone["quantity"]) * (new_drone["price"])), 2)
+    #                     new_drone["total"] = round(((new_drone["quantity"]) * (new_drone["price"]) - (
+    #                             new_drone["discount"] / 100) * (
+    #                                                     new_drone["quantity"]) * (
+    #                                                     new_drone["price"])) + new_drone[
+    #                                                    "igst_percentage"] + new_drone["cgst_percentage"] + new_drone[
+    #                                                    "sgst_percentage"], 2)
+    #                     item.dronedetails.append(new_drone)
+    #                 else:
+    #                     # Drone not in dronedetails, check in DroneOwnership
+    #                     try:
+    #                         owner = DroneOwnership.objects.get(user=item.owner_id, drone=j['drone_id'])
+    #                         new_drone = {
+    #                             'drone_id': j['drone_id'],
+    #                             'quantity': j['quantity'],
+    #                             'units': j['units'],
+    #                             'price': j['price'],
+    #                             'serial_numbers': j['serial_numbers'],
+    #                             'hsn_number': j['hsn_number'],
+    #                             'discount': j.get('discount', 0),
+    #                             'igst': j.get('igst', 0),
+    #                             'cgst': j.get('cgst', 0),
+    #                             'sgst': j.get('sgst', 0),
+    #                             'updated_datetime': timezone.now().isoformat(),
+    #
+    #                         }
+    #                         # Calculate additional fields for the new drone
+    #                         new_drone["item_total_price"] = self.calculate_item_total_price(new_drone["price"],
+    #                                                                                         new_drone["quantity"])
+    #                         new_drone["discount_amount"] = round((new_drone["discount"] / 100) * (
+    #                             new_drone["quantity"]) * (new_drone["price"]), 2)
+    #                         new_drone["price_after_discount"] = round((new_drone["quantity"]) * (
+    #                             new_drone["price"]) - (
+    #                                                                           new_drone["discount"] / 100) * (
+    #                                                                       new_drone["quantity"]) * (
+    #                                                                       new_drone["price"]), 2)
+    #                         new_drone["igst_percentage"] = round((new_drone["igst"] / 100) * (
+    #                                 (new_drone["quantity"]) * (new_drone["price"]) - (
+    #                                 new_drone["discount"] / 100) * (
+    #                                     new_drone["quantity"]) * (new_drone["price"])), 2)
+    #                         new_drone["cgst_percentage"] = round((new_drone["cgst"] / 100) * (
+    #                                 (new_drone["quantity"]) * (new_drone["price"]) - (
+    #                                 new_drone["discount"] / 100) * (
+    #                                     new_drone["quantity"]) * (new_drone["price"])), 2)
+    #                         new_drone["sgst_percentage"] = round((new_drone["sgst"] / 100) * (
+    #                                 (new_drone["quantity"]) * (new_drone["price"]) - (
+    #                                 new_drone["discount"] / 100) * (
+    #                                     new_drone["quantity"]) * (new_drone["price"])), 2)
+    #                         new_drone["total"] = round(((new_drone["quantity"]) * (
+    #                             new_drone["price"]) - (
+    #                                                             new_drone["discount"] / 100) * (
+    #                                                         new_drone["quantity"]) * (
+    #                                                         new_drone["price"])) + new_drone[
+    #                                                        "igst_percentage"] + new_drone["cgst_percentage"] +
+    #                                                    new_drone[
+    #                                                        "sgst_percentage"], 2)
+    #
+    #                         # Add new drone to the dronedetails list
+    #                         item.dronedetails.append(new_drone)
+    #
+    #                         # Only (q) or fewer quantities allowed for d1
+    #                         if owner.quantity >= j['quantity']:
+    #                             # Subtract new drone quantity from DroneOwnership
+    #                             owner.quantity -= j['quantity']
+    #                             owner.save()
+    #
+    #                             # Add new drone quantity to dronedetails
+    #                             add_list.append({
+    #                                 'drone_id': j['drone_id'],
+    #                                 'quantity': j['quantity'],
+    #                                 'units': j['units'],
+    #                                 'price': j['price'],
+    #                                 'serial_numbers': j['serial_numbers'],
+    #                                 'hsn_number': j['hsn_number'],
+    #                                 'discount': j.get('discount', 0),
+    #                                 'igst': j.get('igst', 0),
+    #                                 'cgst': j.get('cgst', 0),
+    #                                 'sgst': j.get('sgst', 0),
+    #                                 'updated_datetime': timezone.now().isoformat(),
+    #                             })
+    #                         else:
+    #                             return Response(
+    #                                 {'message': f"Only {owner.quantity} or fewer quantities allowed for {drone_name}"},
+    #                                 status=status.HTTP_400_BAD_REQUEST
+    #                             )
+    #                     except DroneOwnership.DoesNotExist:
+    #                         return Response(
+    #                             {'message': f"Only {j['quantity']} or fewer quantities allowed for {drone_name}"},
+    #                             status=status.HTTP_400_BAD_REQUEST
+    #                         )
+    #             else:
+    #                 # Drone already in dronedetails, update quantity and serial numbers
+    #                 for i in item.dronedetails:
+    #                     serial_numbers = j['serial_numbers']
+    #                     if len(set(serial_numbers)) != len(serial_numbers):
+    #                         return Response({'message': f"Serial numbers must be unique within each drone entry"},
+    #                                         status=status.HTTP_400_BAD_REQUEST)
+    #
+    #                     if j["drone_id"] == i["drone_id"]:
+    #                         # Check if the provided serial numbers match the quantity
+    #                         if len(j['serial_numbers']) != j['quantity']:
+    #                             return Response(
+    #                                 {
+    #                                     'message': f"The number of serial numbers must be equal to the quantity for {drone_name}"},
+    #                                 status=status.HTTP_400_BAD_REQUEST
+    #                             )
+    #
+    #                         difference = i["quantity"] - j["quantity"]
+    #                         update_list.append({"drone_id": j["drone_id"], "difference": difference})
+    #
+    #                         if item.owner_id.role_id.role_name != 'Super_admin':
+    #                             # Update quantity in DroneOwnership
+    #                             owner = DroneOwnership.objects.get(user=item.owner_id, drone=j["drone_id"])
+    #                             new_quantity = owner.quantity + difference
+    #
+    #                             # Check if new quantity is non-negative
+    #                             if new_quantity < 0:
+    #                                 return Response(
+    #                                     {
+    #                                         'message': f"Only {owner.quantity} or fewer quantities allowed for {drone_name}"},
+    #                                     status=status.HTTP_400_BAD_REQUEST
+    #                                 )
+    #
+    #                             owner.quantity = new_quantity
+    #                             owner.save()
+    #
+    #                         # Update quantity and serial numbers in dronedetails
+    #                         i["quantity"] = j["quantity"]
+    #                         i["serial_numbers"] = j["serial_numbers"]
+    #                         i["item_total_price"] = self.calculate_item_total_price(j["price"], j["quantity"])
+    #                         i["hsn_number"] = j["hsn_number"]
+    #                         i["units"] = j["units"]
+    #                         i["discount"] = j.get('discount', 0)
+    #                         i["igst"] = j.get('igst', 0)
+    #                         i["cgst"] = j.get('cgst', 0)
+    #                         i["sgst"] = j.get('sgst', 0)
+    #
+    #                         # Add default values for missing keys
+    #                         i.setdefault("discount_amount", 0)
+    #                         i.setdefault("price_after_discount", 0)
+    #                         i.setdefault("igst_percentage", 0)
+    #                         i.setdefault("cgst_percentage", 0)
+    #                         i.setdefault("sgst_percentage", 0)
+    #                         i.setdefault("total", 0)
+    #
+    #                         # Recalculate the additional fields
+    #                         i["discount_amount"] = round((i["discount"] / 100) * (i["quantity"]) * (i["price"]), 2)
+    #                         i["price_after_discount"] = round((i["quantity"]) * (i["price"]) - (
+    #                                 i["discount"] / 100) * (
+    #                                                               i["quantity"]) * (
+    #                                                               i["price"]), 2)
+    #                         i["igst_percentage"] = round((i["igst"] / 100) * (
+    #                                 (i["quantity"]) * (i["price"]) - (
+    #                                 i["discount"] / 100) * (
+    #                                     i["quantity"]) * (i["price"])), 2)
+    #                         i["cgst_percentage"] = round((i["cgst"] / 100) * (
+    #                                 (i["quantity"]) * (i["price"]) - (
+    #                                 i["discount"] / 100) * (
+    #                                     i["quantity"]) * (i["price"])), 2)
+    #                         i["sgst_percentage"] = round((i["sgst"] / 100) * (
+    #                                 (i["quantity"]) * (i["price"]) - (
+    #                                 i["discount"] / 100) * (
+    #                                     i["quantity"]) * (i["price"])), 2)
+    #                         i["total"] = round(((i["quantity"]) * (
+    #                             i["price"]) - (
+    #                                                     i["discount"] / 100) * (
+    #                                                 i["quantity"]) * (
+    #                                                 i["price"])) + i["igst_percentage"] + i[
+    #                                                "cgst_percentage"] + i["sgst_percentage"], 2)
+    #
+    #         item.amount_to_pay = round(sum(i.get("total", 0) for i in item.dronedetails), 2)
+    #         item.sum_of_item_total_price = round(sum(Decimal(i.get("item_total_price", 0)) for i in item.dronedetails),
+    #                                              2)
+    #         item.sum_of_igst_percentage = round(sum(float(i.get("igst_percentage", 0)) for i in item.dronedetails), 2)
+    #         item.sum_of_cgst_percentage = round(sum(float(i.get("cgst_percentage", 0)) for i in item.dronedetails), 2)
+    #         item.sum_of_sgst_percentage = round(sum(float(i.get("sgst_percentage", 0)) for i in item.dronedetails), 2)
+    #         item.sum_of_discount_amount = round(sum(float(i.get("discount_amount", 0)) for i in item.dronedetails), 2)
+    #         item.sum_of_price_after_discount = round(
+    #             sum(float(i.get("price_after_discount", 0)) for i in item.dronedetails), 2)
+    #
+    #         updated_datetime = timezone.now().isoformat()
+    #         for i in item.dronedetails:
+    #             i["updated_datetime"] = [updated_datetime]
+    #
+    #         item.save()
+    #
+    #         if inventory_partner.role_id.role_name == 'Partner':
+    #             drone_ownerships = DroneOwnership.objects.filter(user=inventory_partner)
+    #             inventory_count = drone_ownerships.aggregate(Sum('quantity'))['quantity__sum']
+    #
+    #             inventory_partner.inventory_count = inventory_count
+    #             inventory_partner.save()
+    #
+    #         response_data = {
+    #             'message': 'Items are updated successfully!',
+    #             'item_id': item.id,
+    #             'items_data': new_items
+    #         }
+    #         return Response(response_data, status=status.HTTP_200_OK)
 
     def delete(self, request, item_id):
         item = get_object_or_404(AddItem, id=item_id)
