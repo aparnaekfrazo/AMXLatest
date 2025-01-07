@@ -5065,6 +5065,11 @@ class AddItemAPI(APIView):
         all_serial_numbers = set()
 
         is_super_admin = partner_instance.role_id.role_name == 'Super_admin'
+        #######################new code for tax########
+        # Fetch shipping addresses
+        owner_address = partner_instance.shipping_address  # Assuming 'shipping_address' field exists
+        customer_instance = get_object_or_404(CustomUser, id=customer_id)
+        customer_address = customer_instance.shipping_address  # Assuming 'shipping_address' field exists
 
         with transaction.atomic():
             entered_serial_numbers = []
@@ -5098,9 +5103,22 @@ class AddItemAPI(APIView):
 
                 all_serial_numbers.update(serial_numbers)
                 price_after_discount = round(item_total_price - discount_amount, 2)
-                igst_percentage = round((igst / 100) * (item_total_price - discount_amount), 2)
-                cgst_percentage = round((cgst / 100) * (item_total_price - discount_amount), 2)
-                sgst_percentage = round((sgst / 100) * (item_total_price - discount_amount), 2)
+                # igst_percentage = round((igst / 100) * (item_total_price - discount_amount), 2)
+                # cgst_percentage = round((cgst / 100) * (item_total_price - discount_amount), 2)
+                # sgst_percentage = round((sgst / 100) * (item_total_price - discount_amount), 2)
+                # total = round(
+                #     (item_total_price - discount_amount) + igst_percentage + cgst_percentage + sgst_percentage, 2)
+                if owner_address == customer_address:
+                    # Same address: Apply sgst + cgst
+                    sgst_percentage = round((sgst / 100) * (item_total_price - discount_amount), 2)
+                    cgst_percentage = round((cgst / 100) * (item_total_price - discount_amount), 2)
+                    igst_percentage = Decimal('0.00')  # No IGST
+                else:
+                    # Different address: Apply only igst
+                    sgst_percentage = Decimal('0.00')  # No SGST
+                    cgst_percentage = Decimal('0.00')  # No CGST
+                    igst_percentage = round((igst / 100) * (item_total_price - discount_amount), 2)
+
                 total = round(
                     (item_total_price - discount_amount) + igst_percentage + cgst_percentage + sgst_percentage, 2)
 
