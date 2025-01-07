@@ -5103,8 +5103,6 @@ class AddItemAPI(APIView):
 
                 all_serial_numbers.update(serial_numbers)
                 price_after_discount = round(item_total_price - discount_amount, 2)
-                item_total_price = Decimal(item_total_price)
-                discount_amount = Decimal(discount_amount)
                 # igst_percentage = round((igst / 100) * (item_total_price - discount_amount), 2)
                 # cgst_percentage = round((cgst / 100) * (item_total_price - discount_amount), 2)
                 # sgst_percentage = round((sgst / 100) * (item_total_price - discount_amount), 2)
@@ -5112,16 +5110,14 @@ class AddItemAPI(APIView):
                 #     (item_total_price - discount_amount) + igst_percentage + cgst_percentage + sgst_percentage, 2)
                 if owner_address == customer_address:
                     # Same address: Apply sgst + cgst
-                    sgst_percentage = round((Decimal(sgst) / 100) * (Decimal(item_total_price) - Decimal(discount_amount)), 2)
-                    cgst_percentage = round((Decimal(cgst) / 100) * (Decimal(item_total_price) - Decimal(discount_amount)), 2)
-                    igst_percentage = Decimal('0.00')  # No IGST
+                    sgst_percentage = round(float(sgst / 100) * float(item_total_price - discount_amount), 2)
+                    cgst_percentage = round(float(cgst / 100) * float(item_total_price - discount_amount), 2)
+                    igst_percentage = 0.0  # No IGST
                 else:
-                    igst = Decimal(igst)
                     # Different address: Apply only igst
-                    sgst_percentage = Decimal('0.00')  # No SGST
-                    cgst_percentage = Decimal('0.00')  # No CGST
-                    igst_percentage = round((igst / Decimal(100)) * (Decimal(item_total_price) - Decimal(discount_amount)), 2)
-
+                    sgst_percentage = 0.0  # No SGST
+                    cgst_percentage = 0.0  # No CGST
+                    igst_percentage = round(float(igst / 100) * float(item_total_price - discount_amount), 2)
 
                 total = round(
                     (item_total_price - discount_amount) + igst_percentage + cgst_percentage + sgst_percentage, 2)
@@ -5133,18 +5129,18 @@ class AddItemAPI(APIView):
                     'serial_numbers': serial_numbers,
                     'hsn_number': item_data.get('hsn_number'),
                     'units': item_data.get('units'),
-                    'item_total_price': float(item_total_price),
+                    'item_total_price': item_total_price,
                     'discount': discount,
                     'igst': igst,
                     'cgst': cgst,
                     'sgst': sgst,
                     'created_datetime': [timezone.now().isoformat()],
                     'updated_datetime': [timezone.now().isoformat()],
-                    'discount_amount': float(discount_amount),
+                    'discount_amount': discount_amount,
                     'price_after_discount': price_after_discount,
-                    'igst_percentage': float(igst_percentage),
-                    'cgst_percentage': float(cgst_percentage),
-                    'sgst_percentage': float(sgst_percentage),
+                    'igst_percentage': igst_percentage,
+                    'cgst_percentage': cgst_percentage,
+                    'sgst_percentage': sgst_percentage,
                     'total': total,
                 })
 
