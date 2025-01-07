@@ -5113,11 +5113,17 @@ class AddItemAPI(APIView):
                     sgst_percentage = round(float(sgst / 100) * float(item_total_price - discount_amount), 2)
                     cgst_percentage = round(float(cgst / 100) * float(item_total_price - discount_amount), 2)
                     igst_percentage = 0.0  # No IGST
+                    sgst = sgst
+                    cgst = cgst
+                    igst = 0.0
                 else:
                     # Different address: Apply only igst
                     sgst_percentage = 0.0  # No SGST
                     cgst_percentage = 0.0  # No CGST
                     igst_percentage = round(float(igst / 100) * float(item_total_price - discount_amount), 2)
+                    sgst = 0.0
+                    cgst = 0.0
+                    igst = igst
 
                 total = round(
                     (item_total_price - discount_amount) + igst_percentage + cgst_percentage + sgst_percentage, 2)
