@@ -5114,10 +5114,12 @@ class AddItemAPI(APIView):
                     cgst_percentage = round((Decimal(cgst) / 100) * (item_total_price - discount_amount), 2)
                     igst_percentage = Decimal('0.00')  # No IGST
                 else:
+                    igst = Decimal(igst)
                     # Different address: Apply only igst
                     sgst_percentage = Decimal('0.00')  # No SGST
                     cgst_percentage = Decimal('0.00')  # No CGST
-                    igst_percentage = round((Decimal(igst) / 100) * (item_total_price - discount_amount), 2)
+                    igst_percentage = round((igst / Decimal(100)) * (item_total_price - discount_amount), 2)
+
 
                 total = round(
                     (item_total_price - discount_amount) + igst_percentage + cgst_percentage + sgst_percentage, 2)
