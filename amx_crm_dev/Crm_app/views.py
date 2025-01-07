@@ -5067,9 +5067,9 @@ class AddItemAPI(APIView):
         is_super_admin = partner_instance.role_id.role_name == 'Super_admin'
         #######################new code for tax########
         # Fetch shipping addresses
-        owner_address = partner_instance.shipping_address  # Assuming 'shipping_address' field exists
+        owner_address = partner_instance.billing_state_code  # Assuming 'shipping_address' field exists
         customer_instance = get_object_or_404(CustomUser, id=customer_id)
-        customer_address = customer_instance.shipping_address  # Assuming 'shipping_address' field exists
+        customer_address = customer_instance.shipping_state_code  # Assuming 'shipping_address' field exists
 
         with transaction.atomic():
             entered_serial_numbers = []
