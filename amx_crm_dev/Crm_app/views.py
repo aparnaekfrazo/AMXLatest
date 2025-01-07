@@ -5110,15 +5110,15 @@ class AddItemAPI(APIView):
                 #     (item_total_price - discount_amount) + igst_percentage + cgst_percentage + sgst_percentage, 2)
                 if owner_address == customer_address:
                     # Same address: Apply sgst + cgst
-                    sgst_percentage = round((Decimal(sgst) / 100) * (item_total_price - discount_amount), 2)
-                    cgst_percentage = round((Decimal(cgst) / 100) * (item_total_price - discount_amount), 2)
+                    sgst_percentage = round((Decimal(sgst) / 100) * (Decimal(item_total_price) - Decimal(discount_amount)), 2)
+                    cgst_percentage = round((Decimal(cgst) / 100) * (Decimal(item_total_price) - Decimal(discount_amount)), 2)
                     igst_percentage = Decimal('0.00')  # No IGST
                 else:
                     igst = Decimal(igst)
                     # Different address: Apply only igst
                     sgst_percentage = Decimal('0.00')  # No SGST
                     cgst_percentage = Decimal('0.00')  # No CGST
-                    igst_percentage = round((igst / Decimal(100)) * (item_total_price - discount_amount), 2)
+                    igst_percentage = round((igst / Decimal(100)) * (Decimal(item_total_price) - Decimal(discount_amount)), 2)
 
 
                 total = round(
