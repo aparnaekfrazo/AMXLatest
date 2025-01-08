@@ -9872,13 +9872,19 @@ class AddCustomItemAPI(APIView):
                                                        "igst_percentage"] + existing_item["cgst_percentage"] + \
                                                    existing_item["sgst_percentage"], 2)
                 else:
-                    if customer_address and owner_address:
+                    igst = 0
+                    cgst = 0
+                    sgst = 0
+                    if customer_address == owner_address:
                         # Same address - Set IGST to 0, and calculate CGST and SGST
+                        cgst = new_item.get('cgst', 0)  # Assuming cgst comes from `new_item`
+                        sgst = new_item.get('sgst', 0)  # Assuming sgst comes from `new_item`
                         igst = 0
                     else:
                         # Different address - Set CGST and SGST to 0, and calculate IGST
                         cgst = 0
                         sgst = 0
+                        igst = new_item.get('igst', 0)
                     new_item_data = {
                         'item_name': new_item['item_name'],
                         'units': new_item['units'],
