@@ -15414,7 +15414,7 @@ class SlotListView(APIView):
 
         if search:
             # Filter based on search term
-            slots = slots.filter(batch_name__icontains=search)
+            slots = slots.filter(batch_name__istartswith=search)
 
             # Check if any slots exist for the search term
             if not slots.exists():
