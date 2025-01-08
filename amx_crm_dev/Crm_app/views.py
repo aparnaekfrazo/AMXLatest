@@ -9336,6 +9336,214 @@ class AddCustomItemAPI(APIView):
         rounded_total_price = total_price.quantize(Decimal('0.00'), rounding=ROUND_HALF_UP)
         return float(rounded_total_price)
 
+    # def post(self, request):
+    #     data = request.data
+    #     items = data.get('items', [])
+    #     owner_id = data.get('owner_id')
+    #     customer_type_id = data.get('customer_type_id')
+    #     customer_id = data.get('customer_id')
+    #     invoice_type_id = data.get('invoice_type_id')
+    #     partner_instance = get_object_or_404(CustomUser, id=owner_id)
+    #     all_serialnumbers = []
+    #
+    #     custom_item_details_lists = CustomInvoice.objects.values_list('custom_item_details', flat=True)
+    #
+    #     for custom_item_details_list in custom_item_details_lists:
+    #         if custom_item_details_list:
+    #             serial_numbers = [serial_number for entry in custom_item_details_list for serial_number in
+    #                               entry.get('serial_numbers', [])]
+    #             all_serialnumbers.extend(serial_numbers)
+    #
+    #     all_items_except_given_id = AddItem.objects.all().values('id', 'dronedetails')
+    #     for item_data in all_items_except_given_id:
+    #         for drone_detail in item_data['dronedetails']:
+    #             serial_numbers = drone_detail.get('serial_numbers', [])
+    #             all_serialnumbers.extend(serial_numbers)
+    #
+    #     items_data = []
+    #     custom_item_details = []
+    #     all_serial_numbers = set()
+    #
+    #     is_super_admin = partner_instance.role_id.role_name == 'Super_admin'
+    #
+    #     with transaction.atomic():
+    #         entered_serial_numbers = []
+    #         for item_data in items:
+    #             item_name = item_data.get('item_name')
+    #             units = item_data.get('units')
+    #             quantity = item_data.get('quantity')
+    #             discount = item_data.get('discount')[0] if isinstance(item_data.get('discount'),
+    #                                                                   tuple) else item_data.get('discount')
+    #             igst = item_data.get('igst')[0] if isinstance(item_data.get('igst'), tuple) else item_data.get('igst')
+    #             cgst = item_data.get('cgst')[0] if isinstance(item_data.get('cgst'), tuple) else item_data.get('cgst')
+    #             sgst = item_data.get('sgst')[0] if isinstance(item_data.get('sgst'), tuple) else item_data.get('sgst')
+    #             item_total_price = round(quantity * item_data.get('price'), 2)
+    #             discount_amount = round((discount / 100) * item_total_price, 2)
+    #             user_id = get_object_or_404(CustomUser, id=customer_id)
+    #
+    #             serial_numbers = item_data.get('serial_numbers', [])
+    #             entered_serial_numbers.extend(serial_numbers)
+    #
+    #             # Check if quantity and serial numbers are equal
+    #             if quantity != len(serial_numbers):
+    #                 return Response(
+    #                     {'message': f"Quantity and the number of serial numbers must be equal in each drone entry"},
+    #                     status=status.HTTP_400_BAD_REQUEST)
+    #
+    #             # Check if serial numbers are unique within each drone entry
+    #             if len(set(serial_numbers)) != len(serial_numbers):
+    #                 return Response({'message': f"Serial numbers must be unique within each drone entry"},
+    #                                 status=status.HTTP_400_BAD_REQUEST)
+    #
+    #             # Check if serial numbers are unique across all drone entries
+    #             if any(serial_number in all_serial_numbers for serial_number in serial_numbers):
+    #                 return Response({'message': f"Serial numbers must be unique across all drone entries"},
+    #                                 status=status.HTTP_400_BAD_REQUEST)
+    #
+    #             all_serial_numbers.update(serial_numbers)
+    #             item_total_price = round((quantity) * (item_data.get('price')), 2)
+    #
+    #             custom_item_details.append({
+    #                 'item_name': item_name,
+    #                 'quantity': quantity,
+    #                 'price': item_data.get('price'),
+    #                 'serial_numbers': serial_numbers,
+    #                 'hsn_number': item_data.get('hsn_number'),
+    #                 'item_total_price': item_total_price,
+    #                 'discount': discount,
+    #                 'igst': igst,
+    #                 'cgst': cgst,
+    #                 'sgst': sgst,
+    #                 'units': units,
+    #                 'created_datetime': [timezone.now().isoformat()],
+    #                 'updated_datetime': [timezone.now().isoformat()],
+    #                 'discount_amount': round(discount_amount, 2),
+    #                 'price_after_discount': round(item_total_price - discount_amount, 2),
+    #                 'igst_percentage': round((igst / 100) * (item_total_price - discount_amount), 2),
+    #                 'cgst_percentage': round((cgst / 100) * (item_total_price - discount_amount), 2),
+    #                 'sgst_percentage': round((sgst / 100) * (item_total_price - discount_amount), 2),
+    #                 'total': round(
+    #                     (item_total_price - discount_amount) +
+    #                     (igst / 100) * (item_total_price - discount_amount) +
+    #                     (cgst / 100) * (item_total_price - discount_amount) +
+    #                     (sgst / 100) * (item_total_price - discount_amount),
+    #                     2
+    #                 )
+    #             })
+    #
+    #             items_data.append({
+    #                 'item_name': item_name,
+    #                 'price': item_data.get('price'),
+    #                 'serial_numbers': serial_numbers,
+    #                 'hsn_number': item_data.get('hsn_number'),
+    #                 'item_total_price': item_total_price,
+    #                 'discount': discount,
+    #                 'igst': igst,
+    #                 'cgst': cgst,
+    #                 'sgst': sgst,
+    #                 'units': units,
+    #                 'created_datetime': [timezone.now().isoformat()],
+    #                 'updated_datetime': [timezone.now().isoformat()],
+    #                 'discount_amount': round(discount_amount, 2),
+    #                 'price_after_discount': round(item_total_price - discount_amount, 2),
+    #                 'igst_percentage': round((igst / 100) * (item_total_price - discount_amount), 2),
+    #                 'cgst_percentage': round((cgst / 100) * (item_total_price - discount_amount), 2),
+    #                 'sgst_percentage': round((sgst / 100) * (item_total_price - discount_amount), 2),
+    #                 'total': round(
+    #                     (item_total_price - discount_amount) +
+    #                     (igst / 100) * (item_total_price - discount_amount) +
+    #                     (cgst / 100) * (item_total_price - discount_amount) +
+    #                     (sgst / 100) * (item_total_price - discount_amount),
+    #                     2
+    #                 )
+    #             })
+    #
+    #         duplicate_serial_numbers = []
+    #         for entered_serial in entered_serial_numbers:
+    #             if entered_serial in all_serialnumbers:
+    #                 duplicate_serial_numbers.append(entered_serial)
+    #
+    #         if duplicate_serial_numbers:
+    #             return Response({
+    #                 'message': f"Serial numbers {', '.join(map(str, duplicate_serial_numbers))} already exist in the table"},
+    #                 status=status.HTTP_400_BAD_REQUEST)
+    #
+    #         if len(custom_item_details) == 0:
+    #             return Response({'message': 'details cannot be empty'}, status=status.HTTP_400_BAD_REQUEST)
+    #
+    #         for item_data in items:
+    #             item_name = item_data.get('item_name')
+    #             quantity = item_data.get('quantity')
+    #             user_id = get_object_or_404(CustomUser, id=customer_id)
+    #
+    #         else:
+    #             try:
+    #                 draft_status = InvoiceStatus.objects.get(invoice_status_name='Inprogress')
+    #             except InvoiceStatus.DoesNotExist:
+    #                 # If 'Draft' status does not exist, create it
+    #                 draft_status = InvoiceStatus.objects.create(invoice_status_name='Inprogress')
+    #             new_item = CustomInvoice.objects.create(
+    #                 customer_type_id=get_object_or_404(CustomerCategory, id=customer_type_id),
+    #                 customer_id=get_object_or_404(CustomUser, id=customer_id),
+    #                 owner_id=partner_instance,
+    #                 invoice_type_id=get_object_or_404(InvoiceType, id=invoice_type_id),
+    #                 invoice_status=draft_status,
+    #             )
+    #
+    #             new_item.invoice_number = self.create_invoice_number()
+    #             new_item.save()
+    #
+    #             # If dronedetails is empty, return a response without creating the item
+    #             new_item.custom_item_details = custom_item_details
+    #             amount_to_pay = round(sum(item['total'] for item in custom_item_details), 2)
+    #             sum_of_item_total_price = round(sum(item['item_total_price'] for item in custom_item_details), 2)
+    #             sum_of_igst_percentage = round(sum(item['igst_percentage'] for item in custom_item_details), 2)
+    #             sum_of_cgst_percentage = round(sum(item['cgst_percentage'] for item in custom_item_details), 2)
+    #             sum_of_sgst_percentage = round(sum(item['sgst_percentage'] for item in custom_item_details), 2)
+    #             sum_of_discount_amount = round(sum(item['discount_amount'] for item in custom_item_details), 2)
+    #             sum_of_price_after_discount = round(sum(item['price_after_discount'] for item in custom_item_details),
+    #                                                 2)
+    #
+    #             new_item.amount_to_pay = amount_to_pay
+    #             new_item.sum_of_item_total_price = sum_of_item_total_price
+    #             new_item.sum_of_igst_percentage = sum_of_igst_percentage
+    #             new_item.sum_of_cgst_percentage = sum_of_cgst_percentage
+    #             new_item.sum_of_sgst_percentage = sum_of_sgst_percentage
+    #             new_item.sum_of_discount_amount = sum_of_discount_amount
+    #             new_item.sum_of_price_after_discount = sum_of_price_after_discount
+    #
+    #             new_item.save()
+    #             # total_amount = sum(item['total'] for item in dronedetails)
+    #             response_data = {
+    #                 'message': 'Items are created successfully!',
+    #                 'item_id': new_item.id,
+    #                 'items_data': [
+    #                     {
+    #                         'item_name': item_data['item_name'],
+    #                         'price': item_data['price'],
+    #                         'serial_numbers': item_data['serial_numbers'],
+    #                         'hsn_number': item_data['hsn_number'],
+    #                         'item_total_price': round(quantity * item_data.get('price'), 2),
+    #                         'discount': item_data.get('discount'),
+    #                         'igst': item_data.get('igst'),
+    #                         'cgst': item_data.get('cgst'),
+    #                         'sgst': item_data.get('sgst'),
+    #
+    #                     } for item_data in items_data
+    #                 ],
+    #                 'Amount_to_pay': amount_to_pay,
+    #                 "sum_of_item_total_price": sum_of_item_total_price,
+    #                 "sum_of_igst_percentage": sum_of_igst_percentage,
+    #                 "sum_of_cgst_percentage": sum_of_cgst_percentage,
+    #                 "sum_of_sgst_percentage": sum_of_sgst_percentage,
+    #                 "sum_of_discount_amount": sum_of_discount_amount,
+    #                 "sum_of_price_after_discount": sum_of_price_after_discount
+    #
+    #                 # 'total_price': total_price,
+    #                 # 'total_price_with_additional_percentages': total_price_with_additional_percentages
+    #             }
+    #             return Response(response_data, status=status.HTTP_201_CREATED)
+
     def post(self, request):
         data = request.data
         items = data.get('items', [])
@@ -9365,6 +9573,10 @@ class AddCustomItemAPI(APIView):
         all_serial_numbers = set()
 
         is_super_admin = partner_instance.role_id.role_name == 'Super_admin'
+
+        owner_address = partner_instance.billing_state_code  # Assuming 'shipping_address' field exists
+        customer_instance = get_object_or_404(CustomUser, id=customer_id)
+        customer_address = customer_instance.shipping_state_code  # Assuming 'shipping_address' field exists
 
         with transaction.atomic():
             entered_serial_numbers = []
@@ -9402,6 +9614,17 @@ class AddCustomItemAPI(APIView):
 
                 all_serial_numbers.update(serial_numbers)
                 item_total_price = round((quantity) * (item_data.get('price')), 2)
+
+                if owner_address == customer_address:
+                    # Same address: Apply sgst + cgst
+                    sgst = sgst
+                    cgst = cgst
+                    igst = 0.0
+                else:
+                    # Different address: Apply only igst
+                    sgst = 0.0
+                    cgst = 0.0
+                    igst = igst
 
                 custom_item_details.append({
                     'item_name': item_name,
@@ -9543,6 +9766,191 @@ class AddCustomItemAPI(APIView):
                     # 'total_price_with_additional_percentages': total_price_with_additional_percentages
                 }
                 return Response(response_data, status=status.HTTP_201_CREATED)
+
+    def put(self, request, item_id):
+
+        def check_unique_serial_numbers(new_items):
+            serial_numbers_set = set()
+
+            for entry in new_items:
+                for serial_number in entry['serial_numbers']:
+                    if serial_number in serial_numbers_set:
+                        return False  # Duplicate serial number found
+                    else:
+                        serial_numbers_set.add(serial_number)
+
+            return True
+
+        item = get_object_or_404(CustomInvoice, id=item_id)
+        data = request.data
+        new_items = data.get('items', [])
+        # Fetch the shipping addresses of customer and owner
+        customer_address = item.customer_id.shipping_state_code if item.customer_id else None
+        owner_address = item.owner_id.billing_state_code if item.owner_id else None
+
+        all_serial = []
+
+        all_items_except_given_id = AddItem.objects.all().values('id', 'dronedetails')
+        for item_data in all_items_except_given_id:
+            for drone_detail in item_data['dronedetails']:
+                serial_numbers = drone_detail.get('serial_numbers', [])
+                all_serial.extend(serial_numbers)
+
+        all_items_except_given_id = CustomInvoice.objects.exclude(id=item_id).values('id', 'custom_item_details')
+        for item_data in all_items_except_given_id:
+            for drone_detail in item_data['custom_item_details']:
+                serial_numbers = drone_detail.get('serial_numbers', [])
+                all_serial.extend(serial_numbers)
+
+        if not check_unique_serial_numbers(new_items):
+            return Response({'message': f"Serial numbers must be unique with all drone entry"},
+                            status=status.HTTP_400_BAD_REQUEST)
+        else:
+            pass
+
+        with transaction.atomic():
+            duplicate_serial = []
+            for j in new_items:
+                for serial_number in j.get('serial_numbers', []):
+                    if serial_number in all_serial:
+                        duplicate_serial.append(serial_number)
+                if duplicate_serial:
+                    error_message = f"Serial numbers {', '.join(map(repr, duplicate_serial))} already exist in other items."
+                    return Response({'message': error_message}, status=status.HTTP_400_BAD_REQUEST)
+
+                if len(j['serial_numbers']) != j['quantity']:
+                    return Response(
+                        {
+                            'message': f"The number of serial numbers must be equal to the quantity"},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+            if customer_address and owner_address:
+                if customer_address == owner_address:
+                    j['igst'] = 0
+                else:
+                    j['cgst'] = 0
+                    j['sgst'] = 0
+
+            for new_item in new_items:
+                existing_item = next(
+                    (item for item in item.custom_item_details if item['item_name'] == new_item['item_name']), None
+                )
+                if existing_item:
+                    existing_item.update(new_item)
+
+                    # Calculate additional fields for existing_item
+                    existing_item['updated_datetime'] = timezone.now().isoformat()
+                    existing_item["item_total_price"] = round(self.calculate_item_total_price(existing_item["price"],
+                                                                                              existing_item[
+                                                                                                  "quantity"]), 2)
+                    existing_item["discount_amount"] = round((existing_item["discount"] / 100) * (
+                        existing_item["quantity"]) * (existing_item["price"]), 2)
+                    existing_item["price_after_discount"] = round((existing_item["quantity"]) * (
+                        existing_item["price"]) - (existing_item["discount"] / 100) * (
+                                                                      existing_item["quantity"]) * (
+                                                                      existing_item["price"]), 2)
+                    existing_item["igst_percentage"] = round((existing_item["igst"] / 100) * (
+                            (existing_item["quantity"]) * (existing_item["price"]) - (
+                            existing_item["discount"] / 100) * (
+                                existing_item["quantity"]) * (
+                                existing_item["price"])), 2)
+                    existing_item["cgst_percentage"] = round((existing_item["cgst"] / 100) * (
+                            (existing_item["quantity"]) * (existing_item["price"]) - (
+                            existing_item["discount"] / 100) * (
+                                existing_item["quantity"]) * (
+                                existing_item["price"])), 2)
+                    existing_item["sgst_percentage"] = round((existing_item["sgst"] / 100) * (
+                            (existing_item["quantity"]) * (existing_item["price"]) - (
+                            existing_item["discount"] / 100) * (
+                                existing_item["quantity"]) * (
+                                existing_item["price"])), 2)
+                    existing_item["total"] = round(((existing_item["quantity"]) * (existing_item["price"]) - (
+                            existing_item["discount"] / 100) * (
+                                                        existing_item["quantity"]) * (
+                                                        existing_item["price"])) + existing_item[
+                                                       "igst_percentage"] + existing_item["cgst_percentage"] + \
+                                                   existing_item["sgst_percentage"], 2)
+                else:
+                    if customer_address and owner_address:
+                        # Same address - Set IGST to 0, and calculate CGST and SGST
+                        igst = 0
+                    else:
+                        # Different address - Set CGST and SGST to 0, and calculate IGST
+                        cgst = 0
+                        sgst = 0
+                    new_item_data = {
+                        'item_name': new_item['item_name'],
+                        'units': new_item['units'],
+                        'quantity': new_item['quantity'],
+                        'price': new_item['price'],
+                        'serial_numbers': new_item['serial_numbers'],
+                        'hsn_number': new_item['hsn_number'],
+                        'discount': new_item.get('discount', 0),
+                        'igst': igst,
+                        'cgst': cgst,
+                        'sgst': sgst,
+                        'updated_datetime': timezone.now().isoformat(),
+                    }
+                    new_item_data["item_total_price"] = round(self.calculate_item_total_price(new_item_data["price"],
+                                                                                              new_item_data[
+                                                                                                  "quantity"]), 2)
+                    new_item_data["discount_amount"] = round((new_item_data["discount"] / 100) * (
+                        new_item_data["quantity"]) * (new_item_data["price"]), 2)
+                    new_item_data["price_after_discount"] = round((new_item_data["quantity"]) * (
+                        new_item_data["price"]) - (new_item_data["discount"] / 100) * (
+                                                                      new_item_data["quantity"]) * (
+                                                                      new_item_data["price"]), 2)
+                    new_item_data["igst_percentage"] = round((new_item_data["igst"] / 100) * (
+                            (new_item_data["quantity"]) * (new_item_data["price"]) - (
+                            new_item_data["discount"] / 100) * (
+                                new_item_data["quantity"]) * (
+                                new_item_data["price"])), 2)
+                    new_item_data["cgst_percentage"] = round((new_item_data["cgst"] / 100) * (
+                            (new_item_data["quantity"]) * (new_item_data["price"]) - (
+                            new_item_data["discount"] / 100) * (
+                                new_item_data["quantity"]) * (
+                                new_item_data["price"])), 2)
+                    new_item_data["sgst_percentage"] = round((new_item_data["sgst"] / 100) * (
+                            (new_item_data["quantity"]) * (new_item_data["price"]) - (
+                            new_item_data["discount"] / 100) * (
+                                new_item_data["quantity"]) * (
+                                new_item_data["price"])), 2)
+                    new_item_data["total"] = round(((new_item_data["quantity"]) * (new_item_data["price"]) - (
+                            new_item_data["discount"] / 100) * (
+                                                        new_item_data["quantity"]) * (
+                                                        new_item_data["price"])) + new_item_data[
+                                                       "igst_percentage"] + new_item_data["cgst_percentage"] + \
+                                                   new_item_data["sgst_percentage"], 2)
+
+                    item.custom_item_details.append(new_item_data)
+
+            item.amount_to_pay = round(sum(i.get("total", 0) for i in item.custom_item_details), 2)
+            item.sum_of_item_total_price = round(
+                sum(float(i.get("item_total_price", 0)) for i in item.custom_item_details), 2)
+            item.sum_of_igst_percentage = round(
+                sum(float(i.get("igst_percentage", 0)) for i in item.custom_item_details), 2)
+            item.sum_of_cgst_percentage = round(
+                sum(float(i.get("cgst_percentage", 0)) for i in item.custom_item_details), 2)
+            item.sum_of_sgst_percentage = round(
+                sum(float(i.get("sgst_percentage", 0)) for i in item.custom_item_details), 2)
+            item.sum_of_discount_amount = round(
+                sum(float(i.get("discount_amount", 0)) for i in item.custom_item_details), 2)
+            item.sum_of_price_after_discount = round(
+                sum(float(i.get("price_after_discount", 0)) for i in item.custom_item_details), 2)
+
+            updated_datetime = timezone.now().isoformat()
+            for i in item.custom_item_details:
+                i["updated_datetime"] = [updated_datetime]
+
+            item.save()
+
+            response_data = {
+                'message': 'Items are updated successfully!',
+                'item_id': item.id,
+                'items_data': new_items
+            }
+            return Response(response_data, status=status.HTTP_200_OK)
 
     def get(self, request, item_id=None):
         sum_of_gst_percentages = 0
@@ -9946,172 +10354,172 @@ class AddCustomItemAPI(APIView):
 
         return Response(response_data, status=status.HTTP_200_OK)
 
-    def put(self, request, item_id):
-
-        def check_unique_serial_numbers(new_items):
-            serial_numbers_set = set()
-
-            for entry in new_items:
-                for serial_number in entry['serial_numbers']:
-                    if serial_number in serial_numbers_set:
-                        return False  # Duplicate serial number found
-                    else:
-                        serial_numbers_set.add(serial_number)
-
-            return True
-
-        item = get_object_or_404(CustomInvoice, id=item_id)
-        data = request.data
-        new_items = data.get('items', [])
-
-        all_serial = []
-
-        all_items_except_given_id = AddItem.objects.all().values('id', 'dronedetails')
-        for item_data in all_items_except_given_id:
-            for drone_detail in item_data['dronedetails']:
-                serial_numbers = drone_detail.get('serial_numbers', [])
-                all_serial.extend(serial_numbers)
-
-        all_items_except_given_id = CustomInvoice.objects.exclude(id=item_id).values('id', 'custom_item_details')
-        for item_data in all_items_except_given_id:
-            for drone_detail in item_data['custom_item_details']:
-                serial_numbers = drone_detail.get('serial_numbers', [])
-                all_serial.extend(serial_numbers)
-
-        if not check_unique_serial_numbers(new_items):
-            return Response({'message': f"Serial numbers must be unique with all drone entry"},
-                            status=status.HTTP_400_BAD_REQUEST)
-        else:
-            pass
-
-        with transaction.atomic():
-            duplicate_serial = []
-            for j in new_items:
-                for serial_number in j.get('serial_numbers', []):
-                    if serial_number in all_serial:
-                        duplicate_serial.append(serial_number)
-                if duplicate_serial:
-                    error_message = f"Serial numbers {', '.join(map(repr, duplicate_serial))} already exist in other items."
-                    return Response({'message': error_message}, status=status.HTTP_400_BAD_REQUEST)
-
-                if len(j['serial_numbers']) != j['quantity']:
-                    return Response(
-                        {
-                            'message': f"The number of serial numbers must be equal to the quantity"},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-            for new_item in new_items:
-                existing_item = next(
-                    (item for item in item.custom_item_details if item['item_name'] == new_item['item_name']), None
-                )
-                if existing_item:
-                    existing_item.update(new_item)
-
-                    # Calculate additional fields for existing_item
-                    existing_item['updated_datetime'] = timezone.now().isoformat()
-                    existing_item["item_total_price"] = round(self.calculate_item_total_price(existing_item["price"],
-                                                                                              existing_item[
-                                                                                                  "quantity"]), 2)
-                    existing_item["discount_amount"] = round((existing_item["discount"] / 100) * (
-                        existing_item["quantity"]) * (existing_item["price"]), 2)
-                    existing_item["price_after_discount"] = round((existing_item["quantity"]) * (
-                        existing_item["price"]) - (existing_item["discount"] / 100) * (
-                                                                      existing_item["quantity"]) * (
-                                                                      existing_item["price"]), 2)
-                    existing_item["igst_percentage"] = round((existing_item["igst"] / 100) * (
-                            (existing_item["quantity"]) * (existing_item["price"]) - (
-                            existing_item["discount"] / 100) * (
-                                existing_item["quantity"]) * (
-                                existing_item["price"])), 2)
-                    existing_item["cgst_percentage"] = round((existing_item["cgst"] / 100) * (
-                            (existing_item["quantity"]) * (existing_item["price"]) - (
-                            existing_item["discount"] / 100) * (
-                                existing_item["quantity"]) * (
-                                existing_item["price"])), 2)
-                    existing_item["sgst_percentage"] = round((existing_item["sgst"] / 100) * (
-                            (existing_item["quantity"]) * (existing_item["price"]) - (
-                            existing_item["discount"] / 100) * (
-                                existing_item["quantity"]) * (
-                                existing_item["price"])), 2)
-                    existing_item["total"] = round(((existing_item["quantity"]) * (existing_item["price"]) - (
-                            existing_item["discount"] / 100) * (
-                                                        existing_item["quantity"]) * (
-                                                        existing_item["price"])) + existing_item[
-                                                       "igst_percentage"] + existing_item["cgst_percentage"] + \
-                                                   existing_item["sgst_percentage"], 2)
-                else:
-                    new_item_data = {
-                        'item_name': new_item['item_name'],
-                        'units': new_item['units'],
-                        'quantity': new_item['quantity'],
-                        'price': new_item['price'],
-                        'serial_numbers': new_item['serial_numbers'],
-                        'hsn_number': new_item['hsn_number'],
-                        'discount': new_item.get('discount', 0),
-                        'igst': new_item.get('igst', 0),
-                        'cgst': new_item.get('cgst', 0),
-                        'sgst': new_item.get('sgst', 0),
-                        'updated_datetime': timezone.now().isoformat(),
-                    }
-                    new_item_data["item_total_price"] = round(self.calculate_item_total_price(new_item_data["price"],
-                                                                                              new_item_data[
-                                                                                                  "quantity"]), 2)
-                    new_item_data["discount_amount"] = round((new_item_data["discount"] / 100) * (
-                        new_item_data["quantity"]) * (new_item_data["price"]), 2)
-                    new_item_data["price_after_discount"] = round((new_item_data["quantity"]) * (
-                        new_item_data["price"]) - (new_item_data["discount"] / 100) * (
-                                                                      new_item_data["quantity"]) * (
-                                                                      new_item_data["price"]), 2)
-                    new_item_data["igst_percentage"] = round((new_item_data["igst"] / 100) * (
-                            (new_item_data["quantity"]) * (new_item_data["price"]) - (
-                            new_item_data["discount"] / 100) * (
-                                new_item_data["quantity"]) * (
-                                new_item_data["price"])), 2)
-                    new_item_data["cgst_percentage"] = round((new_item_data["cgst"] / 100) * (
-                            (new_item_data["quantity"]) * (new_item_data["price"]) - (
-                            new_item_data["discount"] / 100) * (
-                                new_item_data["quantity"]) * (
-                                new_item_data["price"])), 2)
-                    new_item_data["sgst_percentage"] = round((new_item_data["sgst"] / 100) * (
-                            (new_item_data["quantity"]) * (new_item_data["price"]) - (
-                            new_item_data["discount"] / 100) * (
-                                new_item_data["quantity"]) * (
-                                new_item_data["price"])), 2)
-                    new_item_data["total"] = round(((new_item_data["quantity"]) * (new_item_data["price"]) - (
-                            new_item_data["discount"] / 100) * (
-                                                        new_item_data["quantity"]) * (
-                                                        new_item_data["price"])) + new_item_data[
-                                                       "igst_percentage"] + new_item_data["cgst_percentage"] + \
-                                                   new_item_data["sgst_percentage"], 2)
-
-                    item.custom_item_details.append(new_item_data)
-
-            item.amount_to_pay = round(sum(i.get("total", 0) for i in item.custom_item_details), 2)
-            item.sum_of_item_total_price = round(
-                sum(float(i.get("item_total_price", 0)) for i in item.custom_item_details), 2)
-            item.sum_of_igst_percentage = round(
-                sum(float(i.get("igst_percentage", 0)) for i in item.custom_item_details), 2)
-            item.sum_of_cgst_percentage = round(
-                sum(float(i.get("cgst_percentage", 0)) for i in item.custom_item_details), 2)
-            item.sum_of_sgst_percentage = round(
-                sum(float(i.get("sgst_percentage", 0)) for i in item.custom_item_details), 2)
-            item.sum_of_discount_amount = round(
-                sum(float(i.get("discount_amount", 0)) for i in item.custom_item_details), 2)
-            item.sum_of_price_after_discount = round(
-                sum(float(i.get("price_after_discount", 0)) for i in item.custom_item_details), 2)
-
-            updated_datetime = timezone.now().isoformat()
-            for i in item.custom_item_details:
-                i["updated_datetime"] = [updated_datetime]
-
-            item.save()
-
-            response_data = {
-                'message': 'Items are updated successfully!',
-                'item_id': item.id,
-                'items_data': new_items
-            }
-            return Response(response_data, status=status.HTTP_200_OK)
+    # def put(self, request, item_id):
+    #
+    #     def check_unique_serial_numbers(new_items):
+    #         serial_numbers_set = set()
+    #
+    #         for entry in new_items:
+    #             for serial_number in entry['serial_numbers']:
+    #                 if serial_number in serial_numbers_set:
+    #                     return False  # Duplicate serial number found
+    #                 else:
+    #                     serial_numbers_set.add(serial_number)
+    #
+    #         return True
+    #
+    #     item = get_object_or_404(CustomInvoice, id=item_id)
+    #     data = request.data
+    #     new_items = data.get('items', [])
+    #
+    #     all_serial = []
+    #
+    #     all_items_except_given_id = AddItem.objects.all().values('id', 'dronedetails')
+    #     for item_data in all_items_except_given_id:
+    #         for drone_detail in item_data['dronedetails']:
+    #             serial_numbers = drone_detail.get('serial_numbers', [])
+    #             all_serial.extend(serial_numbers)
+    #
+    #     all_items_except_given_id = CustomInvoice.objects.exclude(id=item_id).values('id', 'custom_item_details')
+    #     for item_data in all_items_except_given_id:
+    #         for drone_detail in item_data['custom_item_details']:
+    #             serial_numbers = drone_detail.get('serial_numbers', [])
+    #             all_serial.extend(serial_numbers)
+    #
+    #     if not check_unique_serial_numbers(new_items):
+    #         return Response({'message': f"Serial numbers must be unique with all drone entry"},
+    #                         status=status.HTTP_400_BAD_REQUEST)
+    #     else:
+    #         pass
+    #
+    #     with transaction.atomic():
+    #         duplicate_serial = []
+    #         for j in new_items:
+    #             for serial_number in j.get('serial_numbers', []):
+    #                 if serial_number in all_serial:
+    #                     duplicate_serial.append(serial_number)
+    #             if duplicate_serial:
+    #                 error_message = f"Serial numbers {', '.join(map(repr, duplicate_serial))} already exist in other items."
+    #                 return Response({'message': error_message}, status=status.HTTP_400_BAD_REQUEST)
+    #
+    #             if len(j['serial_numbers']) != j['quantity']:
+    #                 return Response(
+    #                     {
+    #                         'message': f"The number of serial numbers must be equal to the quantity"},
+    #                     status=status.HTTP_400_BAD_REQUEST
+    #                 )
+    #         for new_item in new_items:
+    #             existing_item = next(
+    #                 (item for item in item.custom_item_details if item['item_name'] == new_item['item_name']), None
+    #             )
+    #             if existing_item:
+    #                 existing_item.update(new_item)
+    #
+    #                 # Calculate additional fields for existing_item
+    #                 existing_item['updated_datetime'] = timezone.now().isoformat()
+    #                 existing_item["item_total_price"] = round(self.calculate_item_total_price(existing_item["price"],
+    #                                                                                           existing_item[
+    #                                                                                               "quantity"]), 2)
+    #                 existing_item["discount_amount"] = round((existing_item["discount"] / 100) * (
+    #                     existing_item["quantity"]) * (existing_item["price"]), 2)
+    #                 existing_item["price_after_discount"] = round((existing_item["quantity"]) * (
+    #                     existing_item["price"]) - (existing_item["discount"] / 100) * (
+    #                                                                   existing_item["quantity"]) * (
+    #                                                                   existing_item["price"]), 2)
+    #                 existing_item["igst_percentage"] = round((existing_item["igst"] / 100) * (
+    #                         (existing_item["quantity"]) * (existing_item["price"]) - (
+    #                         existing_item["discount"] / 100) * (
+    #                             existing_item["quantity"]) * (
+    #                             existing_item["price"])), 2)
+    #                 existing_item["cgst_percentage"] = round((existing_item["cgst"] / 100) * (
+    #                         (existing_item["quantity"]) * (existing_item["price"]) - (
+    #                         existing_item["discount"] / 100) * (
+    #                             existing_item["quantity"]) * (
+    #                             existing_item["price"])), 2)
+    #                 existing_item["sgst_percentage"] = round((existing_item["sgst"] / 100) * (
+    #                         (existing_item["quantity"]) * (existing_item["price"]) - (
+    #                         existing_item["discount"] / 100) * (
+    #                             existing_item["quantity"]) * (
+    #                             existing_item["price"])), 2)
+    #                 existing_item["total"] = round(((existing_item["quantity"]) * (existing_item["price"]) - (
+    #                         existing_item["discount"] / 100) * (
+    #                                                     existing_item["quantity"]) * (
+    #                                                     existing_item["price"])) + existing_item[
+    #                                                    "igst_percentage"] + existing_item["cgst_percentage"] + \
+    #                                                existing_item["sgst_percentage"], 2)
+    #             else:
+    #                 new_item_data = {
+    #                     'item_name': new_item['item_name'],
+    #                     'units': new_item['units'],
+    #                     'quantity': new_item['quantity'],
+    #                     'price': new_item['price'],
+    #                     'serial_numbers': new_item['serial_numbers'],
+    #                     'hsn_number': new_item['hsn_number'],
+    #                     'discount': new_item.get('discount', 0),
+    #                     'igst': new_item.get('igst', 0),
+    #                     'cgst': new_item.get('cgst', 0),
+    #                     'sgst': new_item.get('sgst', 0),
+    #                     'updated_datetime': timezone.now().isoformat(),
+    #                 }
+    #                 new_item_data["item_total_price"] = round(self.calculate_item_total_price(new_item_data["price"],
+    #                                                                                           new_item_data[
+    #                                                                                               "quantity"]), 2)
+    #                 new_item_data["discount_amount"] = round((new_item_data["discount"] / 100) * (
+    #                     new_item_data["quantity"]) * (new_item_data["price"]), 2)
+    #                 new_item_data["price_after_discount"] = round((new_item_data["quantity"]) * (
+    #                     new_item_data["price"]) - (new_item_data["discount"] / 100) * (
+    #                                                                   new_item_data["quantity"]) * (
+    #                                                                   new_item_data["price"]), 2)
+    #                 new_item_data["igst_percentage"] = round((new_item_data["igst"] / 100) * (
+    #                         (new_item_data["quantity"]) * (new_item_data["price"]) - (
+    #                         new_item_data["discount"] / 100) * (
+    #                             new_item_data["quantity"]) * (
+    #                             new_item_data["price"])), 2)
+    #                 new_item_data["cgst_percentage"] = round((new_item_data["cgst"] / 100) * (
+    #                         (new_item_data["quantity"]) * (new_item_data["price"]) - (
+    #                         new_item_data["discount"] / 100) * (
+    #                             new_item_data["quantity"]) * (
+    #                             new_item_data["price"])), 2)
+    #                 new_item_data["sgst_percentage"] = round((new_item_data["sgst"] / 100) * (
+    #                         (new_item_data["quantity"]) * (new_item_data["price"]) - (
+    #                         new_item_data["discount"] / 100) * (
+    #                             new_item_data["quantity"]) * (
+    #                             new_item_data["price"])), 2)
+    #                 new_item_data["total"] = round(((new_item_data["quantity"]) * (new_item_data["price"]) - (
+    #                         new_item_data["discount"] / 100) * (
+    #                                                     new_item_data["quantity"]) * (
+    #                                                     new_item_data["price"])) + new_item_data[
+    #                                                    "igst_percentage"] + new_item_data["cgst_percentage"] + \
+    #                                                new_item_data["sgst_percentage"], 2)
+    #
+    #                 item.custom_item_details.append(new_item_data)
+    #
+    #         item.amount_to_pay = round(sum(i.get("total", 0) for i in item.custom_item_details), 2)
+    #         item.sum_of_item_total_price = round(
+    #             sum(float(i.get("item_total_price", 0)) for i in item.custom_item_details), 2)
+    #         item.sum_of_igst_percentage = round(
+    #             sum(float(i.get("igst_percentage", 0)) for i in item.custom_item_details), 2)
+    #         item.sum_of_cgst_percentage = round(
+    #             sum(float(i.get("cgst_percentage", 0)) for i in item.custom_item_details), 2)
+    #         item.sum_of_sgst_percentage = round(
+    #             sum(float(i.get("sgst_percentage", 0)) for i in item.custom_item_details), 2)
+    #         item.sum_of_discount_amount = round(
+    #             sum(float(i.get("discount_amount", 0)) for i in item.custom_item_details), 2)
+    #         item.sum_of_price_after_discount = round(
+    #             sum(float(i.get("price_after_discount", 0)) for i in item.custom_item_details), 2)
+    #
+    #         updated_datetime = timezone.now().isoformat()
+    #         for i in item.custom_item_details:
+    #             i["updated_datetime"] = [updated_datetime]
+    #
+    #         item.save()
+    #
+    #         response_data = {
+    #             'message': 'Items are updated successfully!',
+    #             'item_id': item.id,
+    #             'items_data': new_items
+    #         }
+    #         return Response(response_data, status=status.HTTP_200_OK)
 
     def delete(self, request, item_id):
         try:
