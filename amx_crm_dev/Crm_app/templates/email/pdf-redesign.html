@@ -193,13 +193,28 @@ p.long-text-readability{
                                         {% for drone in dronedetails %}
                                         <tr>
                                                 <td>{{drone.drone_id}} </td>
-                                                <td>
-                                                    {% if drone.item_name %}
-                                                    {{ drone.item_name|default:'-'  }}
-                                                {% elif invoice_data.drone_name %}
-                                                    {{ drone.drone_name |default:'-' }}
-                                                {% endif %}
-                                                </td>
+                                                                                <td>
+                                        {% if drone.item_name %}
+                                            {{ drone.item_name|default:'-' }}
+                                            {% if drone.drone_category %}
+                                                - {{ drone.drone_category|default:'-' }}
+                                            {% endif %}
+                                        {% elif invoice_data.drone_name %}
+                                            {{ drone.drone_name|default:'-' }}
+                                            {% if drone.drone_category %}
+                                                - {{ drone.drone_category|default:'-' }}
+                                            {% endif %}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+<!--                                                <td>-->
+<!--                                                    {% if drone.item_name %}-->
+<!--                                                    {{ drone.item_name|default:'-'  }}-->
+<!--                                                {% elif invoice_data.drone_name %}-->
+<!--                                                    {{ drone.drone_name |default:'-' }}-->
+<!--                                                {% endif %}-->
+<!--                                                </td>-->
                                                 <td>{{drone.hsn_number|default:'-'  }}</td>
                                     <td>{{drone.quantity|default:'-'  }}</td>
                                     <td>&#x20B9;{{drone.price|default:'-'  }}</td>
