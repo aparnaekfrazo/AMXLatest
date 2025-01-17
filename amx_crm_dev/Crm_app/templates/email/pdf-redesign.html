@@ -197,12 +197,12 @@ p.long-text-readability{
                                         {% if drone.item_name %}
                                             {{ drone.item_name|default:'-' }}
                                             {% if drone.drone_category %}
-                                                - {{ drone.drone_category|default:'-' }}
+                                                 {{ drone.drone_category|default:'-' }}
                                             {% endif %}
                                         {% elif invoice_data.drone_name %}
                                             {{ drone.drone_name|default:'-' }}
                                             {% if drone.drone_category %}
-                                                - {{ drone.drone_category|default:'-' }}
+                                                 {{ drone.drone_category|default:'-' }}
                                             {% endif %}
                                         {% else %}
                                             -
