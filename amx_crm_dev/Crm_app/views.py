@@ -631,7 +631,7 @@ class LoginAPIView(APIView):
                 except requests.exceptions.RequestException as e:
                     flydro_token = {"error": str(e)}
 
-                fibergrid_url = "https://fibergrid.example.com/api/login/"  # Replace with actual URL
+                fibergrid_url = "https://fibergrid.example.com/dronecount/login/"  # Replace with actual URL
                 fibergrid_payload = {
                     "username": username,
                     "password": password,
