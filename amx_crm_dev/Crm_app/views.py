@@ -9761,8 +9761,13 @@ class GstRateValuesAPI(APIView):
                 return Response({'message': 'Gstrate not found for the specified id'}, status=404)
         else:
             # Convert the queryset to a list of dictionaries
-            invoice_types = list(GstRateValues.objects.values())
-            return Response({'Result': invoice_types})
+            # invoice_types = list(GstRateValues.objects.values())
+            # return Response({'Result': invoice_types})
+            # Change 1: Retrieve all objects and sort by gstrates in ascending order
+            invoice_types = GstRateValues.objects.order_by('gstrates').values('id','gstrates', 'created_date_time',
+                                                                              'updated_date_time')
+            # Change 2: Return sorted and filtered response
+            return Response({'Result': list(invoice_types)})
 
     def post(self, request):
         data = request.data
