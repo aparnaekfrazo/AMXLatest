@@ -609,6 +609,7 @@ class LoginAPIView(APIView):
             authorization = "Bearer " + str(auth_token)
 
             flydro_token = None
+            fibergrid_token = None
             if role == "Super_admin":
                 # karthik's code
                 # Sending a login request to Flydro to retrieve a flydro_token for accessing Flydro APIs
@@ -630,6 +631,24 @@ class LoginAPIView(APIView):
                 except requests.exceptions.RequestException as e:
                     flydro_token = {"error": str(e)}
 
+                fibergrid_url = "https://fibergrid.example.com/api/login/"  # Replace with actual URL
+                fibergrid_payload = {
+                    "username": username,
+                    "password": password,
+                }
+                fibergrid_headers = {
+                    "Content-Type": "application/json",
+                }
+
+                try:
+                    response = requests.post(fibergrid_url, json=fibergrid_payload, headers=fibergrid_headers)
+                    if response.status_code == 200:
+                        fibergrid_token = response.json().get('access_token', None)
+                    else:
+                        fibergrid_token = {"error": "Failed to authenticate with FiberGrid"}
+                except requests.exceptions.RequestException as e:
+                    fibergrid_token = {"error": str(e)}
+
                 # Aparna's code
                 message = 'Super_admin login successful'
             elif role == "Partner":
@@ -649,7 +668,8 @@ class LoginAPIView(APIView):
                         "mobile_number": mobile_number,
                         "firstname": firstname,
                         "lastname": lastname,
-                        "flydro_token": flydro_token
+                        "flydro_token": flydro_token,
+                        'fibergrid_token': fibergrid_token
                     },
                     'message': message
                 }
