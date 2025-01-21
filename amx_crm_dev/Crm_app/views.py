@@ -626,6 +626,8 @@ class LoginAPIView(APIView):
                     flydro_token = requests.post(flydro_url, json=payload, headers=headers)
                     if flydro_token.status_code == 200:
                         flydro_token = flydro_token.json()
+                        if 'access_token' in flydro_token:
+                            flydro_token = f"Bearer {flydro_token['access_token']}"
                     else:
                         flydro_token = {"error": "Failed to authenticate with Flydro"}
                 except requests.exceptions.RequestException as e:
