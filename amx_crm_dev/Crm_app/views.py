@@ -25675,3 +25675,42 @@ class GenerateCompanydetailsGST(APIView):
 # def Mytem(request):
 #
 #     return render(request, 'email/pdf-redesign.html')
+@method_decorator([authorization_required], name='dispatch')
+class UpdateInvoiceView(APIView):
+    def put(self, request, invoice_number):
+        try:
+            # First, check if the invoice_number exists in AddItem
+            invoice = AddItem.objects.filter(invoice_number=invoice_number).first()
+
+            # If not found, check in CustomInvoice
+            if not invoice:
+                invoice = CustomInvoice.objects.filter(invoice_number=invoice_number).first()
+
+            # If the invoice is not found in either table, raise an error
+            if not invoice:
+                return Response({"message": "Invoice not found in both AddItem and CustomInvoice"}, status=status.HTTP_404_NOT_FOUND)
+
+            # Update fields based on the request payload
+            invoice.customer_first_name = request.data.get("first_name", invoice.customer_first_name)
+            invoice.customer_last_name = request.data.get("last_name", invoice.customer_last_name)
+            invoice.customer_email = request.data.get("email", invoice.customer_email)
+            invoice.customer_mobile_number = request.data.get("phone", invoice.customer_mobile_number)
+            invoice.customer_pan_number = request.data.get("pan", invoice.customer_pan_number)
+            invoice.customer_company_name = request.data.get("company_name", invoice.customer_company_name)
+            invoice.customer_shipping_address = request.data.get("shipping_address", invoice.customer_shipping_address)
+            invoice.customer_billing_address = request.data.get("billing_address", invoice.customer_billing_address)
+            invoice.customer_company_cin_num = request.data.get("cin", invoice.customer_company_cin_num)
+            invoice.customer_gst_number = request.data.get("gst", invoice.customer_gst_number)
+            invoice.customer_gender = request.data.get("gender", invoice.customer_gender)
+            invoice.customer_date_of_birth = request.data.get("date_of_birth", invoice.customer_date_of_birth)
+            invoice.customer_shipping_pincode = request.data.get("shipping_address", invoice.customer_shipping_pincode)
+            invoice.customer_billing_pincode = request.data.get("shipping_pincode", invoice.customer_billing_pincode)
+
+
+            # Save the updated invoice
+            invoice.save()
+
+            return Response({"message": "Customer updated successfully"}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
