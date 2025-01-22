@@ -166,9 +166,10 @@ urlpatterns = [
     # Other URLs
     path('s/', SuperAdminOrderSummary.as_view(), name='superadmin-order-summary'),
     path('payee-student/<int:slot_id>/', DeletePayeeStudent.as_view(), name='delete_payee_student'),
-path('auth_tokenn/', AuthenticateAPIView.as_view(), name='authenticate'),
+    path('auth_tokenn/', AuthenticateAPIView.as_view(), name='authenticate'),
     path('company_detailss/<str:params>/', GenerateCompanydetailsGST.as_view(),
          name='Collecting companydetails after entering the gstn'),
+    path('inv-update/<str:invoice_number>/', UpdateInvoiceView.as_view(), name='update_invoice'),
 
 ]
 
