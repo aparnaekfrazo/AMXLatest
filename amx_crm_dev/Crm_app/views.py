@@ -13320,6 +13320,19 @@ class MyAPIView(APIView):
 
                 else:
                     print("Owner Company Logo not available")
+                customer_type_name = add_item.customer_type_id.name if add_item.customer_type_id else None
+
+                print(customer_type_name,"llllllllllll")
+                if customer_type_name == "Individual":
+                    customer_gst_number = None
+                    customer_pan_number = add_item.customer_pan_number
+                    print("eeeeeeeeeee")
+                elif customer_type_name == "Organization":
+                    customer_gst_number = add_item.customer_gst_number
+                    customer_pan_number = None
+                else:
+                    customer_gst_number = add_item.customer_gst_number
+                    customer_pan_number = add_item.customer_pan_number
 
                 invoice_data.update({
                     'invoice_id': add_item.id,
@@ -13398,7 +13411,7 @@ class MyAPIView(APIView):
                     'customer_mobile_number': add_item.customer_mobile_number,
                     'customer_address': add_item.customer_address,
                     'customer_pin_code': add_item.customer_pin_code,
-                    'customer_pan_number': add_item.customer_pan_number,
+                    'customer_pan_number': customer_pan_number,
                     'customer_profile_pic': add_item.customer_profile_pic.url if add_item.customer_profile_pic else None,
                     'customer_company_name': add_item.customer_company_name,
                     'customer_company_email': add_item.customer_company_email,
@@ -13416,7 +13429,7 @@ class MyAPIView(APIView):
                     'customer_location': add_item.customer_location,
                     # 'customer_reason': add_item.customer_id.reason,
                     # 'customer_partner_initial_update': add_item.customer_id.partner_initial_update,
-                    'customer_gst_number': add_item.customer_gst_number,
+                    'customer_gst_number': customer_gst_number,
                     # 'customer_inventory_count': add_item.customer_id.inventory_count,
                     'customer_category': add_item.customer_id.category.id if add_item.customer_id.category else None,
                     'customer_date_of_birth': add_item.customer_date_of_birth,
