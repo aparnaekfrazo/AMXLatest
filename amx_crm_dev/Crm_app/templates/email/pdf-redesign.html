@@ -177,7 +177,11 @@ p.long-text-readability{
                                     {% if invoice_data.customer_gst_number and invoice_data.customer_gst_number != 'N/A' %}
     <h3><b>GSTIN: </b>{{ invoice_data.customer_gst_number }}</h3>
 {% endif %}
-                                    <h3><b>Pan: </b>{{invoice_data.customer_pan_number|default:'N/A' }}</h3>
+<!--                                    <h3><b>Pan: </b>{{invoice_data.customer_pan_number|default:'N/A' }}</h3>-->
+                                    {% if invoice_data.customer_pan_number and invoice_data.customer_pan_number != 'N/A' %}
+    <h3><b>PAN: </b>{{ invoice_data.customer_pan_number }}</h3>
+{% endif %}
+
 
                          <h3><b>Contact Details:</b>Email:{{invoice_data.customer_email|default:'N/A' }} | Mob:{{ invoice_data.customer_mobile_number|default:'N/A'  }} </h3>
                          <h3><b>Place Of Delivery: </b> {{invoice_data.customer_shipping_state|default:'N/A' }}</h3>
