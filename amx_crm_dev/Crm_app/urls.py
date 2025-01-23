@@ -169,7 +169,7 @@ urlpatterns = [
     path('auth_tokenn/', AuthenticateAPIView.as_view(), name='authenticate'),
     path('company_detailss/<str:params>/', GenerateCompanydetailsGST.as_view(),
          name='Collecting companydetails after entering the gstn'),
-    path('inv-update/<str:invoice_number>/', UpdateInvoiceView.as_view(), name='update_invoice'),
+    path('inv-update/<int:itemid>/', UpdateInvoiceView.as_view(), name='update_invoice'),
 
 ]
 
