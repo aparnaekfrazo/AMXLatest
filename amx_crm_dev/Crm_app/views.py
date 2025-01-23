@@ -11981,6 +11981,8 @@ class GetByInvoiceNumber(View):
             # "created_by_id": item.created_by_id,
             "company_logo": f"/media/{item.owner_company_logo}" if item.owner_company_logo else None,
             # "invoice_id": owner.invoice_id.id if owner.invoice_id else None,
+            "invoice": item.invoice_type_id.id if item.invoice_type_id.id else None,
+
             'category': item.customer_type_id.id if item.customer_type_id.id else None,
             # "state_name": item.state_name,
             # "state_code": item.state_code,
@@ -12034,6 +12036,7 @@ class GetByInvoiceNumber(View):
             # "category_id": item.customer_id.category.id if item.customer_id and item.customer_id.category else None,
             "date_of_birth": item.customer_date_of_birth,
             "gender": item.customer_gender,
+            "invoice": item.invoice_type_id.id if item.invoice_type_id.id else None,
             # "created_by_id": item.customer_id.created_by_id if item.customer_id else None,
             # "invoice_id": item.customer_id.invoice_id.id if item.customer_id and item.customer_id.invoice_id else None,
             # "state_name": item.customer_id.state_name if item.customer_id else None,
