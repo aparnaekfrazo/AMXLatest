@@ -25767,7 +25767,7 @@ class UpdateInvoiceView(APIView):
 
                 # Save the updated invoice in AddItem
                 invoice.save()
-                return Response({"message": "Customer updated succesfully"}, status=status.HTTP_200_OK)
+                return Response({"message": "Invoice customer details updated successfully."}, status=status.HTTP_200_OK)
 
             elif invoice_type_name == "Custom":
                 # If invoice type is "custom", check in CustomInvoice
@@ -25796,7 +25796,7 @@ class UpdateInvoiceView(APIView):
 
                 # Save the updated invoice in CustomInvoice
                 invoice.save()
-                return Response({"message": "Customer updated succesfully"}, status=status.HTTP_200_OK)
+                return Response({"message": "Invoice customer details updated successfully."}, status=status.HTTP_200_OK)
 
             else:
                 return Response({"message": "Invalid invoice type"}, status=status.HTTP_400_BAD_REQUEST)
