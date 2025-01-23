@@ -196,7 +196,9 @@ p.long-text-readability{
                                         <thead class="text-white">
                                         <tr>
                                            <th scope="col">Sl no.</th>
-                                            <th scope="col">Product & Category</th>
+<!--                                            <th scope="col">Product & Category</th>-->
+                                            <th scope="col">Item name</th>
+
                                             <th scope="col">HSN Number</th>
                                             <th scope="col">Qty</th>
                                             <th scope="col">Unit Price</th>
@@ -213,14 +215,14 @@ p.long-text-readability{
                                                                                 <td>
                                         {% if drone.item_name %}
                                             {{ drone.item_name|default:'-' }}
-                                            {% if drone.drone_category %}
-                                                 {{ drone.drone_category|default:'-' }}
-                                            {% endif %}
+<!--                                            {% if drone.drone_category %}-->
+<!--                                                 {{ drone.drone_category|default:'-' }}-->
+<!--                                            {% endif %}-->
                                         {% elif invoice_data.drone_name %}
                                             {{ drone.drone_name|default:'-' }}
-                                            {% if drone.drone_category %}
-                                                 {{ drone.drone_category|default:'-' }}
-                                            {% endif %}
+<!--                                            {% if drone.drone_category %}-->
+<!--                                                 {{ drone.drone_category|default:'-' }}-->
+<!--                                            {% endif %}-->
                                         {% else %}
                                             -
                                         {% endif %}
