@@ -8816,7 +8816,7 @@ class MyApiView(APIView):
                         ).first()
 
                         custom_shipping_details = CustomInvoice.objects.filter(invoice_number=invoice_number).values(
-                            'customer_gst_number', 'customer_company_name', 'customer_address', 'location',
+                            'customer_gst_number', 'customer_company_name', 'customer_address', 'customer_location',
                             'customer_billing_pincode',
                             'customer_shipping_address', 'customer_shipping_state_city', 'customer_shipping_state_code',
                             'customer_shipping_pincode'
