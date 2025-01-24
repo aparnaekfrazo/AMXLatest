@@ -8143,7 +8143,7 @@ class MyApiView(APIView):
                         # ).first()
                         buyer_details =AddItem.objects.filter(invoice_number=invoice_number).values(
                             'customer_gst_number', 'customer_company_name', 'customer_address', 'customer_location',
-                            'customer_billing_pincode', 'customer_state_code', 'customer_billing_address',
+                            'customer_billing_pincode', 'customer_billing_address',
                             'customer_billing_state_city', 'customer_billing_state_code', 'customer_shipping_address', 'customer_shipping_state_city',
                             'customer_shipping_state_code', 'customer_shipping_pincode'
                         ).first()
@@ -8153,7 +8153,7 @@ class MyApiView(APIView):
                         #     'shipping_address', 'shipping_state_city', 'shipping_state_code', 'shipping_pincode'
                         # ).first()
                         shipping_details = AddItem.objects.filter(invoice_number=invoice_number).values(
-                            'customer_gst_number', 'customer_company_name', 'customer_address', 'customer_location', 'customer_billing_pincode', 'customer_state_code',
+                            'customer_gst_number', 'customer_company_name', 'customer_address', 'customer_location', 'customer_billing_pincode',
                             'customer_shipping_address', 'customer_shipping_state_city', 'customer_shipping_state_code', 'customer_shipping_pincode'
                         ).first()
 
@@ -8364,13 +8364,13 @@ class MyApiView(APIView):
                         ).first()
 
                         custom_buyer_details = CustomInvoice.objects.filter(invoice_number=invoice_number).values(
-                            'customer_gst_number', 'customer_company_name', 'customer_address', 'customer_location', 'customer_billing_pincode', 'customer_state_code',
+                            'customer_gst_number', 'customer_company_name', 'customer_address', 'customer_location', 'customer_billing_pincode',
                             'customer_billing_address', 'customer_billing_state_city', 'customer_billing_state_code', 'customer_shipping_address',
                             'customer_shipping_state_city', 'customer_shipping_state_code', 'customer_shipping_pincode'
                         ).first()
 
                         custom_shipping_details = CustomInvoice.objects.filter(invoice_number=invoice_number).values(
-                            'customer_gst_number', 'customer_company_name', 'customer_address', 'location', 'customer_billing_pincode', 'customer_state_code',
+                            'customer_gst_number', 'customer_company_name', 'customer_address', 'customer_location', 'customer_billing_pincode',
                             'customer_shipping_address', 'customer_shipping_state_city', 'customer_shipping_state_code', 'customer_shipping_pincode'
                         ).first()
 
@@ -8630,7 +8630,7 @@ class MyApiView(APIView):
                         # ).first()
                         buyer_details = AddItem.objects.filter(invoice_number=invoice_number).values(
                             'customer_gst_number', 'customer_company_name', 'customer_address', 'customer_location',
-                            'customer_billing_pincode', 'customer_state_code', 'customer_billing_address',
+                            'customer_billing_pincode', 'customer_billing_address',
                             'customer_billing_state_city', 'customer_billing_state_code', 'customer_shipping_address',
                             'customer_shipping_state_city',
                             'customer_shipping_state_code', 'customer_shipping_pincode'
@@ -8642,7 +8642,7 @@ class MyApiView(APIView):
                         # ).first()
                         shipping_details = AddItem.objects.filter(invoice_number=invoice_number).values(
                             'customer_gst_number', 'customer_company_name', 'customer_address', 'customer_location',
-                            'customer_billing_pincode', 'customer_state_code',
+                            'customer_billing_pincode',
                             'customer_shipping_address', 'customer_shipping_state_city', 'customer_shipping_state_code',
                             'customer_shipping_pincode'
                         ).first()
@@ -8809,7 +8809,7 @@ class MyApiView(APIView):
 
                         custom_buyer_details = CustomInvoice.objects.filter(invoice_number=invoice_number).values(
                             'customer_gst_number', 'customer_company_name', 'customer_address', 'customer_location',
-                            'customer_billing_pincode', 'customer_state_code',
+                            'customer_billing_pincode',
                             'customer_billing_address', 'customer_billing_state_city', 'customer_billing_state_code',
                             'customer_shipping_address',
                             'customer_shipping_state_city', 'customer_shipping_state_code', 'customer_shipping_pincode'
@@ -8817,7 +8817,7 @@ class MyApiView(APIView):
 
                         custom_shipping_details = CustomInvoice.objects.filter(invoice_number=invoice_number).values(
                             'customer_gst_number', 'customer_company_name', 'customer_address', 'location',
-                            'customer_billing_pincode', 'customer_state_code',
+                            'customer_billing_pincode',
                             'customer_shipping_address', 'customer_shipping_state_city', 'customer_shipping_state_code',
                             'customer_shipping_pincode'
                         ).first()
