@@ -14511,6 +14511,20 @@ class MyAPIView(APIView):
                     igst = custom_item.get('igst', 0)
                     item_total_price = custom_item.get('item_total_price', 0)
 
+                    customer_type_name = custom_invoice.customer_type_id.name if custom_invoice.customer_type_id else None
+
+                    print(customer_type_name, "llllllllllll")
+                    if customer_type_name == "Individual":
+                        customer_gst_number = None
+                        customer_pan_number = custom_invoice.customer_pan_number
+                        print("eeeeeeeeeee")
+                    elif customer_type_name == "Organization":
+                        customer_gst_number = custom_invoice.customer_gst_number
+                        customer_pan_number = None
+                    else:
+                        customer_gst_number = custom_invoice.customer_gst_number
+                        customer_pan_number = custom_invoice.customer_pan_number
+
                     invoice_data.update({
                         'invoice_id': custom_invoice.id,
                         'customer_type_id': custom_invoice.customer_type_id,
@@ -14588,7 +14602,7 @@ class MyAPIView(APIView):
                     'customer_mobile_number': custom_invoice.customer_mobile_number,
                     'customer_address': custom_invoice.customer_address,
                     'customer_pin_code': custom_invoice.customer_pin_code,
-                    'customer_pan_number': custom_invoice.customer_pan_number,
+                    'customer_pan_number': customer_pan_number,
                     'customer_profile_pic': custom_invoice.customer_profile_pic.url if custom_invoice.customer_profile_pic else None,
                     'customer_company_name': custom_invoice.customer_company_name,
                     'customer_company_email': custom_invoice.customer_company_email,
@@ -14606,7 +14620,7 @@ class MyAPIView(APIView):
                     'customer_location': custom_invoice.customer_location,
                     # 'customer_reason': add_item.customer_id.reason,
                     # 'customer_partner_initial_update': add_item.customer_id.partner_initial_update,
-                    'customer_gst_number': custom_invoice.customer_gst_number,
+                    'customer_gst_number': customer_gst_number,
                     # 'customer_inventory_count': add_item.customer_id.inventory_count,
                     'customer_category': custom_invoice.customer_id.category.id if custom_invoice.customer_id.category else None,
                     'customer_date_of_birth': custom_invoice.customer_date_of_birth,
