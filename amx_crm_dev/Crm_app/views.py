@@ -8082,8 +8082,7 @@ from Crypto.Cipher import AES
 from Crypto.Protocol.KDF import PBKDF2
 from collections import OrderedDict
 
-
-@method_decorator([authorization_required], name='dispatch')
+# @method_decorator([authorization_required], name='dispatch')
 class MyApiView(APIView):
     def clean_payload(self, payload):
         cleaned_payload = ''.join(char for char in payload if char.isprintable())
@@ -8126,21 +8125,36 @@ class MyApiView(APIView):
                     if auth_token:
                         sek_key = auth_token.sek
 
-                        owner_details = CustomUser.objects.filter(id=item.owner_id.id).values(
-                            'company_gst_num', 'company_name', 'billing_address', 'billing_state_city',
-                            'billing_pincode', 'billing_state_code'
+                        # owner_details = CustomUser.objects.filter(id=item.owner_id.id).values(
+                        #     'company_gst_num', 'company_name', 'billing_address', 'billing_state_city',
+                        #     'billing_pincode', 'billing_state_code'
+                        # ).first()
+                        owner_details = AddItem.objects.filter(invoice_number=invoice_number).values(
+                                'owner_company_gst_num', 'owner_company_name', 'owner_billing_address', 'owner_billing_state_city',
+                                'owner_billing_pincode', 'owner_billing_state_code'
+                            ).first()
+                        print(owner_details,"lllll")
+
+                        # buyer_details = CustomUser.objects.filter(id=item.customer_id.id).values(
+                        #     'gst_number', 'company_name', 'address', 'location',
+                        #     'billing_pincode', 'state_code', 'billing_address',
+                        #     'billing_state_city', 'billing_state_code', 'shipping_address', 'shipping_state_city',
+                        #     'shipping_state_code', 'shipping_pincode'
+                        # ).first()
+                        buyer_details =AddItem.objects.filter(invoice_number=invoice_number).values(
+                            'customer_gst_number', 'customer_company_name', 'customer_address', 'customer_location',
+                            'customer_billing_pincode', 'customer_state_code', 'customer_billing_address',
+                            'customer_billing_state_city', 'customer_billing_state_code', 'customer_shipping_address', 'customer_shipping_state_city',
+                            'customer_shipping_state_code', 'customer_shipping_pincode'
                         ).first()
 
-                        buyer_details = CustomUser.objects.filter(id=item.customer_id.id).values(
-                            'gst_number', 'company_name', 'address', 'location',
-                            'billing_pincode', 'state_code', 'billing_address',
-                            'billing_state_city', 'billing_state_code', 'shipping_address', 'shipping_state_city',
-                            'shipping_state_code', 'shipping_pincode'
-                        ).first()
-
-                        shipping_details = CustomUser.objects.filter(id=item.customer_id.id).values(
-                            'gst_number', 'company_name', 'address', 'location', 'billing_pincode', 'state_code',
-                            'shipping_address', 'shipping_state_city', 'shipping_state_code', 'shipping_pincode'
+                        # shipping_details = CustomUser.objects.filter(id=item.customer_id.id).values(
+                        #     'gst_number', 'company_name', 'address', 'location', 'billing_pincode', 'state_code',
+                        #     'shipping_address', 'shipping_state_city', 'shipping_state_code', 'shipping_pincode'
+                        # ).first()
+                        shipping_details = AddItem.objects.filter(invoice_number=invoice_number).values(
+                            'customer_gst_number', 'customer_company_name', 'customer_address', 'customer_location', 'customer_billing_pincode', 'customer_state_code',
+                            'customer_shipping_address', 'customer_shipping_state_city', 'customer_shipping_state_code', 'customer_shipping_pincode'
                         ).first()
 
                         if owner_details and buyer_details and shipping_details:
@@ -8152,8 +8166,8 @@ class MyApiView(APIView):
                                     "RegRev": "Y",
                                     "EcmGstin": None,
                                     # "IgstOnIntra": "N"
-                                    "IgstOnIntra": "Y" if owner_details['billing_state_code'] != shipping_details[
-                                        'shipping_state_code'] else "N"
+                                    "IgstOnIntra": "Y" if owner_details['owner_billing_state_code'] != shipping_details[
+                                        'customer_shipping_state_code'] else "N"
                                 },
                                 "DocDtls": {
                                     "Typ": "INV",
@@ -8161,29 +8175,29 @@ class MyApiView(APIView):
                                     "Dt": item.created_date_time.strftime('%d/%m/%Y')
                                 },
                                 "SellerDtls": {
-                                    "Gstin": owner_details['company_gst_num'],
-                                    "LglNm": owner_details['company_name'],
-                                    "Addr1": owner_details['billing_address'],
-                                    "Loc": owner_details['billing_state_city'],
-                                    "Pin": owner_details['billing_pincode'],
-                                    "Stcd": owner_details['billing_state_code']
+                                    "Gstin": owner_details['owner_company_gst_num'],
+                                    "LglNm": owner_details['owner_company_name'],
+                                    "Addr1": owner_details['owner_billing_address'],
+                                    "Loc": owner_details['owner_billing_state_city'],
+                                    "Pin": owner_details['owner_billing_pincode'],
+                                    "Stcd": owner_details['owner_billing_state_code']
                                 },
                                 "BuyerDtls": {
-                                    "Gstin": buyer_details['gst_number'],
-                                    "LglNm": buyer_details['company_name'],
-                                    "Pos": buyer_details['billing_state_code'],
-                                    "Addr1": buyer_details['billing_address'],
-                                    "Loc": buyer_details['billing_state_city'],
-                                    "Pin": buyer_details['billing_pincode'],
-                                    "Stcd": buyer_details['billing_state_code']
+                                    "Gstin": buyer_details['customer_gst_number'],
+                                    "LglNm": buyer_details['customer_company_name'],
+                                    "Pos": buyer_details['customer_billing_state_code'],
+                                    "Addr1": buyer_details['customer_billing_address'],
+                                    "Loc": buyer_details['customer_billing_state_city'],
+                                    "Pin": buyer_details['customer_billing_pincode'],
+                                    "Stcd": buyer_details['customer_billing_state_code']
                                 },
                                 "ShipDtls": {
-                                    "Gstin": shipping_details['gst_number'],
-                                    "LglNm": shipping_details['company_name'],
-                                    "Addr1": shipping_details['shipping_address'],
-                                    "Loc": shipping_details['shipping_state_city'],
-                                    "Pin": shipping_details['shipping_pincode'],
-                                    "Stcd": shipping_details['shipping_state_code']
+                                    "Gstin": shipping_details['customer_gst_number'],
+                                    "LglNm": shipping_details['customer_company_name'],
+                                    "Addr1": shipping_details['customer_shipping_address'],
+                                    "Loc": shipping_details['customer_shipping_state_city'],
+                                    "Pin": shipping_details['customer_shipping_pincode'],
+                                    "Stcd": shipping_details['customer_shipping_state_code']
                                 },
                                 "ItemList": [
                                     {
@@ -8338,21 +8352,26 @@ class MyApiView(APIView):
                     if auth_token:
                         sek_key = auth_token.sek
 
-                        custom_owner_details = CustomUser.objects.filter(id=custom.owner_id.id).values(
-                            'company_gst_num', 'company_name', 'company_address', 'location',
-                            'billing_state_city', 'billing_pincode', 'billing_state_code', 'shipping_pincode',
-                            'billing_address'
+                        # custom_owner_details = CustomUser.objects.filter(id=custom.owner_id.id).values(
+                        #     'company_gst_num', 'company_name', 'company_address', 'location',
+                        #     'billing_state_city', 'billing_pincode', 'billing_state_code', 'shipping_pincode',
+                        #     'billing_address'
+                        # ).first()
+                        custom_owner_details = CustomInvoice.objects.filter(invoice_number=invoice_number).values(
+                            'owner_company_gst_num', 'owner_company_name', 'owner_company_address', 'owner_location',
+                            'owner_billing_state_city', 'owner_billing_pincode', 'owner_billing_state_code', 'owner_shipping_pincode',
+                            'owner_billing_address'
                         ).first()
 
-                        custom_buyer_details = CustomUser.objects.filter(id=custom.customer_id.id).values(
-                            'gst_number', 'company_name', 'address', 'location', 'billing_pincode', 'state_code',
-                            'billing_address', 'billing_state_city', 'billing_state_code', 'shipping_address',
-                            'shipping_state_city', 'shipping_state_code', 'shipping_pincode'
+                        custom_buyer_details = CustomInvoice.objects.filter(invoice_number=invoice_number).values(
+                            'customer_gst_number', 'customer_company_name', 'customer_address', 'customer_location', 'customer_billing_pincode', 'customer_state_code',
+                            'customer_billing_address', 'customer_billing_state_city', 'customer_billing_state_code', 'customer_shipping_address',
+                            'customer_shipping_state_city', 'customer_shipping_state_code', 'customer_shipping_pincode'
                         ).first()
 
-                        custom_shipping_details = CustomUser.objects.filter(id=custom.customer_id.id).values(
-                            'gst_number', 'company_name', 'address', 'location', 'billing_pincode', 'state_code',
-                            'shipping_address', 'shipping_state_city', 'shipping_state_code', 'shipping_pincode'
+                        custom_shipping_details = CustomInvoice.objects.filter(invoice_number=invoice_number).values(
+                            'customer_gst_number', 'customer_company_name', 'customer_address', 'location', 'customer_billing_pincode', 'customer_state_code',
+                            'customer_shipping_address', 'customer_shipping_state_city', 'customer_shipping_state_code', 'customer_shipping_pincode'
                         ).first()
 
                         if custom_owner_details and custom_buyer_details and custom_shipping_details:
@@ -8364,8 +8383,8 @@ class MyApiView(APIView):
                                     "RegRev": "Y",
                                     "EcmGstin": None,
                                     # "IgstOnIntra": "N"
-                                    "IgstOnIntra": "Y" if custom_owner_details['billing_state_code'] !=
-                                                          custom_shipping_details['shipping_state_code'] else "N"
+                                    "IgstOnIntra": "Y" if custom_owner_details['owner_billing_state_code'] !=
+                                                          custom_shipping_details['customer_shipping_state_code'] else "N"
                                 },
                                 "DocDtls": {
                                     "Typ": "INV",
@@ -8373,29 +8392,29 @@ class MyApiView(APIView):
                                     "Dt": custom.created_date_time.strftime('%d/%m/%Y')
                                 },
                                 "SellerDtls": {
-                                    "Gstin": custom_owner_details['company_gst_num'],
-                                    "LglNm": custom_owner_details['company_name'],
-                                    "Addr1": custom_owner_details['billing_address'],
-                                    "Loc": custom_owner_details['billing_state_city'],
-                                    "Pin": custom_owner_details['billing_pincode'],
-                                    "Stcd": custom_owner_details['billing_state_code']
+                                    "Gstin": custom_owner_details['owner_company_gst_num'],
+                                    "LglNm": custom_owner_details['owner_company_name'],
+                                    "Addr1": custom_owner_details['owner_billing_address'],
+                                    "Loc": custom_owner_details['owner_billing_state_city'],
+                                    "Pin": custom_owner_details['owner_billing_pincode'],
+                                    "Stcd": custom_owner_details['owner_billing_state_code']
                                 },
                                 "BuyerDtls": {
-                                    "Gstin": custom_buyer_details['gst_number'],
-                                    "LglNm": custom_buyer_details['company_name'],
-                                    "Pos": custom_buyer_details['billing_state_code'],
-                                    "Addr1": custom_buyer_details['billing_address'],
-                                    "Loc": custom_buyer_details['billing_state_city'],
-                                    "Pin": custom_buyer_details['billing_pincode'],
-                                    "Stcd": custom_buyer_details['billing_state_code']
+                                    "Gstin": custom_buyer_details['customer_gst_number'],
+                                    "LglNm": custom_buyer_details['customer_company_name'],
+                                    "Pos": custom_buyer_details['customer_billing_state_code'],
+                                    "Addr1": custom_buyer_details['customer_billing_address'],
+                                    "Loc": custom_buyer_details['customer_billing_state_city'],
+                                    "Pin": custom_buyer_details['customer_billing_pincode'],
+                                    "Stcd": custom_buyer_details['customer_billing_state_code']
                                 },
                                 "ShipDtls": {
-                                    "Gstin": custom_buyer_details['gst_number'],
-                                    "LglNm": custom_buyer_details['company_name'],
-                                    "Addr1": custom_buyer_details['shipping_address'],
-                                    "Loc": custom_buyer_details['shipping_state_city'],
-                                    "Pin": custom_buyer_details['shipping_pincode'],
-                                    "Stcd": custom_buyer_details['shipping_state_code']
+                                    "Gstin": custom_buyer_details['customer_gst_number'],
+                                    "LglNm": custom_buyer_details['customer_company_name'],
+                                    "Addr1": custom_buyer_details['customer_shipping_address'],
+                                    "Loc": custom_buyer_details['customer_shipping_state_city'],
+                                    "Pin": custom_buyer_details['customer_shipping_pincode'],
+                                    "Stcd": custom_buyer_details['customer_shipping_state_code']
                                 },
                                 "ItemList": [
                                     {
@@ -8593,21 +8612,39 @@ class MyApiView(APIView):
                     if auth_token:
                         sek_key = auth_token.sek
 
-                        owner_details = CustomUser.objects.filter(id=item.owner_id.id).values(
-                            'company_gst_num', 'company_name', 'company_address', 'location',
-                            'billing_state_city', 'billing_pincode', 'billing_state_code', 'shipping_pincode',
-                            'billing_address'
+                        # owner_details = CustomUser.objects.filter(id=item.owner_id.id).values(
+                        #     'company_gst_num', 'company_name', 'company_address', 'location',
+                        #     'billing_state_city', 'billing_pincode', 'billing_state_code', 'shipping_pincode',
+                        #     'billing_address'
+                        # ).first()
+                        owner_details = AddItem.objects.filter(invoice_number=invoice_number).values(
+                            'owner_company_gst_num', 'owner_company_name', 'owner_billing_address',
+                            'owner_billing_state_city',
+                            'owner_billing_pincode', 'owner_billing_state_code'
                         ).first()
 
-                        buyer_details = CustomUser.objects.filter(id=item.customer_id.id).values(
-                            'gst_number', 'company_name', 'address', 'location', 'billing_pincode', 'state_code',
-                            'billing_address', 'billing_state_city', 'billing_state_code', 'shipping_address',
-                            'shipping_state_city', 'shipping_state_code', 'shipping_pincode'
+                        # buyer_details = CustomUser.objects.filter(id=item.customer_id.id).values(
+                        #     'gst_number', 'company_name', 'address', 'location', 'billing_pincode', 'state_code',
+                        #     'billing_address', 'billing_state_city', 'billing_state_code', 'shipping_address',
+                        #     'shipping_state_city', 'shipping_state_code', 'shipping_pincode'
+                        # ).first()
+                        buyer_details = AddItem.objects.filter(invoice_number=invoice_number).values(
+                            'customer_gst_number', 'customer_company_name', 'customer_address', 'customer_location',
+                            'customer_billing_pincode', 'customer_state_code', 'customer_billing_address',
+                            'customer_billing_state_city', 'customer_billing_state_code', 'customer_shipping_address',
+                            'customer_shipping_state_city',
+                            'customer_shipping_state_code', 'customer_shipping_pincode'
                         ).first()
 
-                        shipping_details = CustomUser.objects.filter(id=item.customer_id.id).values(
-                            'gst_number', 'company_name', 'address', 'location', 'billing_pincode', 'state_code',
-                            'shipping_address', 'shipping_state_city', 'shipping_state_code', 'shipping_pincode'
+                        # shipping_details = CustomUser.objects.filter(id=item.customer_id.id).values(
+                        #     'gst_number', 'company_name', 'address', 'location', 'billing_pincode', 'state_code',
+                        #     'shipping_address', 'shipping_state_city', 'shipping_state_code', 'shipping_pincode'
+                        # ).first()
+                        shipping_details = AddItem.objects.filter(invoice_number=invoice_number).values(
+                            'customer_gst_number', 'customer_company_name', 'customer_address', 'customer_location',
+                            'customer_billing_pincode', 'customer_state_code',
+                            'customer_shipping_address', 'customer_shipping_state_city', 'customer_shipping_state_code',
+                            'customer_shipping_pincode'
                         ).first()
 
                         if owner_details and buyer_details and shipping_details:
@@ -8619,8 +8656,8 @@ class MyApiView(APIView):
                                     "RegRev": "Y",
                                     "EcmGstin": None,
                                     # "IgstOnIntra": "N"
-                                    "IgstOnIntra": "Y" if owner_details['billing_state_code'] != shipping_details[
-                                        'shipping_state_code'] else "N"
+                                    "IgstOnIntra": "Y" if owner_details['owner_billing_state_code'] != shipping_details[
+                                        'customer_shipping_state_code'] else "N"
                                 },
                                 "DocDtls": {
                                     "Typ": "INV",
@@ -8628,29 +8665,29 @@ class MyApiView(APIView):
                                     "Dt": item.created_date_time.strftime('%d/%m/%Y')
                                 },
                                 "SellerDtls": {
-                                    "Gstin": owner_details['company_gst_num'],
-                                    "LglNm": owner_details['company_name'],
-                                    "Addr1": owner_details['billing_address'],
-                                    "Loc": owner_details['billing_state_city'],
-                                    "Pin": owner_details['billing_pincode'],
-                                    "Stcd": owner_details['billing_state_code']
+                                    "Gstin": owner_details['owner_company_gst_num'],
+                                    "LglNm": owner_details['owner_company_name'],
+                                    "Addr1": owner_details['owner_billing_address'],
+                                    "Loc": owner_details['owner_billing_state_city'],
+                                    "Pin": owner_details['owner_billing_pincode'],
+                                    "Stcd": owner_details['owner_billing_state_code']
                                 },
                                 "BuyerDtls": {
-                                    "Gstin": buyer_details['gst_number'],
-                                    "LglNm": buyer_details['company_name'],
-                                    "Pos": buyer_details['billing_state_code'],
-                                    "Addr1": buyer_details['billing_address'],
-                                    "Loc": buyer_details['billing_state_city'],
-                                    "Pin": buyer_details['billing_pincode'],
-                                    "Stcd": buyer_details['billing_state_code']
+                                    "Gstin": buyer_details['customer_gst_number'],
+                                    "LglNm": buyer_details['customer_company_name'],
+                                    "Pos": buyer_details['customer_billing_state_code'],
+                                    "Addr1": buyer_details['customer_billing_address'],
+                                    "Loc": buyer_details['customer_billing_state_city'],
+                                    "Pin": buyer_details['customer_billing_pincode'],
+                                    "Stcd": buyer_details['customer_billing_state_code']
                                 },
                                 "ShipDtls": {
-                                    "Gstin": buyer_details['gst_number'],
-                                    "LglNm": buyer_details['company_name'],
-                                    "Addr1": buyer_details['shipping_address'],
-                                    "Loc": buyer_details['shipping_state_city'],
-                                    "Pin": buyer_details['shipping_pincode'],
-                                    "Stcd": buyer_details['shipping_state_code']
+                                    "Gstin": buyer_details['customer_gst_number'],
+                                    "LglNm": buyer_details['customer_company_name'],
+                                    "Addr1": buyer_details['customer_shipping_address'],
+                                    "Loc": buyer_details['customer_shipping_state_city'],
+                                    "Pin": buyer_details['customer_shipping_pincode'],
+                                    "Stcd": buyer_details['customer_shipping_state_code']
                                 },
                                 "ItemList": [
                                     {
@@ -8747,21 +8784,42 @@ class MyApiView(APIView):
                     if auth_token:
                         sek_key = auth_token.sek
 
-                        custom_owner_details = CustomUser.objects.filter(id=custom.owner_id.id).values(
-                            'company_gst_num', 'company_name', 'company_address', 'location',
-                            'billing_state_city', 'billing_pincode', 'billing_state_code', 'shipping_pincode',
-                            'billing_address'
+                        # custom_owner_details = CustomUser.objects.filter(id=custom.owner_id.id).values(
+                        #     'company_gst_num', 'company_name', 'company_address', 'location',
+                        #     'billing_state_city', 'billing_pincode', 'billing_state_code', 'shipping_pincode',
+                        #     'billing_address'
+                        # ).first()
+                        #
+                        # custom_buyer_details = CustomUser.objects.filter(id=custom.customer_id.id).values(
+                        #     'gst_number', 'company_name', 'address', 'location', 'billing_pincode', 'state_code',
+                        #     'billing_address', 'billing_state_city', 'billing_state_code', 'shipping_address',
+                        #     'shipping_state_city', 'shipping_state_code', 'shipping_pincode'
+                        # ).first()
+                        #
+                        # custom_shipping_details = CustomUser.objects.filter(id=custom.customer_id.id).values(
+                        #     'gst_number', 'company_name', 'address', 'location', 'billing_pincode', 'state_code',
+                        #     'shipping_address', 'shipping_state_city', 'shipping_state_code', 'shipping_pincode'
+                        # ).first()
+                        custom_owner_details = CustomInvoice.objects.filter(invoice_number=invoice_number).values(
+                            'owner_company_gst_num', 'owner_company_name', 'owner_company_address', 'owner_location',
+                            'owner_billing_state_city', 'owner_billing_pincode', 'owner_billing_state_code',
+                            'owner_shipping_pincode',
+                            'owner_billing_address'
                         ).first()
 
-                        custom_buyer_details = CustomUser.objects.filter(id=custom.customer_id.id).values(
-                            'gst_number', 'company_name', 'address', 'location', 'billing_pincode', 'state_code',
-                            'billing_address', 'billing_state_city', 'billing_state_code', 'shipping_address',
-                            'shipping_state_city', 'shipping_state_code', 'shipping_pincode'
+                        custom_buyer_details = CustomInvoice.objects.filter(invoice_number=invoice_number).values(
+                            'customer_gst_number', 'customer_company_name', 'customer_address', 'customer_location',
+                            'customer_billing_pincode', 'customer_state_code',
+                            'customer_billing_address', 'customer_billing_state_city', 'customer_billing_state_code',
+                            'customer_shipping_address',
+                            'customer_shipping_state_city', 'customer_shipping_state_code', 'customer_shipping_pincode'
                         ).first()
 
-                        custom_shipping_details = CustomUser.objects.filter(id=custom.customer_id.id).values(
-                            'gst_number', 'company_name', 'address', 'location', 'billing_pincode', 'state_code',
-                            'shipping_address', 'shipping_state_city', 'shipping_state_code', 'shipping_pincode'
+                        custom_shipping_details = CustomInvoice.objects.filter(invoice_number=invoice_number).values(
+                            'customer_gst_number', 'customer_company_name', 'customer_address', 'location',
+                            'customer_billing_pincode', 'customer_state_code',
+                            'customer_shipping_address', 'customer_shipping_state_city', 'customer_shipping_state_code',
+                            'customer_shipping_pincode'
                         ).first()
 
                         if custom_owner_details and custom_buyer_details and custom_shipping_details:
@@ -8773,8 +8831,8 @@ class MyApiView(APIView):
                                     "RegRev": "Y",
                                     "EcmGstin": None,
                                     # "IgstOnIntra": "N"
-                                    "IgstOnIntra": "Y" if custom_owner_details['billing_state_code'] !=
-                                                          custom_shipping_details['shipping_state_code'] else "N"
+                                    "IgstOnIntra": "Y" if custom_owner_details['owner_billing_state_code'] !=
+                                                          custom_shipping_details['customer_shipping_state_code'] else "N"
 
                                 },
                                 "DocDtls": {
@@ -8783,29 +8841,29 @@ class MyApiView(APIView):
                                     "Dt": custom.created_date_time.strftime('%d/%m/%Y')
                                 },
                                 "SellerDtls": {
-                                    "Gstin": custom_owner_details['company_gst_num'],
-                                    "LglNm": custom_owner_details['company_name'],
-                                    "Addr1": custom_owner_details['billing_address'],
-                                    "Loc": custom_owner_details['billing_state_city'],
-                                    "Pin": custom_owner_details['billing_pincode'],
-                                    "Stcd": custom_owner_details['billing_state_code']
+                                    "Gstin": custom_owner_details['owner_company_gst_num'],
+                                    "LglNm": custom_owner_details['owner_company_name'],
+                                    "Addr1": custom_owner_details['owner_billing_address'],
+                                    "Loc": custom_owner_details['owner_billing_state_city'],
+                                    "Pin": custom_owner_details['owner_billing_pincode'],
+                                    "Stcd": custom_owner_details['owner_billing_state_code']
                                 },
                                 "BuyerDtls": {
-                                    "Gstin": custom_buyer_details['gst_number'],
-                                    "LglNm": custom_buyer_details['company_name'],
-                                    "Pos": custom_buyer_details['billing_state_code'],
-                                    "Addr1": custom_buyer_details['billing_address'],
-                                    "Loc": custom_buyer_details['billing_state_city'],
-                                    "Pin": custom_buyer_details['billing_pincode'],
-                                    "Stcd": custom_buyer_details['billing_state_code']
+                                    "Gstin": custom_buyer_details['customer_gst_number'],
+                                    "LglNm": custom_buyer_details['customer_company_name'],
+                                    "Pos": custom_buyer_details['customer_billing_state_code'],
+                                    "Addr1": custom_buyer_details['customer_billing_address'],
+                                    "Loc": custom_buyer_details['customer_billing_state_city'],
+                                    "Pin": custom_buyer_details['customer_billing_pincode'],
+                                    "Stcd": custom_buyer_details['customer_billing_state_code']
                                 },
                                 "ShipDtls": {
-                                    "Gstin": custom_buyer_details['gst_number'],
-                                    "LglNm": custom_buyer_details['company_name'],
-                                    "Addr1": custom_buyer_details['shipping_address'],
-                                    "Loc": custom_buyer_details['shipping_state_city'],
-                                    "Pin": custom_buyer_details['shipping_pincode'],
-                                    "Stcd": custom_buyer_details['shipping_state_code']
+                                    "Gstin": custom_buyer_details['customer_gst_number'],
+                                    "LglNm": custom_buyer_details['customer_company_name'],
+                                    "Addr1": custom_buyer_details['customer_shipping_address'],
+                                    "Loc": custom_buyer_details['customer_shipping_state_city'],
+                                    "Pin": custom_buyer_details['customer_shipping_pincode'],
+                                    "Stcd": custom_buyer_details['customer_shipping_state_code']
                                 },
                                 "ItemList": [
                                     {
@@ -8893,6 +8951,818 @@ class MyApiView(APIView):
 
         else:
             return Response({"error": "Invalid invoice_type provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# @method_decorator([authorization_required], name='dispatch')
+# class MyApiView(APIView):
+#     def clean_payload(self, payload):
+#         cleaned_payload = ''.join(char for char in payload if char.isprintable())
+#         return cleaned_payload
+#
+#     def encrypt(self, payload, sek_key):
+#         cleaned_payload = self.clean_payload(json.dumps(payload, separators=(',', ':')))
+#         decoded_sek_key = base64.b64decode(sek_key)
+#         padder = padding.PKCS7(algorithms.AES.block_size).padder()
+#         padded_payload = padder.update(cleaned_payload.encode())
+#         padded_payload += padder.finalize()
+#         cipher = Cipher(algorithms.AES(decoded_sek_key), modes.ECB(), backend=default_backend())
+#         encryptor = cipher.encryptor()
+#         encrypted_data = encryptor.update(padded_payload) + encryptor.finalize()
+#         encrypted_text = base64.b64encode(encrypted_data).decode()
+#         print(f"Encrypted Data: {encrypted_text}")
+#
+#         # Clean up the encrypted payload using json.dumps
+#         cleaned_encrypted_payload = json.dumps(encrypted_text).strip('"')
+#         print(f"Cleaned Encrypted Data: {cleaned_encrypted_payload}")
+#
+#         return cleaned_encrypted_payload
+#
+#     def get(self, request, *args, **kwargs):
+#         invoice_number = request.query_params.get('invoice_number')
+#         invoice_type = request.query_params.get('invoice_type')
+#
+#         if not invoice_number:
+#             return Response({"error": "Missing invoice_number in the request body."},
+#                             status=status.HTTP_400_BAD_REQUEST)
+#
+#         if invoice_type == 'Drone':
+#             item = get_object_or_404(AddItem.objects.select_related('invoice_type_id'),
+#                                      invoice_number=invoice_number,
+#                                      invoice_type_id__invoice_type_name=invoice_type)
+#             if item:
+#                 try:
+#                     auth_token = AuthToken.objects.first()
+#
+#                     if auth_token:
+#                         sek_key = auth_token.sek
+#
+#                         owner_details = CustomUser.objects.filter(id=item.owner_id.id).values(
+#                             'company_gst_num', 'company_name', 'billing_address', 'billing_state_city',
+#                             'billing_pincode', 'billing_state_code'
+#                         ).first()
+#
+#                         buyer_details = CustomUser.objects.filter(id=item.customer_id.id).values(
+#                             'gst_number', 'company_name', 'address', 'location',
+#                             'billing_pincode', 'state_code', 'billing_address',
+#                             'billing_state_city', 'billing_state_code', 'shipping_address', 'shipping_state_city',
+#                             'shipping_state_code', 'shipping_pincode'
+#                         ).first()
+#
+#                         shipping_details = CustomUser.objects.filter(id=item.customer_id.id).values(
+#                             'gst_number', 'company_name', 'address', 'location', 'billing_pincode', 'state_code',
+#                             'shipping_address', 'shipping_state_city', 'shipping_state_code', 'shipping_pincode'
+#                         ).first()
+#
+#                         if owner_details and buyer_details and shipping_details:
+#                             item.invoice_payload = {
+#                                 "Version": "1.1",
+#                                 "TranDtls": {
+#                                     "TaxSch": "GST",
+#                                     "SupTyp": "B2B",
+#                                     "RegRev": "Y",
+#                                     "EcmGstin": None,
+#                                     # "IgstOnIntra": "N"
+#                                     "IgstOnIntra": "Y" if owner_details['billing_state_code'] != shipping_details[
+#                                         'shipping_state_code'] else "N"
+#                                 },
+#                                 "DocDtls": {
+#                                     "Typ": "INV",
+#                                     "No": item.invoice_number,
+#                                     "Dt": item.created_date_time.strftime('%d/%m/%Y')
+#                                 },
+#                                 "SellerDtls": {
+#                                     "Gstin": owner_details['company_gst_num'],
+#                                     "LglNm": owner_details['company_name'],
+#                                     "Addr1": owner_details['billing_address'],
+#                                     "Loc": owner_details['billing_state_city'],
+#                                     "Pin": owner_details['billing_pincode'],
+#                                     "Stcd": owner_details['billing_state_code']
+#                                 },
+#                                 "BuyerDtls": {
+#                                     "Gstin": buyer_details['gst_number'],
+#                                     "LglNm": buyer_details['company_name'],
+#                                     "Pos": buyer_details['billing_state_code'],
+#                                     "Addr1": buyer_details['billing_address'],
+#                                     "Loc": buyer_details['billing_state_city'],
+#                                     "Pin": buyer_details['billing_pincode'],
+#                                     "Stcd": buyer_details['billing_state_code']
+#                                 },
+#                                 "ShipDtls": {
+#                                     "Gstin": shipping_details['gst_number'],
+#                                     "LglNm": shipping_details['company_name'],
+#                                     "Addr1": shipping_details['shipping_address'],
+#                                     "Loc": shipping_details['shipping_state_city'],
+#                                     "Pin": shipping_details['shipping_pincode'],
+#                                     "Stcd": shipping_details['shipping_state_code']
+#                                 },
+#                                 "ItemList": [
+#                                     {
+#                                         "SlNo": str(index + 1),
+#                                         "IsServc": "N",
+#                                         "HsnCd": str(drone_detail.get('hsn_number', '')),
+#                                         "Qty": str(drone_detail.get('quantity', 1)),
+#                                         "UnitPrice": str(drone_detail.get('price', 0)),
+#                                         # "Unit": "KGS",
+#                                         "Unit": str(drone_detail.get('units', '')),
+#                                         "TotAmt": drone_detail.get('item_total_price', ''),
+#                                         "AssAmt": drone_detail.get('price_after_discount', ''),
+#                                         "GstRt": drone_detail.get('igst', ''),
+#                                         "IgstAmt": drone_detail.get('igst_percentage', ''),
+#                                         "CgstAmt": drone_detail.get('cgst_percentage', ''),
+#                                         "SgstAmt": drone_detail.get('sgst_percentage', ''),
+#                                         "Discount": drone_detail.get('discount_amount', ''),
+#                                         "TotItemVal": drone_detail.get('total', '')
+#                                     }
+#                                     for index, drone_detail in enumerate(item.dronedetails)
+#                                 ],
+#                                 "ValDtls": {
+#                                     "AssVal": item.sum_of_price_after_discount,
+#                                     "TotInvVal": item.amount_to_pay
+#                                 },
+#                                 "PrecDocDtls": [{
+#                                     "InvNo": request.data.get('prec_doc_inv_no', '') or item.invoice_number,
+#                                     "InvDt": item.created_date_time.strftime('%d/%m/%Y')
+#                                 }]
+#                             }
+#
+#                             draft_status, _ = InvoiceStatus.objects.get_or_create(invoice_status_name='Draft')
+#                             item.invoice_status = draft_status
+#                             item.save()
+#
+#                             encrypted_payload = self.encrypt(item.invoice_payload, sek_key)
+#                             formatted_payload = json.loads(json.dumps(item.invoice_payload, separators=(',', ':')))
+#
+#                             # Prepare the data for the API request
+#                             # api_url = "https://einv-apisandbox.nic.in/eicore/v1.03/Invoice"
+#                             api_url = "https://einv1api.gstsandbox.nic.in/eicore/v1.03/Invoice"
+#
+#                             headers = {
+#                                 "client-id": auth_token.client_id,
+#                                 "client-secret": "76KkYyE3SGguAaOocIWw",
+#                                 "gstin": "29AAGCE4783K1Z1",
+#                                 "user_name": auth_token.user_name,
+#                                 "authtoken": auth_token.auth_token,
+#                             }
+#                             api_data = {
+#                                 "Data": encrypted_payload,
+#                                 "sek": sek_key
+#                             }
+#
+#                             # Make the POST request to the API endpoint
+#                             response = requests.post(api_url, headers=headers, json=api_data)
+#
+#                             if response.status_code == 200:
+#                                 api_response = response.json()
+#                                 response_data = api_response['Status']
+#                                 response_error_details = api_response['ErrorDetails']
+#
+#                                 if response_error_details:  # Check if error details are present
+#                                     error_details = response_error_details[0][
+#                                         'ErrorMessage']  # Accessing the first error message
+#                                 # response_error_message=response_error_details['ErrorMessage']
+#                                 encrypted_data = api_response.get('Data')
+#
+#                                 # Check if encrypted data is available
+#                                 if encrypted_data:
+#                                     decrypted_data = self.decrypt_data(encrypted_data, sek_key)
+#
+#                                     if decrypted_data is not None:
+#                                         # Include decrypted data in the response
+#                                         api_response = {'DecryptedData': decrypted_data}
+#
+#                                 # Save API response as JSON string
+#                                 api_response_json = json.dumps(api_response)
+#
+#                                 # Check if the status is 1 or 0
+#                                 if response_data == 1:
+#                                     # Set invoice status to 2
+#                                     item.invoice_status_id = 2
+#                                     item.save(update_fields=['invoice_status_id'])
+#                                     item.e_invoice_status = True
+#                                     item.save(update_fields=['e_invoice_status'])
+#
+#                                     # Save api_response in EInvoice table
+#                                     e_invoice_instance = EInvoice.objects.create(
+#                                         invoice_number=item,
+#                                         api_response=api_response_json,
+#                                         data=item.invoice_payload
+#                                     )
+#
+#                                 # Check if the error message is 'Duplicate IRN'
+#                                 error_message = next(
+#                                     (error['ErrorMessage'] for error in api_response.get('ErrorDetails', []) if
+#                                      'Duplicate IRN' in error.get('ErrorMessage', '')), None)
+#                                 if response_data == 0 and error_message == 'Duplicate IRN':
+#                                     # Set invoice status to 2
+#                                     item.invoice_status_id = 2
+#                                     item.save(update_fields=['invoice_status_id'])
+#                                     item.e_invoice_status = True
+#                                     item.save(update_fields=['e_invoice_status'])
+#                                 if response_data == 0:
+#                                     return Response(
+#                                         {"message": error_details},
+#                                         status=status.HTTP_500_INTERNAL_SERVER_ERROR
+#                                     )
+#
+#                                 # Prepare response data
+#                                 response_data = {
+#                                     "message": "E-Invoice generated successfully.",
+#                                     "Data": item.invoice_payload,
+#                                     "sek": sek_key,
+#                                     "api_response": api_response,
+#                                     # "Error_details": error_details
+#                                 }
+#                                 if response_data == 0:
+#                                     return Response(
+#                                         {"message": error_details},
+#                                         status=status.HTTP_500_INTERNAL_SERVER_ERROR
+#                                     )
+#
+#                                 return Response(response_data, status=status.HTTP_200_OK)
+#
+#                             else:
+#                                 return Response(
+#                                     {"error": f"API sheetal request failed with status code {response.status_code}"},
+#                                     status=response.status_code)
+#
+#
+#                         else:
+#                             return Response({"error": "Details not found."}, status=status.HTTP_404_NOT_FOUND)
+#
+#                     else:
+#                         return Response({"error": "AuthToken not found."}, status=status.HTTP_404_NOT_FOUND)
+#
+#                 except Exception as e:
+#                     return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#
+#         elif invoice_type == 'Custom':
+#             custom = get_object_or_404(CustomInvoice.objects.select_related('invoice_type_id'),
+#                                        invoice_number=invoice_number,
+#                                        invoice_type_id__invoice_type_name=invoice_type)
+#
+#             if custom:
+#                 try:
+#                     auth_token = AuthToken.objects.first()
+#                     error_details = []
+#
+#                     if auth_token:
+#                         sek_key = auth_token.sek
+#
+#                         custom_owner_details = CustomUser.objects.filter(id=custom.owner_id.id).values(
+#                             'company_gst_num', 'company_name', 'company_address', 'location',
+#                             'billing_state_city', 'billing_pincode', 'billing_state_code', 'shipping_pincode',
+#                             'billing_address'
+#                         ).first()
+#
+#                         custom_buyer_details = CustomUser.objects.filter(id=custom.customer_id.id).values(
+#                             'gst_number', 'company_name', 'address', 'location', 'billing_pincode', 'state_code',
+#                             'billing_address', 'billing_state_city', 'billing_state_code', 'shipping_address',
+#                             'shipping_state_city', 'shipping_state_code', 'shipping_pincode'
+#                         ).first()
+#
+#                         custom_shipping_details = CustomUser.objects.filter(id=custom.customer_id.id).values(
+#                             'gst_number', 'company_name', 'address', 'location', 'billing_pincode', 'state_code',
+#                             'shipping_address', 'shipping_state_city', 'shipping_state_code', 'shipping_pincode'
+#                         ).first()
+#
+#                         if custom_owner_details and custom_buyer_details and custom_shipping_details:
+#                             custom.invoice_payload = {
+#                                 "Version": "1.1",
+#                                 "TranDtls": {
+#                                     "TaxSch": "GST",
+#                                     "SupTyp": "B2B",
+#                                     "RegRev": "Y",
+#                                     "EcmGstin": None,
+#                                     # "IgstOnIntra": "N"
+#                                     "IgstOnIntra": "Y" if custom_owner_details['billing_state_code'] !=
+#                                                           custom_shipping_details['shipping_state_code'] else "N"
+#                                 },
+#                                 "DocDtls": {
+#                                     "Typ": "INV",
+#                                     "No": custom.invoice_number,
+#                                     "Dt": custom.created_date_time.strftime('%d/%m/%Y')
+#                                 },
+#                                 "SellerDtls": {
+#                                     "Gstin": custom_owner_details['company_gst_num'],
+#                                     "LglNm": custom_owner_details['company_name'],
+#                                     "Addr1": custom_owner_details['billing_address'],
+#                                     "Loc": custom_owner_details['billing_state_city'],
+#                                     "Pin": custom_owner_details['billing_pincode'],
+#                                     "Stcd": custom_owner_details['billing_state_code']
+#                                 },
+#                                 "BuyerDtls": {
+#                                     "Gstin": custom_buyer_details['gst_number'],
+#                                     "LglNm": custom_buyer_details['company_name'],
+#                                     "Pos": custom_buyer_details['billing_state_code'],
+#                                     "Addr1": custom_buyer_details['billing_address'],
+#                                     "Loc": custom_buyer_details['billing_state_city'],
+#                                     "Pin": custom_buyer_details['billing_pincode'],
+#                                     "Stcd": custom_buyer_details['billing_state_code']
+#                                 },
+#                                 "ShipDtls": {
+#                                     "Gstin": custom_buyer_details['gst_number'],
+#                                     "LglNm": custom_buyer_details['company_name'],
+#                                     "Addr1": custom_buyer_details['shipping_address'],
+#                                     "Loc": custom_buyer_details['shipping_state_city'],
+#                                     "Pin": custom_buyer_details['shipping_pincode'],
+#                                     "Stcd": custom_buyer_details['shipping_state_code']
+#                                 },
+#                                 "ItemList": [
+#                                     {
+#                                         "SlNo": str(index + 1),
+#                                         "IsServc": "N",
+#                                         "HsnCd": str(custom_item_detail.get('hsn_number', '')),
+#                                         "Qty": str(custom_item_detail.get('quantity', 1)),
+#                                         "UnitPrice": str(custom_item_detail.get('price', 0)),
+#                                         # "Unit": "KGS",
+#                                         "Unit": str(custom_item_detail.get('units', '')),
+#                                         "TotAmt": str(custom_item_detail.get('item_total_price', '')),
+#                                         "AssAmt": custom_item_detail.get('price_after_discount', ''),
+#                                         "GstRt": str(custom_item_detail.get('igst', '')),
+#                                         "IgstAmt": str(custom_item_detail.get('igst_percentage', '')),
+#                                         "CgstAmt": str(custom_item_detail.get('cgst_percentage', '')),
+#                                         "SgstAmt": str(custom_item_detail.get('sgst_percentage', '')),
+#                                         "Discount": str(custom_item_detail.get('discount_amount', '')),
+#                                         "TotItemVal": custom_item_detail.get('total', '')
+#                                     }
+#                                     for index, custom_item_detail in enumerate(custom.custom_item_details)
+#                                 ],
+#                                 "ValDtls": {
+#                                     "AssVal": custom.sum_of_price_after_discount,
+#                                     "TotInvVal": custom.amount_to_pay
+#                                 },
+#                                 "PrecDocDtls": [{
+#                                     "InvNo": request.data.get('prec_doc_inv_no', '') or custom.invoice_number,
+#                                     "InvDt": custom.created_date_time.strftime('%d/%m/%Y')
+#                                 }]
+#                             }
+#
+#                             draft_status, _ = InvoiceStatus.objects.get_or_create(invoice_status_name='Draft')
+#                             custom.invoice_status = draft_status
+#                             custom.save()
+#
+#                             encrypted_payload = self.encrypt(custom.invoice_payload, sek_key)
+#                             formatted_payload = json.loads(json.dumps(custom.invoice_payload, separators=(',', ':')))
+#
+#                             # Prepare the data for the API request
+#                             api_url = "https://einv1api.gstsandbox.nic.in/eicore/v1.03/Invoice"
+#                             headers = {
+#                                 "client-id": auth_token.client_id,
+#                                 "client-secret": "76KkYyE3SGguAaOocIWw",
+#                                 "gstin": "29AAGCE4783K1Z1",
+#                                 "user_name": auth_token.user_name,
+#                                 "authtoken": auth_token.auth_token,
+#                             }
+#                             api_data = {
+#                                 "Data": encrypted_payload,
+#                                 "sek": sek_key
+#                             }
+#
+#                             # Make the POST request to the API endpoint
+#                             response = requests.post(api_url, headers=headers, json=api_data)
+#
+#                             if response.status_code == 200:
+#                                 api_response = response.json()
+#                                 response_data = api_response['Status']
+#                                 response_error_details = api_response['ErrorDetails']
+#
+#                                 if response_error_details:  # Check if error details are present
+#                                     error_details = response_error_details[0][
+#                                         'ErrorMessage']  # Accessing the first error message
+#                                 encrypted_data = api_response.get('Data')
+#
+#                                 # Check if encrypted data is available
+#                                 if encrypted_data:
+#                                     decrypted_data = self.decrypt_data(encrypted_data, sek_key)
+#
+#                                     if decrypted_data is not None:
+#                                         print(f"Decrypted Data: {decrypted_data}")
+#
+#                                         # Include decrypted data in the response
+#                                         api_response = {'DecryptedData': decrypted_data}
+#
+#                                 # Save API response as JSON string
+#                                 api_response_json = json.dumps(api_response)
+#
+#                                 # Check if the status is 1 or 0
+#                                 if response_data == 1:
+#                                     # Set invoice status to 2
+#                                     custom.invoice_status_id = 2
+#                                     custom.save(update_fields=['invoice_status_id'])
+#                                     custom.e_invoice_status = True
+#                                     custom.save(update_fields=['e_invoice_status'])
+#
+#                                     # ewaybill_status = True if 'EwbNo' in decrypted_data else False
+#
+#                                     # Update ewaybill_status in AddItem model
+#                                     # custom.ewaybill_status = ewaybill_status
+#                                     # custom.save(update_fields=['ewaybill_status'])
+#
+#                                     # Save api_response in EInvoice table
+#                                     e_invoice_instance = EInvoice.objects.create(
+#                                         invoice_number_custominvoice=custom,
+#                                         api_response=api_response_json,
+#                                         data=custom.invoice_payload
+#                                     )
+#
+#                                 # Check if the error message is 'Duplicate IRN'
+#                                 error_message = next(
+#                                     (error['ErrorMessage'] for error in api_response.get('ErrorDetails', []) if
+#                                      'Duplicate IRN' in error.get('ErrorMessage', '')), None)
+#                                 if response_data == 0 and error_message == 'Duplicate IRN':
+#                                     # Set invoice status to 2
+#                                     custom.invoice_status_id = 2
+#                                     custom.save(update_fields=['invoice_status_id'])
+#                                     # custom.ewaybill_status = True
+#                                     custom.save(update_fields=['e_invoice_status'])
+#
+#                                 if response_data == 0:
+#                                     return Response(
+#                                         {"message": error_details},
+#                                         status=status.HTTP_500_INTERNAL_SERVER_ERROR
+#                                     )
+#                                 # Prepare response data
+#                                 response_data = {
+#                                     "message": "E-Invoice generated successfully.",
+#                                     "Data": custom.invoice_payload,
+#                                     "sek": sek_key,
+#                                     "api_response": api_response,
+#                                     "Error_details": error_details
+#                                 }
+#                                 if response_data == 0:
+#                                     return Response(
+#                                         {"message": error_details},
+#                                         status=status.HTTP_500_INTERNAL_SERVER_ERROR
+#                                     )
+#
+#                                 return Response(response_data, status=status.HTTP_200_OK)
+#
+#                             else:
+#                                 return Response(
+#                                     {"error": f"API sheetal request failed with status code "},
+#                                     status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#
+#                         else:
+#                             return Response({"error": "Details not found."}, status=status.HTTP_404_NOT_FOUND)
+#
+#                     else:
+#                         return Response({"error": "AuthToken not found."}, status=status.HTTP_404_NOT_FOUND)
+#
+#                 except Exception as e:
+#                     return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#
+#         return Response({"error": "Invoice not found or invoice_type not supported."}, status=status.HTTP_404_NOT_FOUND)
+#
+#     def decrypt_data(self, encrypted_data, sek_key_base64):
+#         try:
+#             # Decode the base64 encoded sek key
+#             sek_key = base64.b64decode(sek_key_base64)
+#
+#             # Decode the base64 encoded data
+#             decoded_data = base64.b64decode(encrypted_data)
+#
+#             # Create AES cipher object with ECB mode
+#             cipher = AES.new(sek_key, AES.MODE_ECB)
+#
+#             # Decrypt the data
+#             decrypted_data = cipher.decrypt(decoded_data)
+#
+#             # Unpad the decrypted data
+#             unpadded_data = unpad(decrypted_data, AES.block_size)
+#
+#             # Convert decrypted data from bytes to string
+#             decrypted_string = unpadded_data.decode('utf-8')
+#
+#             # Convert decrypted string to JSON
+#             decrypted_json = json.loads(decrypted_string)
+#
+#             return decrypted_json
+#
+#         except Exception as e:
+#             print(f"Error decrypting data: {str(e)}")
+#             return None
+#
+#     def post(self, request, *args, **kwargs):
+#         invoice_number = request.data.get('invoice_number')
+#         invoice_type = request.data.get('invoice_type')
+#
+#         if not invoice_number:
+#             return Response({"error": "Missing invoice_number in the request body."},
+#                             status=status.HTTP_400_BAD_REQUEST)
+#
+#         if not invoice_type:
+#             return Response({"error": "Missing invoice_type in the request body."}, status=status.HTTP_400_BAD_REQUEST)
+#
+#         if invoice_type == "Drone":
+#             item = get_object_or_404(AddItem, invoice_number=invoice_number)
+#
+#             if item:
+#                 try:
+#                     auth_token = AuthToken.objects.first()
+#
+#                     if auth_token:
+#                         sek_key = auth_token.sek
+#
+#                         owner_details = CustomUser.objects.filter(id=item.owner_id.id).values(
+#                             'company_gst_num', 'company_name', 'company_address', 'location',
+#                             'billing_state_city', 'billing_pincode', 'billing_state_code', 'shipping_pincode',
+#                             'billing_address'
+#                         ).first()
+#
+#                         buyer_details = CustomUser.objects.filter(id=item.customer_id.id).values(
+#                             'gst_number', 'company_name', 'address', 'location', 'billing_pincode', 'state_code',
+#                             'billing_address', 'billing_state_city', 'billing_state_code', 'shipping_address',
+#                             'shipping_state_city', 'shipping_state_code', 'shipping_pincode'
+#                         ).first()
+#
+#                         shipping_details = CustomUser.objects.filter(id=item.customer_id.id).values(
+#                             'gst_number', 'company_name', 'address', 'location', 'billing_pincode', 'state_code',
+#                             'shipping_address', 'shipping_state_city', 'shipping_state_code', 'shipping_pincode'
+#                         ).first()
+#
+#                         if owner_details and buyer_details and shipping_details:
+#                             item.invoice_payload = {
+#                                 "Version": "1.1",
+#                                 "TranDtls": {
+#                                     "TaxSch": "GST",
+#                                     "SupTyp": "B2B",
+#                                     "RegRev": "Y",
+#                                     "EcmGstin": None,
+#                                     # "IgstOnIntra": "N"
+#                                     "IgstOnIntra": "Y" if owner_details['billing_state_code'] != shipping_details[
+#                                         'shipping_state_code'] else "N"
+#                                 },
+#                                 "DocDtls": {
+#                                     "Typ": "INV",
+#                                     "No": item.invoice_number,
+#                                     "Dt": item.created_date_time.strftime('%d/%m/%Y')
+#                                 },
+#                                 "SellerDtls": {
+#                                     "Gstin": owner_details['company_gst_num'],
+#                                     "LglNm": owner_details['company_name'],
+#                                     "Addr1": owner_details['billing_address'],
+#                                     "Loc": owner_details['billing_state_city'],
+#                                     "Pin": owner_details['billing_pincode'],
+#                                     "Stcd": owner_details['billing_state_code']
+#                                 },
+#                                 "BuyerDtls": {
+#                                     "Gstin": buyer_details['gst_number'],
+#                                     "LglNm": buyer_details['company_name'],
+#                                     "Pos": buyer_details['billing_state_code'],
+#                                     "Addr1": buyer_details['billing_address'],
+#                                     "Loc": buyer_details['billing_state_city'],
+#                                     "Pin": buyer_details['billing_pincode'],
+#                                     "Stcd": buyer_details['billing_state_code']
+#                                 },
+#                                 "ShipDtls": {
+#                                     "Gstin": buyer_details['gst_number'],
+#                                     "LglNm": buyer_details['company_name'],
+#                                     "Addr1": buyer_details['shipping_address'],
+#                                     "Loc": buyer_details['shipping_state_city'],
+#                                     "Pin": buyer_details['shipping_pincode'],
+#                                     "Stcd": buyer_details['shipping_state_code']
+#                                 },
+#                                 "ItemList": [
+#                                     {
+#                                         "SlNo": str(index + 1),
+#                                         "IsServc": "N",
+#                                         "HsnCd": str(drone_detail.get('hsn_number', '')),
+#                                         "Qty": str(drone_detail.get('quantity', 1)),
+#                                         "UnitPrice": str(drone_detail.get('price', 0)),
+#                                         # "Unit": "KGS",  # You can adjust this field based on your data
+#                                         "Unit": str(drone_detail.get('units', '')),
+#                                         "TotAmt": str(drone_detail.get('item_total_price', '')),
+#                                         "AssAmt": str(float(drone_detail.get('item_total_price', 0)) - float(
+#                                             item.discount_amount)),
+#                                         "GstRt": item.igst,
+#                                         "CgstAmt": item.cgst_amount,
+#                                         "SgstAmt": item.sgst_amount,
+#                                         "Discount": item.discount_amount,
+#                                         "TotItemVal": str(float(drone_detail.get('item_total_price', 0)) - float(
+#                                             item.discount_amount) + float(
+#                                             item.igst) + item.cgst_amount + item.sgst_amount)
+#                                     }
+#                                     for index, drone_detail in enumerate(item.dronedetails)
+#                                 ],
+#                                 "ValDtls": {
+#                                     "AssVal": str(sum(
+#                                         float(drone_detail.get('item_total_price', 0)) - float(item.discount_amount) for
+#                                         drone_detail in item.dronedetails)),
+#                                     "TotInvVal": str(sum(float(drone_detail.get('item_total_price', 0)) - float(
+#                                         item.discount_amount) + float(item.igst) + item.cgst_amount + item.sgst_amount
+#                                                          for drone_detail in item.dronedetails))
+#                                 },
+#                                 "PrecDocDtls": [{
+#                                     "InvNo": request.data.get('prec_doc_inv_no', '') or item.invoice_number,
+#                                     "InvDt": item.created_date_time.strftime('%d/%m/%Y')
+#                                 }]
+#                             }
+#
+#                             draft_status, _ = InvoiceStatus.objects.get_or_create(invoice_status_name='Draft')
+#                             item.invoice_status = draft_status
+#                             item.save()
+#
+#                             encrypted_payload = self.encrypt(item.invoice_payload, sek_key)
+#                             formatted_payload = json.loads(json.dumps(item.invoice_payload, separators=(',', ':')))
+#
+#                             # Prepare the data for the API request
+#                             api_url = "https://einv1api.gstsandbox.nic.in/eicore/v1.03/Invoice"
+#                             headers = {
+#                                 "client-id": auth_token.client_id,
+#                                 "client-secret": "76KkYyE3SGguAaOocIWw",
+#                                 "gstin": "29AAGCE4783K1Z1",
+#                                 "user_name": auth_token.user_name,
+#                                 "authtoken": auth_token.auth_token,
+#                             }
+#                             api_data = {
+#                                 "encrypted_payload": encrypted_payload,
+#                                 "sek": sek_key
+#                             }
+#
+#                             # Make the POST request to the API endpoint
+#                             response = requests.post(api_url, headers=headers, json=api_data)
+#
+#                             # Check if the request was successful
+#                             if response.status_code == 200:
+#                                 api_response = response.json()
+#                                 response_data = api_response['Status']
+#
+#                                 response_data = {
+#                                     "message": "Invoice saved to draft successfully.",
+#                                 }
+#                                 return Response(response_data, status=status.HTTP_200_OK)
+#                             else:
+#                                 return Response(
+#                                     {"error": f"API request failed with status code {response.status_code}"},
+#                                     status=response.status_code)
+#
+#                         else:
+#                             return Response({"error": "Details not found."}, status=status.HTTP_404_NOT_FOUND)
+#
+#                     else:
+#                         return Response({"error": "AuthToken not found."}, status=status.HTTP_404_NOT_FOUND)
+#
+#                 except Exception as e:
+#                     return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#
+#             return Response({"error": "Invoice not found."}, status=status.HTTP_404_NOT_FOUND)
+#
+#         elif invoice_type == "Custom":
+#             custom = get_object_or_404(CustomInvoice, invoice_number=invoice_number)
+#
+#             if custom:
+#                 try:
+#                     auth_token = AuthToken.objects.first()
+#
+#                     if auth_token:
+#                         sek_key = auth_token.sek
+#
+#                         custom_owner_details = CustomUser.objects.filter(id=custom.owner_id.id).values(
+#                             'company_gst_num', 'company_name', 'company_address', 'location',
+#                             'billing_state_city', 'billing_pincode', 'billing_state_code', 'shipping_pincode',
+#                             'billing_address'
+#                         ).first()
+#
+#                         custom_buyer_details = CustomUser.objects.filter(id=custom.customer_id.id).values(
+#                             'gst_number', 'company_name', 'address', 'location', 'billing_pincode', 'state_code',
+#                             'billing_address', 'billing_state_city', 'billing_state_code', 'shipping_address',
+#                             'shipping_state_city', 'shipping_state_code', 'shipping_pincode'
+#                         ).first()
+#
+#                         custom_shipping_details = CustomUser.objects.filter(id=custom.customer_id.id).values(
+#                             'gst_number', 'company_name', 'address', 'location', 'billing_pincode', 'state_code',
+#                             'shipping_address', 'shipping_state_city', 'shipping_state_code', 'shipping_pincode'
+#                         ).first()
+#
+#                         if custom_owner_details and custom_buyer_details and custom_shipping_details:
+#                             custom.invoice_payload = {
+#                                 "Version": "1.1",
+#                                 "TranDtls": {
+#                                     "TaxSch": "GST",
+#                                     "SupTyp": "B2B",
+#                                     "RegRev": "Y",
+#                                     "EcmGstin": None,
+#                                     # "IgstOnIntra": "N"
+#                                     "IgstOnIntra": "Y" if custom_owner_details['billing_state_code'] !=
+#                                                           custom_shipping_details['shipping_state_code'] else "N"
+#
+#                                 },
+#                                 "DocDtls": {
+#                                     "Typ": "INV",
+#                                     "No": custom.invoice_number,
+#                                     "Dt": custom.created_date_time.strftime('%d/%m/%Y')
+#                                 },
+#                                 "SellerDtls": {
+#                                     "Gstin": custom_owner_details['company_gst_num'],
+#                                     "LglNm": custom_owner_details['company_name'],
+#                                     "Addr1": custom_owner_details['billing_address'],
+#                                     "Loc": custom_owner_details['billing_state_city'],
+#                                     "Pin": custom_owner_details['billing_pincode'],
+#                                     "Stcd": custom_owner_details['billing_state_code']
+#                                 },
+#                                 "BuyerDtls": {
+#                                     "Gstin": custom_buyer_details['gst_number'],
+#                                     "LglNm": custom_buyer_details['company_name'],
+#                                     "Pos": custom_buyer_details['billing_state_code'],
+#                                     "Addr1": custom_buyer_details['billing_address'],
+#                                     "Loc": custom_buyer_details['billing_state_city'],
+#                                     "Pin": custom_buyer_details['billing_pincode'],
+#                                     "Stcd": custom_buyer_details['billing_state_code']
+#                                 },
+#                                 "ShipDtls": {
+#                                     "Gstin": custom_buyer_details['gst_number'],
+#                                     "LglNm": custom_buyer_details['company_name'],
+#                                     "Addr1": custom_buyer_details['shipping_address'],
+#                                     "Loc": custom_buyer_details['shipping_state_city'],
+#                                     "Pin": custom_buyer_details['shipping_pincode'],
+#                                     "Stcd": custom_buyer_details['shipping_state_code']
+#                                 },
+#                                 "ItemList": [
+#                                     {
+#                                         "SlNo": str(index + 1),
+#                                         "IsServc": "N",
+#                                         "HsnCd": str(custom_item_detail.get('hsn_number', '')),
+#                                         "Qty": str(custom_item_detail.get('quantity', 1)),
+#                                         "UnitPrice": str(custom_item_detail.get('price', 0)),
+#                                         # "Unit": "KGS",  # You can adjust this field based on your data
+#                                         "Unit": str(custom_item_detail.get('units', '')),
+#                                         "TotAmt": str(custom_item_detail.get('item_total_price', '')),
+#                                         "AssAmt": str(float(custom_item_detail.get('item_total_price', 0)) - float(
+#                                             custom_item_detail.get('discount_amount', ''))),
+#                                         "GstRt": str(custom_item_detail.get('igst', '')),
+#                                         "IgstAmt": str(custom_item_detail.get('igst_percentage', '')),
+#                                         "CgstAmt": str(custom_item_detail.get('cgst_percentage', '')),
+#                                         "SgstAmt": str(custom_item_detail.get('sgst_percentage', '')),
+#                                         "Discount": str(custom_item_detail.get('discount_amount', '')),
+#                                         "TotItemVal": str(float(custom_item_detail.get('item_total_price', 0)) - float(
+#                                             custom_item_detail.get('discount_amount', '')) + float(
+#                                             custom_item_detail.get('igst', '')) + float(
+#                                             custom_item_detail.get('cgst_percentage', '')) + float(
+#                                             custom_item_detail.get('sgst_percentage', '')))
+#                                     }
+#                                     for index, custom_item_detail in enumerate(custom.custom_item_details)
+#                                 ],
+#                                 "ValDtls": {
+#                                     "AssVal": custom.sum_of_price_after_discount,
+#                                     "TotInvVal": custom.amount_to_pay
+#                                 },
+#                                 "PrecDocDtls": [{
+#                                     "InvNo": request.data.get('prec_doc_inv_no', '') or custom.invoice_number,
+#                                     "InvDt": custom.created_date_time.strftime('%d/%m/%Y')
+#                                 }]
+#                             }
+#
+#                             draft_status, _ = InvoiceStatus.objects.get_or_create(invoice_status_name='Draft')
+#                             custom.invoice_status = draft_status
+#                             custom.save()
+#
+#                             encrypted_payload = self.encrypt(custom.invoice_payload, sek_key)
+#                             formatted_payload = json.loads(json.dumps(custom.invoice_payload, separators=(',', ':')))
+#
+#                             # Prepare the data for the API request
+#                             api_url = "https://einv1api.gstsandbox.nic.in/eicore/v1.03/Invoice"
+#                             headers = {
+#                                 "client-id": auth_token.client_id,
+#                                 "client-secret": "76KkYyE3SGguAaOocIWw",
+#                                 "gstin": "29AAGCE4783K1Z1",
+#                                 "user_name": auth_token.user_name,
+#                                 "authtoken": auth_token.auth_token,
+#                             }
+#                             api_data = {
+#                                 "encrypted_payload": encrypted_payload,
+#                                 "sek": sek_key
+#                             }
+#
+#                             # Make the POST request to the API endpoint
+#                             response = requests.post(api_url, headers=headers, json=api_data)
+#
+#                             # Check if the request was successful
+#                             if response.status_code == 200:
+#                                 api_response = response.json()
+#                                 response_data = api_response['Status']
+#
+#                                 response_data = {
+#                                     "message": "Invoice saved to draft successfully.",
+#                                 }
+#                                 return Response(response_data, status=status.HTTP_200_OK)
+#                             else:
+#                                 return Response(
+#                                     {"error": f"API request failed with status code {response.status_code}"},
+#                                     status=response.status_code)
+#
+#                         else:
+#                             return Response({"error": "Details not found."}, status=status.HTTP_404_NOT_FOUND)
+#
+#                     else:
+#                         return Response({"error": "AuthToken not found."}, status=status.HTTP_404_NOT_FOUND)
+#
+#                 except Exception as e:
+#                     return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#
+#             return Response({"error": "Invoice not found."}, status=status.HTTP_404_NOT_FOUND)
+#
+#         else:
+#             return Response({"error": "Invalid invoice_type provided."}, status=status.HTTP_400_BAD_REQUEST)
 
 
 import ast
@@ -25792,9 +26662,9 @@ class UpdateInvoiceView(APIView):
                 invoice.customer_gst_number = request.data.get("gst", invoice.customer_gst_number)
                 invoice.customer_gender = request.data.get("gender", invoice.customer_gender)
                 invoice.customer_date_of_birth = request.data.get("date_of_birth", invoice.customer_date_of_birth)
-                invoice.customer_shipping_pincode = request.data.get("shipping_address",
+                invoice.customer_shipping_pincode = request.data.get("shipping_pincode",
                                                                      invoice.customer_shipping_pincode)
-                invoice.customer_billing_pincode = request.data.get("shipping_pincode",
+                invoice.customer_billing_pincode = request.data.get("billing_pincode",
                                                                     invoice.customer_billing_pincode)
 
                 # Save the updated invoice in CustomInvoice
