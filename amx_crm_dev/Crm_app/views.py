@@ -25763,9 +25763,9 @@ class UpdateInvoiceView(APIView):
                 invoice.customer_gst_number = request.data.get("gst", invoice.customer_gst_number)
                 invoice.customer_gender = request.data.get("gender", invoice.customer_gender)
                 invoice.customer_date_of_birth = request.data.get("date_of_birth", invoice.customer_date_of_birth)
-                invoice.customer_shipping_pincode = request.data.get("shipping_address",
+                invoice.customer_shipping_pincode = request.data.get("shipping_pincode",
                                                                      invoice.customer_shipping_pincode)
-                invoice.customer_billing_pincode = request.data.get("shipping_pincode",
+                invoice.customer_billing_pincode = request.data.get("billing_pincode",
                                                                     invoice.customer_billing_pincode)
 
                 # Save the updated invoice in AddItem
