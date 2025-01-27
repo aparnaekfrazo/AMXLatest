@@ -238,7 +238,7 @@ p.long-text-readability{
                                     <td>{{drone.quantity|default:'-'  }}</td>
                                     <td>&#x20B9;{{drone.price|default:'-'  }}</td>
                                     <td>{{drone.discount |default:0 }}</td>
-                                    <td>{{total_cgst_igst_sgst|default:'-' }}%</td>
+                                    <td>{{drone.tax_percentage_total|default:'-' }}%</td>
                                     <td>&#x20B9;{{ drone.item_total_price|default:'-'  }}</td>
                                             </tr>
 
@@ -274,7 +274,7 @@ p.long-text-readability{
                                             <tr>
                                                 <td colspan="4">{{i.hsn_number|default:'-'}}</td>
                                                 <td>&#x20B9; {{i.price_after_discount|default:'-'}}</td>
-                                                <td>{{total_cgst_igst_sgst|default:'-'}}%</td>
+                                                <td>{{i.tax_percentage_total|default:'-'}}%</td>
                                                 <td>&#x20B9; {{i.tax_percentage_total|default:'-'}}</td>
                                                 <td>&#x20B9; {{i.tax_percentage_total|default:'-'}}</td>
 
