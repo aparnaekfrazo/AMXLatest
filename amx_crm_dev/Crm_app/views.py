@@ -14392,12 +14392,18 @@ class MyAPIView(APIView):
                 total_tax = 0
                 price_after_discount = 0
                 sum_of_discount_amount = float(invoice_data.get("sum_of_discount_amount", 0))
+                total_cgst_igst_sgst = 0
 
                 # Accumulate totals
                 for drone in formatted_drones:
                     total_price_before_tax += float(drone["item_total_price"])
                     total_tax += float(drone["tax_percentage_total"])
                     price_after_discount += float(drone["price_after_discount"])
+
+                    cgst = float(drone.get("cgst", 0))
+                    igst = float(drone.get("igst", 0))
+                    sgst = float(drone.get("sgst", 0))
+                    total_cgst_igst_sgst += cgst + igst + sgst
 
                 # Round the total value to two decimal places (change here)
                 total_amount = total_price_before_tax + total_tax - sum_of_discount_amount
@@ -14411,7 +14417,8 @@ class MyAPIView(APIView):
                     'total_amount_inwords': num2words_inr(total_amount_rounded),  # Change here: passing rounded total
                     'total_tax': total_tax,
                     'total_tax_words': num2words_inr(total_tax),
-                    'price_after_discount': price_after_discount
+                    'price_after_discount': price_after_discount,
+                    'total_cgst_igst_sgst': total_cgst_igst_sgst
                 }
                 # print(context,"cccccc")
                 # context = {
