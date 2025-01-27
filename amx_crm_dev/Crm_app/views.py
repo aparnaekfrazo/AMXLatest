@@ -14418,7 +14418,7 @@ class MyAPIView(APIView):
                     'total_tax': total_tax,
                     'total_tax_words': num2words_inr(total_tax),
                     'price_after_discount': price_after_discount,
-                    'total_cgst_igst_sgst': total_cgst_igst_sgst
+                    'total_cgst_igst_sgst': round(total_cgst_igst_sgst)
                 }
                 print(total_cgst_igst_sgst,"ffffffffffffffffffffffff")
                 # print(context,"cccccc")
