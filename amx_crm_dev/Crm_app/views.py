@@ -14384,9 +14384,9 @@ class MyAPIView(APIView):
                                         drone_detail.get('sgst_percentage', 0)
                                 ),
                                 'tax_csi_total': (
-                                        drone_detail.get('cgst', 0) +
-                                        drone_detail.get('igst', 0) +
-                                        drone_detail.get('sgst', 0)
+                                        round(drone_detail.get('cgst', 0)) +
+                                        round(drone_detail.get('igst', 0)) +
+                                        round(drone_detail.get('sgst', 0))
                                 ),
                             }
 
@@ -14518,11 +14518,9 @@ class MyAPIView(APIView):
 
                     customer_type_name = custom_invoice.customer_type_id.name if custom_invoice.customer_type_id else None
 
-                    print(customer_type_name, "llllllllllll")
                     if customer_type_name == "Individual":
                         customer_gst_number = None
                         customer_pan_number = custom_invoice.customer_pan_number
-                        print("eeeeeeeeeee")
                     elif customer_type_name == "Organization":
                         customer_gst_number = custom_invoice.customer_gst_number
                         customer_pan_number = None
@@ -14705,9 +14703,9 @@ class MyAPIView(APIView):
                                             drone_detail.get('sgst_percentage', 0)
                                     ),
                                     'tax_csi_total': (
-                                            drone_detail.get('cgst', 0) +
-                                            drone_detail.get('igst', 0) +
-                                            drone_detail.get('sgst', 0)
+                                            round(drone_detail.get('cgst', 0)) +
+                                            round(drone_detail.get('igst', 0)) +
+                                            round(drone_detail.get('sgst', 0))
                                     ),
                                 }
 
