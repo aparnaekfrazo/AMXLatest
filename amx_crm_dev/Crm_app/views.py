@@ -14383,6 +14383,11 @@ class MyAPIView(APIView):
                                         drone_detail.get('igst_percentage', 0) +
                                         drone_detail.get('sgst_percentage', 0)
                                 ),
+                                'tax_csi_total': (
+                                        drone_detail.get('cgst', 0) +
+                                        drone_detail.get('igst', 0) +
+                                        drone_detail.get('sgst', 0)
+                                ),
                             }
 
                             # Append the formatted drone detail to the list
@@ -14698,6 +14703,11 @@ class MyAPIView(APIView):
                                             drone_detail.get('cgst_percentage', 0) +
                                             drone_detail.get('igst_percentage', 0) +
                                             drone_detail.get('sgst_percentage', 0)
+                                    ),
+                                    'tax_csi_total': (
+                                            drone_detail.get('cgst', 0) +
+                                            drone_detail.get('igst', 0) +
+                                            drone_detail.get('sgst', 0)
                                     ),
                                 }
 
