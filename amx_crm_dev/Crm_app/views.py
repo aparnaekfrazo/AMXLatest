@@ -4387,7 +4387,7 @@ class AuthAPIView(APIView):
         }
 
         data = {
-            "Data": "kvNXiw10UtV9LSFh0s9qPVGmkaKd0IG6EUDM4UaiIuFrL4NHtmJMVMGCBT5aA8xSeNuHEWOTOUHc/3CvBIvqqtb43qqyPgJGb0tM13SlaHd6Rp26VQhLSSD416wloM3TV4U/AoEayhbifI0O3jg9rMK+lGTxgQRGpuDEMxH84JFlZ8j9yMfpVf+xj0WZScjlxHoYvqpML+O+8VE6oAAp6syIfA3OOuumal6IXgBXfYNjjZeJbJyiHCG8AoZ3V10rkp3iLzNczn9I5oEiKeV8ogXlykrRQ8ah5WTWjqUCjuLruUYzeVgn1IrFGt9AdNE9v5/tTJUpdI7KGfqHn9Eh+Q=="
+            "Data":"M4gdCz4FT9rUqx4OOrVWX3JWIwxGZa8leQLvC+H+RRk2tzB1eqjnrJkdr+sF5E7s4Rfc2Feggb71/EoozgjUkv9wbEyfBqShT1iQAY3bRqx/M7giUEWbuB+2LORIZCnxCAPiZqaBPU5mXT3VC6rxDVdFEKGJ3i3WjjK8jWNDNcY6nar2FYWF2M+CBWCb6qnmi9bDQHRBPg5Z51ellllhlNBtmfN4lVGWVtuXgDNXqV9OCyPnvV/RE4X+YpNfIvycuZYA3u/XcaH+0zYeJlAP5a1gSV1383/Wu+FJU651Uw4oVXH8izIYMmUj0SF6wfegVwBGbNtZraNt3gai/sJkqg=="
         }
         response = requests.post(url, headers=headers, data=json.dumps(data))
 
@@ -4398,7 +4398,7 @@ class AuthAPIView(APIView):
             existing_record = AuthToken.objects.first()
 
             if existing_record:
-                provided_key = "skxn5m5f4I32wYp0e2co8j8eAjUon6O/tJ2ay5X/JUM="  # app key
+                provided_key = "c5oXOld5NnfGfDGOfH0L7XNOFe0qfHWJUkLizH7elK4="  # app key
                 encrypted_sek = data.get("Sek")
                 decrypted_sek = decrypt_by_symmetric_key(encrypted_sek, provided_key)
                 base64_decrypted_sek = base64.b64encode(decrypted_sek).decode('utf-8')
@@ -4410,7 +4410,7 @@ class AuthAPIView(APIView):
                 existing_record.token_expiry = data.get("TokenExpiry")
                 existing_record.save()
             else:
-                provided_key = "skxn5m5f4I32wYp0e2co8j8eAjUon6O/tJ2ay5X/JUM="  # app key
+                provided_key = "c5oXOld5NnfGfDGOfH0L7XNOFe0qfHWJUkLizH7elK4="  # app key
                 encrypted_sek = data.get("Sek")
                 decrypted_sek = decrypt_by_symmetric_key(encrypted_sek, provided_key)
                 base64_decrypted_sek = base64.b64encode(decrypted_sek).decode('utf-8')
