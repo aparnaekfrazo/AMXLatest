@@ -115,17 +115,42 @@ class RoleAPIView(APIView):
             return Response({"message": "Role not found"}, status=status.HTTP_404_NOT_FOUND)
 
 
+#######sheetal#####################
+# def convertBase64(image, image_name, username, folder_name):
+#     if image is None:
+#         return None
+#
+#     split_base_url_data = image.split(';base64,')[1]
+#     imgdata1 = base64.b64decode(split_base_url_data)
+#     filename1 = "/amx-crm-dev/site/public/media/" + str(folder_name) + "/" + str(username) + image_name + '.png'
+#     fname1 = '/' + str(folder_name) + '/' + str(username) + image_name + '.png'
+#     ss = open(filename1, 'wb')
+#     ss.write(imgdata1)
+#     ss.close()
+#
+#     return fname1
+
+import base64
+import os
+from django.conf import settings
+
+
 def convertBase64(image, image_name, username, folder_name):
     if image is None:
         return None
 
     split_base_url_data = image.split(';base64,')[1]
     imgdata1 = base64.b64decode(split_base_url_data)
-    filename1 = "/amx-crm-dev/site/public/media/" + str(folder_name) + "/" + str(username) + image_name + '.png'
-    fname1 = '/' + str(folder_name) + '/' + str(username) + image_name + '.png'
-    ss = open(filename1, 'wb')
-    ss.write(imgdata1)
-    ss.close()
+
+    # Use MEDIA_BASE_PATH from settings
+    media_dir = os.path.join(settings.MEDIA_BASE_PATH, folder_name)
+    os.makedirs(media_dir, exist_ok=True)
+
+    filename1 = os.path.join(media_dir, f"{username}{image_name}.png")
+    fname1 = f"/{folder_name}/{username}{image_name}.png"
+
+    with open(filename1, 'wb') as ss:
+        ss.write(imgdata1)
 
     return fname1
 
@@ -750,6 +775,7 @@ class DroneCategoryAPIView(APIView):
 from rest_framework.exceptions import NotFound
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 
+
 @method_decorator([authorization_required], name='dispatch')
 class DroneAPIView(APIView):
     def get(self, request, pk=None):
@@ -1022,23 +1048,48 @@ class DroneAPIView(APIView):
 
         return Response({"message": "Drone details updated successfully"}, status=status.HTTP_200_OK)
 
+    # def save_image(self, drone, image_data, folder_name, image_name):
+    #     if image_data.startswith(('http:', 'https:')):
+    #         image_response = requests.get(image_data)
+    #         if image_response.status_code == 200:
+    #             content_type = image_response.headers['content-type']
+    #             extension = content_type.split('/')[-1]
+    #             image_filename = f"{image_name}.{extension}"
+    #             image_path = os.path.join(folder_name, image_filename)
+    #             save_path = os.path.join("amx-crm-dev/site/public/media", image_path)
+    #             with open(save_path, 'wb') as f:
+    #                 f.write(image_response.content)
+    #         else:
+    #             raise ValueError(f"Failed to fetch {folder_name} image from the provided URL.")
+    #     else:  # Assume it's base64-encoded data
+    #         image_filename = f"{image_name}.png"
+    #         image_path = os.path.join(folder_name, image_filename)
+    #         save_path = os.path.join("amx-crm-dev/site/public/media", image_path)
+    #         image_data = base64.b64decode(image_data.split(';base64,')[1])
+    #         with open(save_path, 'wb') as f:
+    #             f.write(image_data)
+    #
+    #     return f'/{image_path}'
+
     def save_image(self, drone, image_data, folder_name, image_name):
         if image_data.startswith(('http:', 'https:')):
             image_response = requests.get(image_data)
             if image_response.status_code == 200:
-                content_type = image_response.headers['content-type']
+                content_type = image_response.headers.get('content-type', '')
                 extension = content_type.split('/')[-1]
                 image_filename = f"{image_name}.{extension}"
                 image_path = os.path.join(folder_name, image_filename)
-                save_path = os.path.join("amx-crm-dev/site/public/media", image_path)
+                save_path = os.path.join(settings.MEDIA_BASE_PATH, image_path)
+                os.makedirs(os.path.dirname(save_path), exist_ok=True)
                 with open(save_path, 'wb') as f:
                     f.write(image_response.content)
             else:
                 raise ValueError(f"Failed to fetch {folder_name} image from the provided URL.")
-        else:  # Assume it's base64-encoded data
+        else:  # base64
             image_filename = f"{image_name}.png"
             image_path = os.path.join(folder_name, image_filename)
-            save_path = os.path.join("amx-crm-dev/site/public/media", image_path)
+            save_path = os.path.join(settings.MEDIA_BASE_PATH, image_path)
+            os.makedirs(os.path.dirname(save_path), exist_ok=True)
             image_data = base64.b64decode(image_data.split(';base64,')[1])
             with open(save_path, 'wb') as f:
                 f.write(image_data)
@@ -1211,6 +1262,7 @@ logger = setup_logger()
 @method_decorator([authorization_required], name='dispatch')
 class CompanydetailsAPIView(APIView):
     ENDPOINT = "https://api.postalpincode.in/pincode/"
+
     def get_state_code(self, state_name):
         # Define a dictionary mapping state names to their codes
         state_code_mapping = {
@@ -1487,7 +1539,10 @@ class CompanydetailsAPIView(APIView):
         except CustomUser.DoesNotExist:
             return Response({"message": "Partner not found"}, status=status.HTTP_404_NOT_FOUND)
 
+
 ENDPOINT = "https://api.postalpincode.in/pincode/"
+
+
 def get_state_code(state_name):
     # Define a dictionary mapping state names to their codes
     state_code_mapping = {
@@ -2214,14 +2269,14 @@ class MydronesAPI(APIView):
         # orders = Order.objects.exclude(order_status__isnull=True).order_by('-id')
 
         if search_param:
-            orders = orders.filter(drone_id__drone_name__istartswith=search_param,user_id__id=user_id)
+            orders = orders.filter(drone_id__drone_name__istartswith=search_param, user_id__id=user_id)
         if drone_category:
             drone_category_ids = [int(category_id) for category_id in drone_category]
             orders = orders.filter(drone_id__drone_category__id__in=drone_category_ids).order_by('-id')
 
         if order_status:
             order_status_ids = [int(status_id) for status_id in order_status.split(',')]
-            orders = orders.filter(order_status__id__in=order_status_ids,user_id__id=user_id)
+            orders = orders.filter(order_status__id__in=order_status_ids, user_id__id=user_id)
 
         if user_id:
             orders = orders.filter(user_id__id=user_id)
@@ -2331,144 +2386,6 @@ class MydronesAPI(APIView):
             return request.build_absolute_uri(
                 f"?page_number={paginated_data.previous_page_number}&data_per_page={paginated_data.paginator.per_page}")
         return None
-# class MydronesAPI(APIView):
-#     def get(self, request):
-#         user_id = request.query_params.get('user_id')
-#         id_param = request.query_params.get('id')
-#         page_number = request.query_params.get('page_number')
-#         data_per_page = request.query_params.get('data_per_page')
-#         pagination = request.query_params.get('pagination')
-#         search_param = request.query_params.get('search', '')
-#         drone_category_param = request.query_params.get('drone_category', '')
-#         drone_category = drone_category_param.split(',') if drone_category_param else []
-#         order_status = request.query_params.get('order_status', '')
-#
-#         orders = Order.objects.all().order_by('-id')
-#         # orders = Order.objects.exclude(order_status__isnull=True).order_by('-id')
-#
-#         if search_param:
-#             orders = orders.filter(
-#                 Q(drone_id__drone_name__icontains=search_param) |
-#                 Q(order_id__icontains=search_param) |
-#                 Q(quantity__icontains=search_param) |
-#                 Q(order_status__status_name__icontains=search_param) |
-#                 Q(drone_id__drone_category__category_name__icontains=search_param) |
-#                 Q(drone_id__market_price__icontains=search_param) |
-#                 Q(drone_id__our_price__icontains=search_param) |
-#                 Q(drone_id__drone_specification__icontains=search_param) |
-#                 Q(drone_id__sales_status__icontains=search_param) |
-#                 Q(created_date_time__icontains=search_param) |
-#                 Q(updated_date_time__icontains=search_param)
-#             )
-#         if drone_category:
-#             drone_category_ids = [int(category_id) for category_id in drone_category]
-#             orders = orders.filter(drone_id__drone_category__id__in=drone_category_ids).order_by('-id')
-#
-#         if order_status:
-#             orders = orders.filter(order_status__status_name=order_status)
-#
-#         if user_id:
-#             orders = orders.filter(user_id__id=user_id)
-#
-#         if search_param and drone_category and order_status and user_id:
-#             drone_category_ids = [int(category_id) for category_id in drone_category]
-#             orders = orders.filter(
-#                 Q(order_status__status_name=order_status) &
-#                 Q(drone_id__drone_name__icontains=search_param) &
-#                 Q(user_id__id=user_id) &
-#                 Q(drone_id__drone_category__id__in=drone_category_ids)
-#             )
-#         if search_param and drone_category and order_status:
-#             drone_category_ids = [int(category_id) for category_id in drone_category]
-#             orders = orders.filter(
-#                 Q(order_status__status_name=order_status) &
-#                 Q(drone_id__drone_name__icontains=search_param) &
-#                 Q(drone_id__drone_category__id__in=drone_category_ids)
-#             )
-#         if search_param and drone_category:
-#             drone_category_ids = [int(category_id) for category_id in drone_category]
-#             orders = orders.filter(
-#                 Q(drone_id__drone_name__icontains=search_param) &
-#                 Q(drone_id__drone_category__id__in=drone_category_ids)
-#             )
-#
-#         if search_param and drone_category and user_id:
-#             drone_category_ids = [int(category_id) for category_id in drone_category]
-#             orders = orders.filter(
-#                 Q(drone_id__drone_name__icontains=search_param) &
-#                 Q(user_id__id=user_id) &
-#                 Q(drone_id__drone_category__id__in=drone_category_ids)
-#             )
-#
-#         if search_param and order_status:
-#             orders = orders.filter(
-#                 Q(order_status__status_name=order_status) &
-#                 Q(drone_id__drone_name__icontains=search_param)
-#             )
-#
-#         if search_param and order_status and user_id:
-#             orders = orders.filter(
-#                 Q(order_status__status_name=order_status) &
-#                 Q(user_id__id=user_id) &
-#                 Q(drone_id__drone_name__icontains=search_param)
-#             )
-#
-#         if drone_category and order_status and user_id:
-#             drone_category_ids = [int(category_id) for category_id in drone_category]
-#             orders = orders.filter(
-#                 Q(order_status__status_name=order_status) &
-#                 Q(user_id__id=user_id) &
-#                 Q(drone_id__drone_category__id__in=drone_category_ids)
-#             )
-#
-#         if drone_category and order_status:
-#             drone_category_ids = [int(category_id) for category_id in drone_category]
-#             orders = orders.filter(
-#                 Q(order_status__status_name=order_status) &
-#                 Q(drone_id__drone_category__id__in=drone_category_ids)
-#             )
-#         return self.paginate_response(request, orders, page_number, data_per_page)
-#
-#     def paginate_response(self, request, queryset, page_number, data_per_page):
-#         paginator = Paginator(queryset, data_per_page)
-#
-#         try:
-#             paginated_data = paginator.page(page_number)
-#         except EmptyPage:
-#             return Response({"message": "No results found for the given page number"}, status=404)
-#
-#         serialized_data = OrderSerializer(paginated_data, many=True).data
-#         len_of_data = paginator.count
-#
-#         return Response({
-#             'result': {
-#                 'status': 'GET ALL with pagination',
-#                 'pagination': {
-#                     'current_page': paginated_data.number,
-#                     'number_of_pages': paginator.num_pages,
-#                     'next_url': self.get_next_url(request, paginated_data),
-#                     'previous_url': self.get_previous_url(request, paginated_data),
-#                     'has_next': paginated_data.has_next(),
-#                     'has_previous': paginated_data.has_previous(),
-#                     'has_other_pages': paginated_data.has_other_pages(),
-#                     'len_of_data': len_of_data,
-#                 },
-#                 'data': serialized_data,
-#             },
-#
-#         })
-#
-#     def get_next_url(self, request, paginated_data):
-#         if paginated_data.has_next():
-#             return request.build_absolute_uri(
-#                 f"?page_number={paginated_data.next_page_number}&data_per_page={paginated_data.paginator.per_page}")
-#         return None
-#
-#     def get_previous_url(self, request, paginated_data):
-#         if paginated_data.has_previous():
-#             return request.build_absolute_uri(
-#                 f"?page_number={paginated_data.previous_page_number}&data_per_page={paginated_data.paginator.per_page}")
-#         return None
 
 
 @method_decorator([authorization_required], name='dispatch')
@@ -2936,145 +2853,6 @@ class OrderStatusView(APIView):
 
         except json.JSONDecodeError:
             return JsonResponse({"message": "Invalid JSON in the request body"}, status=400)
-
-    # def put(self, request, super_admin_id):
-    #     try:
-    #         data = json.loads(request.body)
-    #         order_ids = data.get('order_ids', [])
-    #         single_order_id = data.get('order_id')
-    #         status_id = data.get('status_id')
-    #
-    #         if not status_id:
-    #             return JsonResponse({"message": "status_id is required in the request body"}, status=400)
-    #
-    #         new_status = get_object_or_404(Status, id=status_id)
-    #
-    #         super_admin = CustomUser.objects.get(id=super_admin_id)
-    #         is_super_admin = super_admin.role_id.role_name == "Super_admin"
-    #         processed_order_ids = set()
-    #         notified_users = set()
-    #
-    #         try:
-    #             with transaction.atomic():
-    #                 if is_super_admin:
-    #                     if single_order_id:
-    #                         #orders = Order.objects.filter(order_id=single_order_id)
-    #                         orders = Order.objects.filter(id=single_order_id)
-    #                         for order in orders:
-    #                             order.order_status = new_status
-    #                             order.updated_date_time = timezone.now()
-    #                             order.save()
-    #
-    #                             if order.user_id:
-    #                                 if new_status.status_name == "Shipped":
-    #                                     order.user_id.inventory_count = F('inventory_count') + order.quantity
-    #                                     order.user_id.save()
-    #
-    #                                 """neww"""
-    #                                 try:
-    #                                     drone_ownership = DroneOwnership.objects.get(
-    #                                         user=order.user_id,
-    #                                         drone=order.drone_id,
-    #                                     )
-    #                                     drone_ownership.quantity += order.quantity
-    #                                     drone_ownership.save()
-    #                                 except DroneOwnership.DoesNotExist:
-    #                                     # If DroneOwnership doesn't exist, create a new one
-    #                                     DroneOwnership.objects.create(
-    #                                         user=order.user_id,
-    #                                         drone=order.drone_id,
-    #                                         quantity=order.quantity,
-    #                                     )
-    #                                 ##sending email###############
-    #                                 drone_names = ", ".join([order.drone_id.drone_name for order in orders])
-    #                                 subject = 'Your order has been shipped'
-    #                                 message = f'Dear {order.user_id.username},\n\nYour order containing the following drones has been shipped: {drone_names}\n\nThank you for shopping with us!'
-    #                                 from_email = 'amxdrone123@gmail.com'
-    #                                 to_email = order.user_id.email
-    #
-    #                                 send_mail(subject, message, from_email, [to_email])
-    #
-    #                             """newww"""
-    #
-    #
-    #                             # Increment inventory_count for the Super_admin
-    #                         if new_status.status_name == "Shipped":
-    #                             # super_admin.inventory_count = F('inventory_count') + orders.count()
-    #                             super_admin.inventory_count = F('inventory_count') + sum(
-    #                                 order.quantity for order in orders)
-    #                             super_admin.save()
-    #                         return JsonResponse({"message": "Order status updated successfully"}, status=200)
-    #
-    #                     # else:
-    #                     #     return JsonResponse({"message": f"Order with order_id {single_order_id} not found"},
-    #                     #                             status=404)
-    #
-    #                     elif order_ids:
-    #                         user_orders = defaultdict(list)
-    #                         # orders = Order.objects.filter(order_id__in=order_ids)
-    #                         orders = Order.objects.filter(id__in=order_ids)
-    #                         for order in orders:
-    #                             order.order_status = new_status
-    #                             order.updated_date_time = timezone.now()
-    #                             order.save()
-    #
-    #                             # Increment inventory_count for the associated user
-    #                             if order.user_id:
-    #                                 if new_status.status_name == "Shipped":
-    #                                     order.user_id.inventory_count = F('inventory_count') + order.quantity
-    #                                     order.user_id.save()
-    #
-    #                                 """neww"""
-    #                                 try:
-    #                                     drone_ownership = DroneOwnership.objects.get(
-    #                                         user=order.user_id,
-    #                                         drone=order.drone_id,
-    #                                     )
-    #                                     drone_ownership.quantity += order.quantity
-    #                                     drone_ownership.save()
-    #                                 except DroneOwnership.DoesNotExist:
-    #                                     # If DroneOwnership doesn't exist, create a new one
-    #                                     DroneOwnership.objects.create(
-    #                                         user=order.user_id,
-    #                                         drone=order.drone_id,
-    #                                         quantity=order.quantity,
-    #                                     )
-    #                                     ##sending email######
-    #                                 user_orders[order.user_id].append(order)
-    #
-    #                                 # Send emails to each user with their purchased drones
-    #                         for user, user_order_list in user_orders.items():
-    #                             drone_names = ", ".join(
-    #                                 [f"{order.drone_id.drone_name} (Order ID: {order.order_id})" for order in
-    #                                  user_order_list])
-    #                             subject = 'Your order has been shipped'
-    #                             message = f'Dear {user.username},\n\nYour order containing the following drones has been shipped: {drone_names}\n\nThank you for shopping with us!'
-    #                             from_email = 'amxdrone123@gmail.com'
-    #                             to_email = user.email
-    #
-    #                             send_mail(subject, message, from_email, [to_email])
-    #
-    #                                 # """new"""
-    #
-    #                         # Increment inventory_count for the Super_admin
-    #                         if new_status.status_name == "Shipped":
-    #                             # super_admin.inventory_count = F('inventory_count') + len(orders)
-    #                             super_admin.inventory_count = F('inventory_count') + sum(
-    #                                 order.quantity for order in orders)
-    #                             super_admin.save()
-    #
-    #                         return JsonResponse({"message": "Order status updated successfully"}, status=200)
-    #
-    #                 else:
-    #                     return JsonResponse({"message": "Permission denied"}, status=403)
-    #
-    #         except IntegrityError:
-    #             return JsonResponse({"message": "IntegrityError: Duplicate key for Super_admin"}, status=500)
-    #
-    #     except json.JSONDecodeError:
-    #         return JsonResponse({"message": "Invalid JSON in the request body"}, status=400)
-    #     except Exception as e:
-    #         return JsonResponse({"message": f"Error: {str(e)}"}, status=500)
 
 
 @method_decorator([authorization_required], name='dispatch')
@@ -3694,6 +3472,7 @@ class GetCompanyDetailAPI(APIView):
 # @method_decorator([authorization_required], name='dispatch')
 class CompanyAndPartnerDetailsAPIView(APIView):
     ENDPOINT = "https://api.postalpincode.in/pincode/"
+
     def get_state_code(self, state_name):
         # Define a dictionary mapping state names to their codes
         state_code_mapping = {
@@ -3949,7 +3728,8 @@ class CompanyAndPartnerDetailsAPIView(APIView):
                 partner.updated_date_time_company = timezone.now()
                 partner.save()
 
-                return Response({"message": "Profile and company details updated successfully"}, status=status.HTTP_200_OK)
+                return Response({"message": "Profile and company details updated successfully"},
+                                status=status.HTTP_200_OK)
 
         except CustomUser.DoesNotExist:
             return Response({"message": "Partner not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -4173,108 +3953,6 @@ class CustomerCreateAPIView(APIView):
 
         return paginator.get_paginated_response(serializer.data)
 
-    # def get(self, request, *args, **kwargs):  ###old codeeeeeeeeeeee
-    #     partner_id = self.kwargs.get('partner_id')
-    #     customer_id = self.request.query_params.get('customer_id')
-    #     invoice_id = self.request.query_params.get('invoice_type_id')
-    #     category_id = self.request.query_params.get('customer_type_id')
-    #     search = self.request.query_params.get('search')
-    #     query_key = request.GET.get('key', None)
-    #     partner_ids = request.GET.get('partner_ids', None)
-    #
-    #     if partner_ids:
-    #         partner_ids = partner_ids.split(',')
-    #
-    #     if partner_id is None:
-    #         customers = CustomUser.objects.filter(role_id__role_name="Customer")
-    #     else:
-    #         customers = CustomUser.objects.filter(created_by=partner_id, role_id__role_name="Customer")
-    #
-    #     if customer_id:
-    #         customers = customers.filter(id=customer_id, role_id__role_name="Customer")
-    #
-    #     if invoice_id:
-    #         customers = customers.filter(invoice__id=invoice_id, role_id__role_name="Customer")
-    #
-    #     if category_id:
-    #         customers = customers.filter(category__id=category_id, role_id__role_name="Customer")
-    #
-    #     if category_id and search:
-    #         customers = customers.filter(category__id=category_id, first_name__istartswith=search,
-    #                                      role_id__role_name="Customer")
-    #
-    #     if search:
-    #         customers = customers.filter(first_name__istartswith=search, role_id__role_name="Customer")
-    #
-    #     if query_key == "admin":
-    #         customers = CustomUser.objects.filter(created_by__role_id__role_name="Super_admin",
-    #                                               role_id__role_name="Customer")
-    #
-    #     if query_key == "admin" and search:
-    #         customers = CustomUser.objects.filter(created_by__role_id__role_name="Super_admin",
-    #                                               first_name__istartswith=search, role_id__role_name="Customer")
-    #
-    #     if query_key == "admin" and category_id:
-    #         customers = CustomUser.objects.filter(created_by__role_id__role_name="Super_admin",
-    #                                               category__id=category_id, role_id__role_name="Customer")
-    #
-    #     if query_key == "admin" and category_id and search:
-    #         customers = CustomUser.objects.filter(created_by__role_id__role_name="Super_admin",
-    #                                               category__id=category_id, first_name__istartswith=search,
-    #                                               role_id__role_name="Customer")
-    #
-    #     if query_key == "partner":
-    #         customers = CustomUser.objects.filter(created_by__role_id__role_name="Partner",
-    #                                               role_id__role_name="Customer")
-    #
-    #     if query_key == "partner" and search:
-    #         customers = CustomUser.objects.filter(created_by__role_id__role_name="Partner",
-    #                                               first_name__istartswith=search, role_id__role_name="Customer")
-    #
-    #     if query_key == "partner" and category_id:
-    #         customers = CustomUser.objects.filter(created_by__role_id__role_name="Partner", category__id=category_id,
-    #                                               role_id__role_name="Customer")
-    #
-    #     if query_key == "partner" and category_id and search:
-    #         customers = CustomUser.objects.filter(created_by__role_id__role_name="Partner", category__id=category_id,
-    #                                               first_name__istartswith=search, role_id__role_name="Customer")
-    #
-    #     if query_key == "partner" and partner_ids:
-    #
-    #         if partner_ids:
-    #             customers = CustomUser.objects.filter(created_by__role_id__role_name="Partner",
-    #                                                   created_by__in=partner_ids, role_id__role_name="Customer")
-    #
-    #     if query_key == "partner" and partner_ids and search:
-    #
-    #         if partner_ids:
-    #             customers = CustomUser.objects.filter(created_by__role_id__role_name="Partner",
-    #                                                   created_by__in=partner_ids, first_name__istartswith=search,
-    #                                                   role_id__role_name="Customer")
-    #
-    #     if query_key == "partner" and partner_ids and category_id:
-    #         if partner_ids:
-    #             customers = CustomUser.objects.filter(created_by__role_id__role_name="Partner",
-    #                                                   created_by__in=partner_ids, category__id=category_id,
-    #                                                   role_id__role_name="Customer")
-    #
-    #     if query_key == "partner" and partner_ids and category_id and search:
-    #
-    #         if partner_ids:
-    #             customers = CustomUser.objects.filter(created_by__role_id__role_name="Partner",
-    #                                                   created_by__in=partner_ids, category__id=category_id,
-    #                                                   first_name__istartswith=search, role_id__role_name="Customer")
-    #
-    #     customers = customers.order_by('-id')
-    #
-    #     paginator = self.pagination_class()
-    #     result_page = paginator.paginate_queryset(customers, request)
-    #     serializer = CustomUserSerializer(result_page, many=True, context={'request': request})
-    #
-    #     return paginator.get_paginated_response(serializer.data)
-    #     # serializer = CustomUserSerializer(customers, many=True, context={'request': request})
-    #     # return Response(serializer.data)
-
 
 @method_decorator([authorization_required], name='dispatch')
 class CustomerCategoryAPI(APIView):
@@ -4387,7 +4065,7 @@ class AuthAPIView(APIView):
         }
 
         data = {
-            "Data":"M4gdCz4FT9rUqx4OOrVWX3JWIwxGZa8leQLvC+H+RRk2tzB1eqjnrJkdr+sF5E7s4Rfc2Feggb71/EoozgjUkv9wbEyfBqShT1iQAY3bRqx/M7giUEWbuB+2LORIZCnxCAPiZqaBPU5mXT3VC6rxDVdFEKGJ3i3WjjK8jWNDNcY6nar2FYWF2M+CBWCb6qnmi9bDQHRBPg5Z51ellllhlNBtmfN4lVGWVtuXgDNXqV9OCyPnvV/RE4X+YpNfIvycuZYA3u/XcaH+0zYeJlAP5a1gSV1383/Wu+FJU651Uw4oVXH8izIYMmUj0SF6wfegVwBGbNtZraNt3gai/sJkqg=="
+            "Data": "M4gdCz4FT9rUqx4OOrVWX3JWIwxGZa8leQLvC+H+RRk2tzB1eqjnrJkdr+sF5E7s4Rfc2Feggb71/EoozgjUkv9wbEyfBqShT1iQAY3bRqx/M7giUEWbuB+2LORIZCnxCAPiZqaBPU5mXT3VC6rxDVdFEKGJ3i3WjjK8jWNDNcY6nar2FYWF2M+CBWCb6qnmi9bDQHRBPg5Z51ellllhlNBtmfN4lVGWVtuXgDNXqV9OCyPnvV/RE4X+YpNfIvycuZYA3u/XcaH+0zYeJlAP5a1gSV1383/Wu+FJU651Uw4oVXH8izIYMmUj0SF6wfegVwBGbNtZraNt3gai/sJkqg=="
         }
         response = requests.post(url, headers=headers, data=json.dumps(data))
 
@@ -4510,53 +4188,6 @@ class GetCompanyDetailsAPIView(generics.RetrieveAPIView):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    # def get(self, request, *args, **kwargs):
-    #     try:
-    #         auth_token = AuthToken.objects.first()
-    #         if auth_token:
-    #             sek = base64.b64decode(auth_token.sek)  # Assuming 'sek' is stored in base64
-    #
-    #             params = self.kwargs.get('params')  # Get the parameter from the URL
-    #
-    #             # Construct the URL with the received params
-    #             url = f"https://einv1api.gstsandbox.nic.in/eivital/v1.04/Master/gstin/{params}/"
-    #
-    #             headers = {
-    #                 "client-id": auth_token.client_id,
-    #                 "client-secret": "76KkYyE3SGguAaOocIWw",
-    #                 "gstin": "29AAGCE4783K1Z1",
-    #                 "user_name": auth_token.user_name,
-    #                 "authtoken": auth_token.auth_token,
-    #             }
-    #
-    #             response = requests.get(url, headers=headers)
-    #
-    #             if response.status_code == 200:
-    #                 ewbres = response.json()
-    #                 encrypted_data = base64.b64decode(ewbres["Data"])
-    #                 decrypted_data = decrypt_aes_256_ecb(encrypted_data, sek)
-    #                 decrypted_string = decrypted_data.decode("utf-8")
-    #
-    #                 # Clean the decrypted string
-    #                 cleaned_decrypted_string = self.clean_string(decrypted_string)
-    #
-    #                 # Extract PAN number from the GSTIN
-    #                 pan_number = self.extract_pan_number(params)
-    #
-    #                 # Include PAN number inside 'companydetails' key
-    #                 company_details = {'pan_number': pan_number, **json.loads(cleaned_decrypted_string)}
-    #
-    #                 return Response({'companydetails': company_details}, status=status.HTTP_200_OK)
-    #             else:
-    #                 return Response(
-    #                     {"error": f"Failed to retrieve data. Status code: {response.status_code}"},
-    #                     status=response.status_code,
-    #                 )
-    #         else:
-    #             return Response({"error": "No AuthToken found."}, status=status.HTTP_404_NOT_FOUND)
-    #     except Exception as e:
-    #         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 
 import hashlib
 import random
@@ -4570,7 +4201,8 @@ from num2words import num2words
 
 from num2words import num2words
 
-MAX_AMOUNT = 10**10  # num2words can't handle numbers >= 10 billion
+MAX_AMOUNT = 10 ** 10  # num2words can't handle numbers >= 10 billion
+
 
 def num2words_inr(amount):
     """
@@ -4607,27 +4239,8 @@ def num2words_inr(amount):
     except OverflowError as e:
         return f"Error converting number to words: {str(e)}"
 
-# def num2words_inr(amount):
-#     # Split amount into rupees and paise
-#     rupees, paise = str(float(amount)).split(".")
-#
-#     # Convert paise to words if rupees is zero
-#     if int(rupees) == 0 and int(paise) > 0:
-#         paise_in_words = num2words(int(paise), lang='en_IN') + " paise"
-#         return paise_in_words
-#
-#     # Convert rupees to words
-#     rupees_in_words = num2words(int(rupees), lang='en_IN') + " rupees"
-#
-#     # Convert paise to words, if any
-#     if int(paise) > 0:
-#         paise_in_words = num2words(int(paise), lang='en_IN') + " paise"
-#         return f"{rupees_in_words} and {paise_in_words}"
-#     else:
-#         return rupees_in_words
 
-
-# @method_decorator([authorization_required], name='dispatch')
+@method_decorator([authorization_required], name='dispatch')
 class AddItemAPI(APIView):
     def generate_serial_numbers(self, quantity):
         # Generate a list of unique serial numbers
@@ -4684,7 +4297,6 @@ class AddItemAPI(APIView):
             #
             # }
 
-
             customer_details = {
                 'id': customer_instance.id,
                 'username': add_item_instance.customer_username,
@@ -4718,7 +4330,7 @@ class AddItemAPI(APIView):
                 'category': customer_instance.category.id if customer_instance.category else None,
                 'date_of_birth': add_item_instance.customer_date_of_birth,
                 'gender': add_item_instance.customer_gender,
-                'created_by':customer_instance.created_by.id if customer_instance.created_by else None,
+                'created_by': customer_instance.created_by.id if customer_instance.created_by else None,
                 'invoice': customer_instance.invoice.id if customer_instance.invoice else None,
                 'shipping_pincode': add_item_instance.customer_shipping_pincode,
                 'billing_pincode': add_item_instance.customer_billing_pincode,
@@ -4779,104 +4391,6 @@ class AddItemAPI(APIView):
                 'billing_state_country': add_item_instance.owner_billing_state_country,
 
             }
-
-            # customer_details = {
-            #     'id': customer_instance.id,
-            #     'username': customer_instance.username,
-            #     'email': customer_instance.email,
-            #     'first_name': customer_instance.first_name,
-            #     'full_name': customer_instance.get_full_name(),
-            #     'mobile_number': customer_instance.mobile_number,
-            #     'address': customer_instance.address,
-            #     'pin_code': customer_instance.pin_code,
-            #     'pan_number': customer_instance.pan_number,
-            #     'profile_pic': customer_instance.profile_pic.url if customer_instance.profile_pic else None,
-            #     'company_name': customer_instance.company_name,
-            #     'company_email': customer_instance.company_email,
-            #     'company_address': customer_instance.company_address,
-            #     'shipping_address': customer_instance.shipping_address,
-            #     'billing_address': customer_instance.billing_address,
-            #     'company_phn_number': customer_instance.company_phn_number,
-            #     'company_gst_num': customer_instance.company_gst_num,
-            #     'company_cin_num': customer_instance.company_cin_num,
-            #     'company_logo': customer_instance.company_logo.url if customer_instance.company_logo else None,
-            #     'role_id': customer_instance.role_id.id,
-            #     'created_date_time': customer_instance.created_date_time,
-            #     'updated_date_time': customer_instance.updated_date_time,
-            #     'status': customer_instance.status,
-            #     'location': customer_instance.location,
-            #     'reason': customer_instance.reason,
-            #     'partner_initial_update': customer_instance.partner_initial_update,
-            #     'gst_number': customer_instance.gst_number,
-            #     'category': customer_instance.category.id if customer_instance.category else None,
-            #     'date_of_birth': customer_instance.date_of_birth,
-            #     'gender': customer_instance.gender,
-            #     'created_by': customer_instance.created_by.id if customer_instance.created_by else None,
-            #     'invoice': customer_instance.invoice.id if customer_instance.invoice else None,
-            #     'shipping_pincode': customer_instance.shipping_pincode,
-            #     'billing_pincode': customer_instance.billing_pincode,
-            #     # 'state_name': customer_instance.state_name,
-            #     # 'state_code': customer_instance.state_code,
-            #     'shipping_state': customer_instance.shipping_state,
-            #     'shipping_state_code': customer_instance.shipping_state_code,
-            #     'shipping_state_city': customer_instance.shipping_state_city,
-            #     'shipping_state_country': customer_instance.shipping_state_country,
-            #     'billing_state': customer_instance.billing_state,
-            #     'billing_state_code': customer_instance.billing_state_code,
-            #     'billing_state_city': customer_instance.billing_state_city,
-            #     'billing_state_country': customer_instance.billing_state_country,
-            #     'category_id': customer_type_id,
-            #     'category_name': customer_type_name,
-            #
-            # }
-
-            # partner_details = {
-            #     'id': partner_instance.id,
-            #     'username': partner_instance.username,
-            #     'email': partner_instance.email,
-            #     'first_name': partner_instance.first_name,
-            #     'full_name': partner_instance.get_full_name(),
-            #     'mobile_number': partner_instance.mobile_number,
-            #     'address': partner_instance.address,
-            #     'pin_code': partner_instance.pin_code,
-            #     'pan_number': partner_instance.pan_number,
-            #     'profile_pic': partner_instance.profile_pic.url if partner_instance.profile_pic else None,
-            #     'company_name': partner_instance.company_name,
-            #     'company_email': partner_instance.company_email,
-            #     'company_address': partner_instance.company_address,
-            #     'shipping_address': partner_instance.shipping_address,
-            #     'billing_address': partner_instance.billing_address,
-            #     'company_phn_number': partner_instance.company_phn_number,
-            #     'company_gst_num': partner_instance.company_gst_num,
-            #     'company_cin_num': partner_instance.company_cin_num,
-            #     'company_logo': partner_instance.company_logo.url if partner_instance.company_logo else None,
-            #     'role_id': partner_instance.role_id.id,
-            #     'created_date_time': partner_instance.created_date_time,
-            #     'updated_date_time': partner_instance.updated_date_time,
-            #     'status': partner_instance.status,
-            #     'location': partner_instance.location,
-            #     'reason': partner_instance.reason,
-            #     'partner_initial_update': partner_instance.partner_initial_update,
-            #     'gst_number': partner_instance.gst_number,
-            #     'category': partner_instance.category.id if partner_instance.category else None,
-            #     'date_of_birth': partner_instance.date_of_birth,
-            #     'gender': partner_instance.gender,
-            #     'created_by': partner_instance.created_by.id if partner_instance.created_by else None,
-            #     'invoice': partner_instance.invoice.id if partner_instance.invoice else None,
-            #     'shipping_pincode': partner_instance.shipping_pincode,
-            #     'billing_pincode': partner_instance.billing_pincode,
-            #     # 'state_name': partner_instance.state_name,
-            #     # 'state_code': partner_instance.state_code,
-            #     'shipping_state': partner_instance.shipping_state,
-            #     'shipping_state_code': partner_instance.shipping_state_code,
-            #     'shipping_state_city': partner_instance.shipping_state_city,
-            #     'shipping_state_country': partner_instance.shipping_state_country,
-            #     'billing_state': partner_instance.billing_state,
-            #     'billing_state_code': partner_instance.billing_state_code,
-            #     'billing_state_city': partner_instance.billing_state_city,
-            #     'billing_state_country': partner_instance.billing_state_country,
-            #
-            # }
 
             invoice_type_details = {
                 'id': add_item_instance.invoice_type_id.id,
@@ -5080,100 +4594,6 @@ class AddItemAPI(APIView):
 
                 }
 
-                # customer_details = {
-                #     'id': customer_instance.id,
-                #     'username': customer_instance.username,
-                #     'email': customer_instance.email,
-                #     'first_name': customer_instance.first_name,
-                #     'full_name': customer_instance.get_full_name(),
-                #     'mobile_number': customer_instance.mobile_number,
-                #     'address': customer_instance.address,
-                #     'pin_code': customer_instance.pin_code,
-                #     'pan_number': customer_instance.pan_number,
-                #     'profile_pic': customer_instance.profile_pic.url if customer_instance.profile_pic else None,
-                #     'company_name': customer_instance.company_name,
-                #     'company_email': customer_instance.company_email,
-                #     'company_address': customer_instance.company_address,
-                #     'shipping_address': customer_instance.shipping_address,
-                #     'billing_address': customer_instance.billing_address,
-                #     'company_phn_number': customer_instance.company_phn_number,
-                #     'company_gst_num': customer_instance.company_gst_num,
-                #     'company_cin_num': customer_instance.company_cin_num,
-                #     'company_logo': customer_instance.company_logo.url if customer_instance.company_logo else None,
-                #     'role_id': customer_instance.role_id.id,
-                #     'created_date_time': customer_instance.created_date_time,
-                #     'updated_date_time': customer_instance.updated_date_time,
-                #     'status': customer_instance.status,
-                #     'location': customer_instance.location,
-                #     'reason': customer_instance.reason,
-                #     'partner_initial_update': customer_instance.partner_initial_update,
-                #     'gst_number': customer_instance.gst_number,
-                #     'category': customer_instance.category.id if customer_instance.category else None,
-                #     'date_of_birth': customer_instance.date_of_birth,
-                #     'gender': customer_instance.gender,
-                #     'created_by': customer_instance.created_by.id if customer_instance.created_by else None,
-                #     'invoice': customer_instance.invoice.id if customer_instance.invoice else None,
-                #     'shipping_pincode': customer_instance.shipping_pincode,
-                #     'billing_pincode': customer_instance.billing_pincode,
-                #     # 'state_name': customer_instance.state_name,
-                #     # 'state_code': customer_instance.state_code,
-                #     'shipping_state': customer_instance.shipping_state,
-                #     'shipping_state_code': customer_instance.shipping_state_code,
-                #     'shipping_state_city': customer_instance.shipping_state_city,
-                #     'shipping_state_country': customer_instance.shipping_state_country,
-                #     'billing_state': customer_instance.billing_state,
-                #     'billing_state_code': customer_instance.billing_state_code,
-                #     'billing_state_city': customer_instance.billing_state_city,
-                #     'billing_state_country': customer_instance.billing_state_country,
-                # }
-                #
-                # partner_details = {
-                #     'id': partner_instance.id,
-                #     'username': partner_instance.username,
-                #     'email': partner_instance.email,
-                #     'first_name': partner_instance.first_name,
-                #     'full_name': partner_instance.get_full_name(),
-                #     'mobile_number': partner_instance.mobile_number,
-                #     'address': partner_instance.address,
-                #     'pin_code': partner_instance.pin_code,
-                #     'pan_number': partner_instance.pan_number,
-                #     'profile_pic': partner_instance.profile_pic.url if partner_instance.profile_pic else None,
-                #     'company_name': partner_instance.company_name,
-                #     'company_email': partner_instance.company_email,
-                #     'company_address': partner_instance.company_address,
-                #     'shipping_address': partner_instance.shipping_address,
-                #     'billing_address': partner_instance.billing_address,
-                #     'company_phn_number': partner_instance.company_phn_number,
-                #     'company_gst_num': partner_instance.company_gst_num,
-                #     'company_cin_num': partner_instance.company_cin_num,
-                #     'company_logo': partner_instance.company_logo.url if partner_instance.company_logo else None,
-                #     'role_id': partner_instance.role_id.id,
-                #     'created_date_time': partner_instance.created_date_time,
-                #     'updated_date_time': partner_instance.updated_date_time,
-                #     'status': partner_instance.status,
-                #     'location': partner_instance.location,
-                #     'reason': partner_instance.reason,
-                #     'partner_initial_update': partner_instance.partner_initial_update,
-                #     'gst_number': partner_instance.gst_number,
-                #     'category': partner_instance.category.id if partner_instance.category else None,
-                #     'date_of_birth': partner_instance.date_of_birth,
-                #     'gender': partner_instance.gender,
-                #     'created_by': partner_instance.created_by.id if partner_instance.created_by else None,
-                #     'invoice': partner_instance.invoice.id if partner_instance.invoice else None,
-                #     'shipping_pincode': partner_instance.shipping_pincode,
-                #     'billing_pincode': partner_instance.billing_pincode,
-                #     # 'state_name': partner_instance.state_name,
-                #     # 'state_code': partner_instance.state_code,
-                #     'shipping_state': partner_instance.shipping_state,
-                #     'shipping_state_code': partner_instance.shipping_state_code,
-                #     'shipping_state_city': partner_instance.shipping_state_city,
-                #     'shipping_state_country': partner_instance.shipping_state_country,
-                #     'billing_state': partner_instance.billing_state,
-                #     'billing_state_code': partner_instance.billing_state_code,
-                #     'billing_state_city': partner_instance.billing_state_city,
-                #     'billing_state_country': partner_instance.billing_state_country,
-                # }
-
                 invoice_type_details = {
                     'id': add_item_instance.invoice_type_id.id,
                     'name': add_item_instance.invoice_type_id.invoice_type_name,
@@ -5259,7 +4679,7 @@ class AddItemAPI(APIView):
                     'invoice_status': invoice_status_name,
                     'invoice_status_id': invoice_status_id,
                     'amount_to_pay': add_item_instance.amount_to_pay,
-                'amount_to_pay_words': num2words_inr(add_item_instance.amount_to_pay),
+                    'amount_to_pay_words': num2words_inr(add_item_instance.amount_to_pay),
 
                     # 'amount_to_pay_words': amount_to_pay_words,
                     'sum_of_gst_percentages': sum_of_gst_percentages,
@@ -5372,8 +4792,8 @@ class AddItemAPI(APIView):
 
                 dronedetails.append({
                     'drone_id': drone_id,
-                    'drone_name':drone_name,
-                    'drone_category':drone_category,
+                    'drone_name': drone_name,
+                    'drone_category': drone_category,
                     'quantity': quantity,
                     'price': item_data.get('price'),
                     'serial_numbers': serial_numbers,
@@ -5597,7 +5017,6 @@ class AddItemAPI(APIView):
 
     def calculate_item_total_price(self, price, quantity):
         return str(round(Decimal(price) * Decimal(quantity), 2))
-
 
     def put(self, request, item_id):
         def check_unique_serial_numbers(new_items):
@@ -5952,298 +5371,6 @@ class AddItemAPI(APIView):
             customer_first_name = data.get("customer_first_name")
             return Response(response_data, status=status.HTTP_200_OK)
 
-    # def put(self, request, item_id):
-    #     def check_unique_serial_numbers(new_items):
-    #         serial_numbers_set = set()
-    #
-    #         for entry in new_items:
-    #             for serial_number in entry['serial_numbers']:
-    #                 if serial_number in serial_numbers_set:
-    #                     return False  # Duplicate serial number found
-    #                 else:
-    #                     serial_numbers_set.add(serial_number)
-    #
-    #         return True
-    #
-    #     item = get_object_or_404(AddItem, id=item_id)
-    #     inventory_partner = item.owner_id
-    #     dic_item = item.dronedetails
-    #     data = request.data
-    #     new_items = data.get('items', [])
-    #     update_list = []
-    #     add_list = []
-    #     total_price_with_additional_percentages = Decimal('0.00')
-    #
-    #     all_serial = []
-    #
-    #     all_items_except_given_id = AddItem.objects.exclude(id=item_id).values('id', 'dronedetails')
-    #     for item_data in all_items_except_given_id:
-    #         for drone_detail in item_data['dronedetails']:
-    #             serial_numbers = drone_detail.get('serial_numbers', [])
-    #             all_serial.extend(serial_numbers)
-    #
-    #     print("All Serial Numbers:", all_serial)
-    #
-    #     if not check_unique_serial_numbers(new_items):
-    #         return Response({'message': f"Serial numbers must be unique with all drone entry"},
-    #                         status=status.HTTP_400_BAD_REQUEST)
-    #     else:
-    #         pass
-    #
-    #     with transaction.atomic():
-    #         duplicate_serial = []
-    #         for j in new_items:
-    #             for serial_number in j.get('serial_numbers', []):
-    #                 if serial_number in all_serial:
-    #                     duplicate_serial.append(serial_number)
-    #                     # Return a response with an error message
-    #                     # return Response({'message': f"Serial number '{serial_number}' already exists in other items."},
-    #                     #                 status=status.HTTP_400_BAD_REQUEST)
-    #             if duplicate_serial:
-    #                 error_message = f"Serial numbers {', '.join(map(repr, duplicate_serial))} already exist in other items."
-    #                 return Response({'message': error_message}, status=status.HTTP_400_BAD_REQUEST)
-    #
-    #             drone_exists = any(drone['drone_id'] == j['drone_id'] for drone in item.dronedetails)
-    #             drone_id = j.get('drone_id')
-    #             drone_name = Drone.objects.filter(id=drone_id).first().drone_name if drone_id else 'Unknown Drone'
-    #
-    #             if not drone_exists:
-    #                 # Drone not in dronedetails, check in DroneOwnership
-    #                 if item.owner_id.role_id.role_name == 'Super_admin':
-    #                     # If owner is Super_admin, just add the new drone to dronedetails
-    #                     new_drone = {
-    #                         'drone_id': j['drone_id'],
-    #                         'quantity': j['quantity'],
-    #                         'price': j['price'],
-    #                         'serial_numbers': j['serial_numbers'],
-    #                         'hsn_number': j['hsn_number'],
-    #                         'units': j['units'],
-    #                         'discount': j.get('discount', 0),
-    #                         'igst': j.get('igst', 0),
-    #                         'cgst': j.get('cgst', 0),
-    #                         'sgst': j.get('sgst', 0),
-    #                         'updated_datetime': timezone.now().isoformat(),
-    #                     }
-    #                     # Calculate additional fields for the new drone
-    #                     new_drone["item_total_price"] = self.calculate_item_total_price(new_drone["price"],
-    #                                                                                     new_drone["quantity"])
-    #                     new_drone["discount_amount"] = round((new_drone["discount"] / 100) * (
-    #                         new_drone["quantity"]) * (new_drone["price"]), 2)
-    #                     new_drone["price_after_discount"] = round((new_drone["quantity"]) * (new_drone["price"]) - (
-    #                             new_drone["discount"] / 100) * (
-    #                                                                   new_drone["quantity"]) * (
-    #                                                                   new_drone["price"]), 2)
-    #                     new_drone["igst_percentage"] = round((new_drone["igst"] / 100) * (
-    #                             (new_drone["quantity"]) * (new_drone["price"]) - (
-    #                             new_drone["discount"] / 100) * (
-    #                                 new_drone["quantity"]) * (new_drone["price"])), 2)
-    #                     new_drone["cgst_percentage"] = round((new_drone["cgst"] / 100) * (
-    #                             (new_drone["quantity"]) * (new_drone["price"]) - (
-    #                             new_drone["discount"] / 100) * (
-    #                                 new_drone["quantity"]) * (new_drone["price"])), 2)
-    #                     new_drone["sgst_percentage"] = round((new_drone["sgst"] / 100) * (
-    #                             (new_drone["quantity"]) * (new_drone["price"]) - (
-    #                             new_drone["discount"] / 100) * (
-    #                                 new_drone["quantity"]) * (new_drone["price"])), 2)
-    #                     new_drone["total"] = round(((new_drone["quantity"]) * (new_drone["price"]) - (
-    #                             new_drone["discount"] / 100) * (
-    #                                                     new_drone["quantity"]) * (
-    #                                                     new_drone["price"])) + new_drone[
-    #                                                    "igst_percentage"] + new_drone["cgst_percentage"] + new_drone[
-    #                                                    "sgst_percentage"], 2)
-    #                     item.dronedetails.append(new_drone)
-    #                 else:
-    #                     # Drone not in dronedetails, check in DroneOwnership
-    #                     try:
-    #                         owner = DroneOwnership.objects.get(user=item.owner_id, drone=j['drone_id'])
-    #                         new_drone = {
-    #                             'drone_id': j['drone_id'],
-    #                             'quantity': j['quantity'],
-    #                             'units': j['units'],
-    #                             'price': j['price'],
-    #                             'serial_numbers': j['serial_numbers'],
-    #                             'hsn_number': j['hsn_number'],
-    #                             'discount': j.get('discount', 0),
-    #                             'igst': j.get('igst', 0),
-    #                             'cgst': j.get('cgst', 0),
-    #                             'sgst': j.get('sgst', 0),
-    #                             'updated_datetime': timezone.now().isoformat(),
-    #
-    #                         }
-    #                         # Calculate additional fields for the new drone
-    #                         new_drone["item_total_price"] = self.calculate_item_total_price(new_drone["price"],
-    #                                                                                         new_drone["quantity"])
-    #                         new_drone["discount_amount"] = round((new_drone["discount"] / 100) * (
-    #                             new_drone["quantity"]) * (new_drone["price"]), 2)
-    #                         new_drone["price_after_discount"] = round((new_drone["quantity"]) * (
-    #                             new_drone["price"]) - (
-    #                                                                           new_drone["discount"] / 100) * (
-    #                                                                       new_drone["quantity"]) * (
-    #                                                                       new_drone["price"]), 2)
-    #                         new_drone["igst_percentage"] = round((new_drone["igst"] / 100) * (
-    #                                 (new_drone["quantity"]) * (new_drone["price"]) - (
-    #                                 new_drone["discount"] / 100) * (
-    #                                     new_drone["quantity"]) * (new_drone["price"])), 2)
-    #                         new_drone["cgst_percentage"] = round((new_drone["cgst"] / 100) * (
-    #                                 (new_drone["quantity"]) * (new_drone["price"]) - (
-    #                                 new_drone["discount"] / 100) * (
-    #                                     new_drone["quantity"]) * (new_drone["price"])), 2)
-    #                         new_drone["sgst_percentage"] = round((new_drone["sgst"] / 100) * (
-    #                                 (new_drone["quantity"]) * (new_drone["price"]) - (
-    #                                 new_drone["discount"] / 100) * (
-    #                                     new_drone["quantity"]) * (new_drone["price"])), 2)
-    #                         new_drone["total"] = round(((new_drone["quantity"]) * (
-    #                             new_drone["price"]) - (
-    #                                                             new_drone["discount"] / 100) * (
-    #                                                         new_drone["quantity"]) * (
-    #                                                         new_drone["price"])) + new_drone[
-    #                                                        "igst_percentage"] + new_drone["cgst_percentage"] +
-    #                                                    new_drone[
-    #                                                        "sgst_percentage"], 2)
-    #
-    #                         # Add new drone to the dronedetails list
-    #                         item.dronedetails.append(new_drone)
-    #
-    #                         # Only (q) or fewer quantities allowed for d1
-    #                         if owner.quantity >= j['quantity']:
-    #                             # Subtract new drone quantity from DroneOwnership
-    #                             owner.quantity -= j['quantity']
-    #                             owner.save()
-    #
-    #                             # Add new drone quantity to dronedetails
-    #                             add_list.append({
-    #                                 'drone_id': j['drone_id'],
-    #                                 'quantity': j['quantity'],
-    #                                 'units': j['units'],
-    #                                 'price': j['price'],
-    #                                 'serial_numbers': j['serial_numbers'],
-    #                                 'hsn_number': j['hsn_number'],
-    #                                 'discount': j.get('discount', 0),
-    #                                 'igst': j.get('igst', 0),
-    #                                 'cgst': j.get('cgst', 0),
-    #                                 'sgst': j.get('sgst', 0),
-    #                                 'updated_datetime': timezone.now().isoformat(),
-    #                             })
-    #                         else:
-    #                             return Response(
-    #                                 {'message': f"Only {owner.quantity} or fewer quantities allowed for {drone_name}"},
-    #                                 status=status.HTTP_400_BAD_REQUEST
-    #                             )
-    #                     except DroneOwnership.DoesNotExist:
-    #                         return Response(
-    #                             {'message': f"Only {j['quantity']} or fewer quantities allowed for {drone_name}"},
-    #                             status=status.HTTP_400_BAD_REQUEST
-    #                         )
-    #             else:
-    #                 # Drone already in dronedetails, update quantity and serial numbers
-    #                 for i in item.dronedetails:
-    #                     serial_numbers = j['serial_numbers']
-    #                     if len(set(serial_numbers)) != len(serial_numbers):
-    #                         return Response({'message': f"Serial numbers must be unique within each drone entry"},
-    #                                         status=status.HTTP_400_BAD_REQUEST)
-    #
-    #                     if j["drone_id"] == i["drone_id"]:
-    #                         # Check if the provided serial numbers match the quantity
-    #                         if len(j['serial_numbers']) != j['quantity']:
-    #                             return Response(
-    #                                 {
-    #                                     'message': f"The number of serial numbers must be equal to the quantity for {drone_name}"},
-    #                                 status=status.HTTP_400_BAD_REQUEST
-    #                             )
-    #
-    #                         difference = i["quantity"] - j["quantity"]
-    #                         update_list.append({"drone_id": j["drone_id"], "difference": difference})
-    #
-    #                         if item.owner_id.role_id.role_name != 'Super_admin':
-    #                             # Update quantity in DroneOwnership
-    #                             owner = DroneOwnership.objects.get(user=item.owner_id, drone=j["drone_id"])
-    #                             new_quantity = owner.quantity + difference
-    #
-    #                             # Check if new quantity is non-negative
-    #                             if new_quantity < 0:
-    #                                 return Response(
-    #                                     {
-    #                                         'message': f"Only {owner.quantity} or fewer quantities allowed for {drone_name}"},
-    #                                     status=status.HTTP_400_BAD_REQUEST
-    #                                 )
-    #
-    #                             owner.quantity = new_quantity
-    #                             owner.save()
-    #
-    #                         # Update quantity and serial numbers in dronedetails
-    #                         i["quantity"] = j["quantity"]
-    #                         i["serial_numbers"] = j["serial_numbers"]
-    #                         i["item_total_price"] = self.calculate_item_total_price(j["price"], j["quantity"])
-    #                         i["hsn_number"] = j["hsn_number"]
-    #                         i["units"] = j["units"]
-    #                         i["discount"] = j.get('discount', 0)
-    #                         i["igst"] = j.get('igst', 0)
-    #                         i["cgst"] = j.get('cgst', 0)
-    #                         i["sgst"] = j.get('sgst', 0)
-    #
-    #                         # Add default values for missing keys
-    #                         i.setdefault("discount_amount", 0)
-    #                         i.setdefault("price_after_discount", 0)
-    #                         i.setdefault("igst_percentage", 0)
-    #                         i.setdefault("cgst_percentage", 0)
-    #                         i.setdefault("sgst_percentage", 0)
-    #                         i.setdefault("total", 0)
-    #
-    #                         # Recalculate the additional fields
-    #                         i["discount_amount"] = round((i["discount"] / 100) * (i["quantity"]) * (i["price"]), 2)
-    #                         i["price_after_discount"] = round((i["quantity"]) * (i["price"]) - (
-    #                                 i["discount"] / 100) * (
-    #                                                               i["quantity"]) * (
-    #                                                               i["price"]), 2)
-    #                         i["igst_percentage"] = round((i["igst"] / 100) * (
-    #                                 (i["quantity"]) * (i["price"]) - (
-    #                                 i["discount"] / 100) * (
-    #                                     i["quantity"]) * (i["price"])), 2)
-    #                         i["cgst_percentage"] = round((i["cgst"] / 100) * (
-    #                                 (i["quantity"]) * (i["price"]) - (
-    #                                 i["discount"] / 100) * (
-    #                                     i["quantity"]) * (i["price"])), 2)
-    #                         i["sgst_percentage"] = round((i["sgst"] / 100) * (
-    #                                 (i["quantity"]) * (i["price"]) - (
-    #                                 i["discount"] / 100) * (
-    #                                     i["quantity"]) * (i["price"])), 2)
-    #                         i["total"] = round(((i["quantity"]) * (
-    #                             i["price"]) - (
-    #                                                     i["discount"] / 100) * (
-    #                                                 i["quantity"]) * (
-    #                                                 i["price"])) + i["igst_percentage"] + i[
-    #                                                "cgst_percentage"] + i["sgst_percentage"], 2)
-    #
-    #         item.amount_to_pay = round(sum(i.get("total", 0) for i in item.dronedetails), 2)
-    #         item.sum_of_item_total_price = round(sum(Decimal(i.get("item_total_price", 0)) for i in item.dronedetails),
-    #                                              2)
-    #         item.sum_of_igst_percentage = round(sum(float(i.get("igst_percentage", 0)) for i in item.dronedetails), 2)
-    #         item.sum_of_cgst_percentage = round(sum(float(i.get("cgst_percentage", 0)) for i in item.dronedetails), 2)
-    #         item.sum_of_sgst_percentage = round(sum(float(i.get("sgst_percentage", 0)) for i in item.dronedetails), 2)
-    #         item.sum_of_discount_amount = round(sum(float(i.get("discount_amount", 0)) for i in item.dronedetails), 2)
-    #         item.sum_of_price_after_discount = round(
-    #             sum(float(i.get("price_after_discount", 0)) for i in item.dronedetails), 2)
-    #
-    #         updated_datetime = timezone.now().isoformat()
-    #         for i in item.dronedetails:
-    #             i["updated_datetime"] = [updated_datetime]
-    #
-    #         item.save()
-    #
-    #         if inventory_partner.role_id.role_name == 'Partner':
-    #             drone_ownerships = DroneOwnership.objects.filter(user=inventory_partner)
-    #             inventory_count = drone_ownerships.aggregate(Sum('quantity'))['quantity__sum']
-    #
-    #             inventory_partner.inventory_count = inventory_count
-    #             inventory_partner.save()
-    #
-    #         response_data = {
-    #             'message': 'Items are updated successfully!',
-    #             'item_id': item.id,
-    #             'items_data': new_items
-    #         }
-    #         return Response(response_data, status=status.HTTP_200_OK)
-
     def delete(self, request, item_id):
         item = get_object_or_404(AddItem, id=item_id)
         data = request.data
@@ -6455,6 +5582,7 @@ from geopy.geocoders import Nominatim
 @method_decorator([authorization_required], name='dispatch')
 class CustomerCreateOrginizationAPIView(APIView):
     ENDPOINT = "https://api.postalpincode.in/pincode/"
+
     def get_state_code(self, state_name):
         # Define a dictionary mapping state names to their codes
         state_code_mapping = {
@@ -7586,7 +6714,7 @@ class GetItemsByOwnerIdView(View):
                 "pan_number": item.customer_pan_number,
                 # "profile_pic": str(
                 #     item.customer_id.profile_pic) if item.customer_id and item.customer_id.profile_pic else None,
-                'profile_pic': f"/media/{item.customer_profile_pic}" if item.customer_profile_pic  else None,
+                'profile_pic': f"/media/{item.customer_profile_pic}" if item.customer_profile_pic else None,
                 "company_name": item.customer_company_name,
                 "company_email": item.customer_company_email,
                 "company_address": item.customer_company_address,
@@ -7595,7 +6723,7 @@ class GetItemsByOwnerIdView(View):
                 "company_phn_number": item.customer_company_phn_number,
                 "company_gst_num": item.customer_company_gst_num,
                 "company_cin_num": item.customer_company_cin_num,
-                'company_logo': f"/media/{item.customer_company_logo}" if item.customer_company_logo  else None,
+                'company_logo': f"/media/{item.customer_company_logo}" if item.customer_company_logo else None,
                 # "company_logo": str(
                 #     item.customer_id.company_logo) if item.customer_id and item.customer_id.company_logo else None,
                 "role_id": item.customer_id.role_id.id if item.customer_id and item.customer_id.role_id else None,
@@ -7770,7 +6898,7 @@ class PartnerAddedItems(APIView):
 
                 customer_data = {
                     "id": item.customer_id.id if item.customer_id else None,
-                    "first_name": item.customer_first_name ,
+                    "first_name": item.customer_first_name,
                     "last_name": item.customer_last_name,
                     "full_name": f"{item.customer_first_name} {item.customer_last_name}" if item.customer_first_name and item.customer_last_name else None,
                     "email": item.customer_email,
@@ -7789,7 +6917,7 @@ class PartnerAddedItems(APIView):
                     "company_phn_number": item.customer_company_phn_number,
                     "company_gst_num": item.customer_company_gst_num,
                     "company_cin_num": item.customer_company_cin_num,
-                    'company_logo': f"/media/{item.customer_company_logo}" if item.customer_company_logo  else None,
+                    'company_logo': f"/media/{item.customer_company_logo}" if item.customer_company_logo else None,
                     # "company_logo": str(
                     #     item.customer_id.company_logo) if item.customer_id and item.customer_id.company_logo else None,
                     "role_id": item.customer_id.role_id.id if item.customer_id and item.customer_id.role_id else None,
@@ -7955,45 +7083,6 @@ class StateCodeAPI(APIView):
             {"name": "Other Countries", "code": "99"},
         ]
 
-        # states_data = [
-        #     {"name": "Andaman and Nicobar Islands", "code": "35"},
-        #     {"name": "Andhra Pradesh", "code": "28"},
-        #     {"name": "Arunachal Pradesh", "code": "12"},
-        #     {"name": "Assam", "code": "18"},
-        #     {"name": "Bihar", "code": "10"},
-        #     {"name": "Chandigarh", "code": "04"},
-        #     {"name": "Chhattisgarh", "code": "22"},
-        #     {"name": "Dadra and Nagar Haveli and Daman and Diu", "code": "26"},
-        #     {"name": "Delhi", "code": "07"},
-        #     {"name": "Goa", "code": "30"},
-        #     {"name": "Gujarat", "code": "24"},
-        #     {"name": "Haryana", "code": "06"},
-        #     {"name": "Himachal Pradesh", "code": "02"},
-        #     {"name": "Jharkhand", "code": "20"},
-        #     {"name": "Karnataka", "code": "29"},
-        #     {"name": "Kerala", "code": "32"},
-        #     {"name": "Lakshadweep", "code": "31"},
-        #     {"name": "Madhya Pradesh", "code": "23"},
-        #     {"name": "Maharashtra", "code": "27"},
-        #     {"name": "Manipur", "code": "14"},
-        #     {"name": "Meghalaya", "code": "17"},
-        #     {"name": "Mizoram", "code": "15"},
-        #     {"name": "Nagaland", "code": "13"},
-        #     {"name": "Odisha", "code": "21"},
-        #     {"name": "Puducherry", "code": "34"},
-        #     {"name": "Punjab", "code": "03"},
-        #     {"name": "Rajasthan", "code": "08"},
-        #     {"name": "Sikkim", "code": "11"},
-        #     {"name": "Tamil Nadu", "code": "33"},
-        #     {"name": "Telangana", "code": "36"},
-        #     {"name": "Tripura", "code": "16"},
-        #     {"name": "Uttar Pradesh", "code": "09"},
-        #     {"name": "Uttarakhand", "code": "05"},
-        #     {"name": "West Bengal", "code": "19"},
-        #     {"name": "Jammu and Kashmir", "code": "01"},
-        #     {"name": "Ladakh", "code": "02"},
-        # ]
-
         # Return the state data in the response
         return Response({'state_data': states_data}, status=status.HTTP_200_OK)
 
@@ -8082,6 +7171,7 @@ from Crypto.Cipher import AES
 from Crypto.Protocol.KDF import PBKDF2
 from collections import OrderedDict
 
+
 # @method_decorator([authorization_required], name='dispatch')
 class MyApiView(APIView):
     def clean_payload(self, payload):
@@ -8130,10 +7220,11 @@ class MyApiView(APIView):
                         #     'billing_pincode', 'billing_state_code'
                         # ).first()
                         owner_details = AddItem.objects.filter(invoice_number=invoice_number).values(
-                                'owner_company_gst_num', 'owner_company_name', 'owner_billing_address', 'owner_billing_state_city',
-                                'owner_billing_pincode', 'owner_billing_state_code'
-                            ).first()
-                        print(owner_details,"lllll")
+                            'owner_company_gst_num', 'owner_company_name', 'owner_billing_address',
+                            'owner_billing_state_city',
+                            'owner_billing_pincode', 'owner_billing_state_code'
+                        ).first()
+                        print(owner_details, "lllll")
 
                         # buyer_details = CustomUser.objects.filter(id=item.customer_id.id).values(
                         #     'gst_number', 'company_name', 'address', 'location',
@@ -8141,10 +7232,11 @@ class MyApiView(APIView):
                         #     'billing_state_city', 'billing_state_code', 'shipping_address', 'shipping_state_city',
                         #     'shipping_state_code', 'shipping_pincode'
                         # ).first()
-                        buyer_details =AddItem.objects.filter(invoice_number=invoice_number).values(
+                        buyer_details = AddItem.objects.filter(invoice_number=invoice_number).values(
                             'customer_gst_number', 'customer_company_name', 'customer_address', 'customer_location',
                             'customer_billing_pincode', 'customer_billing_address',
-                            'customer_billing_state_city', 'customer_billing_state_code', 'customer_shipping_address', 'customer_shipping_state_city',
+                            'customer_billing_state_city', 'customer_billing_state_code', 'customer_shipping_address',
+                            'customer_shipping_state_city',
                             'customer_shipping_state_code', 'customer_shipping_pincode'
                         ).first()
 
@@ -8153,8 +7245,10 @@ class MyApiView(APIView):
                         #     'shipping_address', 'shipping_state_city', 'shipping_state_code', 'shipping_pincode'
                         # ).first()
                         shipping_details = AddItem.objects.filter(invoice_number=invoice_number).values(
-                            'customer_gst_number', 'customer_company_name', 'customer_address', 'customer_location', 'customer_billing_pincode',
-                            'customer_shipping_address', 'customer_shipping_state_city', 'customer_shipping_state_code', 'customer_shipping_pincode'
+                            'customer_gst_number', 'customer_company_name', 'customer_address', 'customer_location',
+                            'customer_billing_pincode',
+                            'customer_shipping_address', 'customer_shipping_state_city', 'customer_shipping_state_code',
+                            'customer_shipping_pincode'
                         ).first()
 
                         if owner_details and buyer_details and shipping_details:
@@ -8359,19 +7453,24 @@ class MyApiView(APIView):
                         # ).first()
                         custom_owner_details = CustomInvoice.objects.filter(invoice_number=invoice_number).values(
                             'owner_company_gst_num', 'owner_company_name', 'owner_company_address', 'owner_location',
-                            'owner_billing_state_city', 'owner_billing_pincode', 'owner_billing_state_code', 'owner_shipping_pincode',
+                            'owner_billing_state_city', 'owner_billing_pincode', 'owner_billing_state_code',
+                            'owner_shipping_pincode',
                             'owner_billing_address'
                         ).first()
 
                         custom_buyer_details = CustomInvoice.objects.filter(invoice_number=invoice_number).values(
-                            'customer_gst_number', 'customer_company_name', 'customer_address', 'customer_location', 'customer_billing_pincode',
-                            'customer_billing_address', 'customer_billing_state_city', 'customer_billing_state_code', 'customer_shipping_address',
+                            'customer_gst_number', 'customer_company_name', 'customer_address', 'customer_location',
+                            'customer_billing_pincode',
+                            'customer_billing_address', 'customer_billing_state_city', 'customer_billing_state_code',
+                            'customer_shipping_address',
                             'customer_shipping_state_city', 'customer_shipping_state_code', 'customer_shipping_pincode'
                         ).first()
 
                         custom_shipping_details = CustomInvoice.objects.filter(invoice_number=invoice_number).values(
-                            'customer_gst_number', 'customer_company_name', 'customer_address', 'customer_location', 'customer_billing_pincode',
-                            'customer_shipping_address', 'customer_shipping_state_city', 'customer_shipping_state_code', 'customer_shipping_pincode'
+                            'customer_gst_number', 'customer_company_name', 'customer_address', 'customer_location',
+                            'customer_billing_pincode',
+                            'customer_shipping_address', 'customer_shipping_state_city', 'customer_shipping_state_code',
+                            'customer_shipping_pincode'
                         ).first()
 
                         if custom_owner_details and custom_buyer_details and custom_shipping_details:
@@ -8384,7 +7483,8 @@ class MyApiView(APIView):
                                     "EcmGstin": None,
                                     # "IgstOnIntra": "N"
                                     "IgstOnIntra": "Y" if custom_owner_details['owner_billing_state_code'] !=
-                                                          custom_shipping_details['customer_shipping_state_code'] else "N"
+                                                          custom_shipping_details[
+                                                              'customer_shipping_state_code'] else "N"
                                 },
                                 "DocDtls": {
                                     "Typ": "INV",
@@ -8832,7 +7932,8 @@ class MyApiView(APIView):
                                     "EcmGstin": None,
                                     # "IgstOnIntra": "N"
                                     "IgstOnIntra": "Y" if custom_owner_details['owner_billing_state_code'] !=
-                                                          custom_shipping_details['customer_shipping_state_code'] else "N"
+                                                          custom_shipping_details[
+                                                              'customer_shipping_state_code'] else "N"
 
                                 },
                                 "DocDtls": {
@@ -8953,1128 +8054,9 @@ class MyApiView(APIView):
             return Response({"error": "Invalid invoice_type provided."}, status=status.HTTP_400_BAD_REQUEST)
 
 
-# @method_decorator([authorization_required], name='dispatch')
-# class MyApiView(APIView):
-#     def clean_payload(self, payload):
-#         cleaned_payload = ''.join(char for char in payload if char.isprintable())
-#         return cleaned_payload
-#
-#     def encrypt(self, payload, sek_key):
-#         cleaned_payload = self.clean_payload(json.dumps(payload, separators=(',', ':')))
-#         decoded_sek_key = base64.b64decode(sek_key)
-#         padder = padding.PKCS7(algorithms.AES.block_size).padder()
-#         padded_payload = padder.update(cleaned_payload.encode())
-#         padded_payload += padder.finalize()
-#         cipher = Cipher(algorithms.AES(decoded_sek_key), modes.ECB(), backend=default_backend())
-#         encryptor = cipher.encryptor()
-#         encrypted_data = encryptor.update(padded_payload) + encryptor.finalize()
-#         encrypted_text = base64.b64encode(encrypted_data).decode()
-#         print(f"Encrypted Data: {encrypted_text}")
-#
-#         # Clean up the encrypted payload using json.dumps
-#         cleaned_encrypted_payload = json.dumps(encrypted_text).strip('"')
-#         print(f"Cleaned Encrypted Data: {cleaned_encrypted_payload}")
-#
-#         return cleaned_encrypted_payload
-#
-#     def get(self, request, *args, **kwargs):
-#         invoice_number = request.query_params.get('invoice_number')
-#         invoice_type = request.query_params.get('invoice_type')
-#
-#         if not invoice_number:
-#             return Response({"error": "Missing invoice_number in the request body."},
-#                             status=status.HTTP_400_BAD_REQUEST)
-#
-#         if invoice_type == 'Drone':
-#             item = get_object_or_404(AddItem.objects.select_related('invoice_type_id'),
-#                                      invoice_number=invoice_number,
-#                                      invoice_type_id__invoice_type_name=invoice_type)
-#             if item:
-#                 try:
-#                     auth_token = AuthToken.objects.first()
-#
-#                     if auth_token:
-#                         sek_key = auth_token.sek
-#
-#                         owner_details = CustomUser.objects.filter(id=item.owner_id.id).values(
-#                             'company_gst_num', 'company_name', 'billing_address', 'billing_state_city',
-#                             'billing_pincode', 'billing_state_code'
-#                         ).first()
-#
-#                         buyer_details = CustomUser.objects.filter(id=item.customer_id.id).values(
-#                             'gst_number', 'company_name', 'address', 'location',
-#                             'billing_pincode', 'state_code', 'billing_address',
-#                             'billing_state_city', 'billing_state_code', 'shipping_address', 'shipping_state_city',
-#                             'shipping_state_code', 'shipping_pincode'
-#                         ).first()
-#
-#                         shipping_details = CustomUser.objects.filter(id=item.customer_id.id).values(
-#                             'gst_number', 'company_name', 'address', 'location', 'billing_pincode', 'state_code',
-#                             'shipping_address', 'shipping_state_city', 'shipping_state_code', 'shipping_pincode'
-#                         ).first()
-#
-#                         if owner_details and buyer_details and shipping_details:
-#                             item.invoice_payload = {
-#                                 "Version": "1.1",
-#                                 "TranDtls": {
-#                                     "TaxSch": "GST",
-#                                     "SupTyp": "B2B",
-#                                     "RegRev": "Y",
-#                                     "EcmGstin": None,
-#                                     # "IgstOnIntra": "N"
-#                                     "IgstOnIntra": "Y" if owner_details['billing_state_code'] != shipping_details[
-#                                         'shipping_state_code'] else "N"
-#                                 },
-#                                 "DocDtls": {
-#                                     "Typ": "INV",
-#                                     "No": item.invoice_number,
-#                                     "Dt": item.created_date_time.strftime('%d/%m/%Y')
-#                                 },
-#                                 "SellerDtls": {
-#                                     "Gstin": owner_details['company_gst_num'],
-#                                     "LglNm": owner_details['company_name'],
-#                                     "Addr1": owner_details['billing_address'],
-#                                     "Loc": owner_details['billing_state_city'],
-#                                     "Pin": owner_details['billing_pincode'],
-#                                     "Stcd": owner_details['billing_state_code']
-#                                 },
-#                                 "BuyerDtls": {
-#                                     "Gstin": buyer_details['gst_number'],
-#                                     "LglNm": buyer_details['company_name'],
-#                                     "Pos": buyer_details['billing_state_code'],
-#                                     "Addr1": buyer_details['billing_address'],
-#                                     "Loc": buyer_details['billing_state_city'],
-#                                     "Pin": buyer_details['billing_pincode'],
-#                                     "Stcd": buyer_details['billing_state_code']
-#                                 },
-#                                 "ShipDtls": {
-#                                     "Gstin": shipping_details['gst_number'],
-#                                     "LglNm": shipping_details['company_name'],
-#                                     "Addr1": shipping_details['shipping_address'],
-#                                     "Loc": shipping_details['shipping_state_city'],
-#                                     "Pin": shipping_details['shipping_pincode'],
-#                                     "Stcd": shipping_details['shipping_state_code']
-#                                 },
-#                                 "ItemList": [
-#                                     {
-#                                         "SlNo": str(index + 1),
-#                                         "IsServc": "N",
-#                                         "HsnCd": str(drone_detail.get('hsn_number', '')),
-#                                         "Qty": str(drone_detail.get('quantity', 1)),
-#                                         "UnitPrice": str(drone_detail.get('price', 0)),
-#                                         # "Unit": "KGS",
-#                                         "Unit": str(drone_detail.get('units', '')),
-#                                         "TotAmt": drone_detail.get('item_total_price', ''),
-#                                         "AssAmt": drone_detail.get('price_after_discount', ''),
-#                                         "GstRt": drone_detail.get('igst', ''),
-#                                         "IgstAmt": drone_detail.get('igst_percentage', ''),
-#                                         "CgstAmt": drone_detail.get('cgst_percentage', ''),
-#                                         "SgstAmt": drone_detail.get('sgst_percentage', ''),
-#                                         "Discount": drone_detail.get('discount_amount', ''),
-#                                         "TotItemVal": drone_detail.get('total', '')
-#                                     }
-#                                     for index, drone_detail in enumerate(item.dronedetails)
-#                                 ],
-#                                 "ValDtls": {
-#                                     "AssVal": item.sum_of_price_after_discount,
-#                                     "TotInvVal": item.amount_to_pay
-#                                 },
-#                                 "PrecDocDtls": [{
-#                                     "InvNo": request.data.get('prec_doc_inv_no', '') or item.invoice_number,
-#                                     "InvDt": item.created_date_time.strftime('%d/%m/%Y')
-#                                 }]
-#                             }
-#
-#                             draft_status, _ = InvoiceStatus.objects.get_or_create(invoice_status_name='Draft')
-#                             item.invoice_status = draft_status
-#                             item.save()
-#
-#                             encrypted_payload = self.encrypt(item.invoice_payload, sek_key)
-#                             formatted_payload = json.loads(json.dumps(item.invoice_payload, separators=(',', ':')))
-#
-#                             # Prepare the data for the API request
-#                             # api_url = "https://einv-apisandbox.nic.in/eicore/v1.03/Invoice"
-#                             api_url = "https://einv1api.gstsandbox.nic.in/eicore/v1.03/Invoice"
-#
-#                             headers = {
-#                                 "client-id": auth_token.client_id,
-#                                 "client-secret": "76KkYyE3SGguAaOocIWw",
-#                                 "gstin": "29AAGCE4783K1Z1",
-#                                 "user_name": auth_token.user_name,
-#                                 "authtoken": auth_token.auth_token,
-#                             }
-#                             api_data = {
-#                                 "Data": encrypted_payload,
-#                                 "sek": sek_key
-#                             }
-#
-#                             # Make the POST request to the API endpoint
-#                             response = requests.post(api_url, headers=headers, json=api_data)
-#
-#                             if response.status_code == 200:
-#                                 api_response = response.json()
-#                                 response_data = api_response['Status']
-#                                 response_error_details = api_response['ErrorDetails']
-#
-#                                 if response_error_details:  # Check if error details are present
-#                                     error_details = response_error_details[0][
-#                                         'ErrorMessage']  # Accessing the first error message
-#                                 # response_error_message=response_error_details['ErrorMessage']
-#                                 encrypted_data = api_response.get('Data')
-#
-#                                 # Check if encrypted data is available
-#                                 if encrypted_data:
-#                                     decrypted_data = self.decrypt_data(encrypted_data, sek_key)
-#
-#                                     if decrypted_data is not None:
-#                                         # Include decrypted data in the response
-#                                         api_response = {'DecryptedData': decrypted_data}
-#
-#                                 # Save API response as JSON string
-#                                 api_response_json = json.dumps(api_response)
-#
-#                                 # Check if the status is 1 or 0
-#                                 if response_data == 1:
-#                                     # Set invoice status to 2
-#                                     item.invoice_status_id = 2
-#                                     item.save(update_fields=['invoice_status_id'])
-#                                     item.e_invoice_status = True
-#                                     item.save(update_fields=['e_invoice_status'])
-#
-#                                     # Save api_response in EInvoice table
-#                                     e_invoice_instance = EInvoice.objects.create(
-#                                         invoice_number=item,
-#                                         api_response=api_response_json,
-#                                         data=item.invoice_payload
-#                                     )
-#
-#                                 # Check if the error message is 'Duplicate IRN'
-#                                 error_message = next(
-#                                     (error['ErrorMessage'] for error in api_response.get('ErrorDetails', []) if
-#                                      'Duplicate IRN' in error.get('ErrorMessage', '')), None)
-#                                 if response_data == 0 and error_message == 'Duplicate IRN':
-#                                     # Set invoice status to 2
-#                                     item.invoice_status_id = 2
-#                                     item.save(update_fields=['invoice_status_id'])
-#                                     item.e_invoice_status = True
-#                                     item.save(update_fields=['e_invoice_status'])
-#                                 if response_data == 0:
-#                                     return Response(
-#                                         {"message": error_details},
-#                                         status=status.HTTP_500_INTERNAL_SERVER_ERROR
-#                                     )
-#
-#                                 # Prepare response data
-#                                 response_data = {
-#                                     "message": "E-Invoice generated successfully.",
-#                                     "Data": item.invoice_payload,
-#                                     "sek": sek_key,
-#                                     "api_response": api_response,
-#                                     # "Error_details": error_details
-#                                 }
-#                                 if response_data == 0:
-#                                     return Response(
-#                                         {"message": error_details},
-#                                         status=status.HTTP_500_INTERNAL_SERVER_ERROR
-#                                     )
-#
-#                                 return Response(response_data, status=status.HTTP_200_OK)
-#
-#                             else:
-#                                 return Response(
-#                                     {"error": f"API sheetal request failed with status code {response.status_code}"},
-#                                     status=response.status_code)
-#
-#
-#                         else:
-#                             return Response({"error": "Details not found."}, status=status.HTTP_404_NOT_FOUND)
-#
-#                     else:
-#                         return Response({"error": "AuthToken not found."}, status=status.HTTP_404_NOT_FOUND)
-#
-#                 except Exception as e:
-#                     return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-#
-#         elif invoice_type == 'Custom':
-#             custom = get_object_or_404(CustomInvoice.objects.select_related('invoice_type_id'),
-#                                        invoice_number=invoice_number,
-#                                        invoice_type_id__invoice_type_name=invoice_type)
-#
-#             if custom:
-#                 try:
-#                     auth_token = AuthToken.objects.first()
-#                     error_details = []
-#
-#                     if auth_token:
-#                         sek_key = auth_token.sek
-#
-#                         custom_owner_details = CustomUser.objects.filter(id=custom.owner_id.id).values(
-#                             'company_gst_num', 'company_name', 'company_address', 'location',
-#                             'billing_state_city', 'billing_pincode', 'billing_state_code', 'shipping_pincode',
-#                             'billing_address'
-#                         ).first()
-#
-#                         custom_buyer_details = CustomUser.objects.filter(id=custom.customer_id.id).values(
-#                             'gst_number', 'company_name', 'address', 'location', 'billing_pincode', 'state_code',
-#                             'billing_address', 'billing_state_city', 'billing_state_code', 'shipping_address',
-#                             'shipping_state_city', 'shipping_state_code', 'shipping_pincode'
-#                         ).first()
-#
-#                         custom_shipping_details = CustomUser.objects.filter(id=custom.customer_id.id).values(
-#                             'gst_number', 'company_name', 'address', 'location', 'billing_pincode', 'state_code',
-#                             'shipping_address', 'shipping_state_city', 'shipping_state_code', 'shipping_pincode'
-#                         ).first()
-#
-#                         if custom_owner_details and custom_buyer_details and custom_shipping_details:
-#                             custom.invoice_payload = {
-#                                 "Version": "1.1",
-#                                 "TranDtls": {
-#                                     "TaxSch": "GST",
-#                                     "SupTyp": "B2B",
-#                                     "RegRev": "Y",
-#                                     "EcmGstin": None,
-#                                     # "IgstOnIntra": "N"
-#                                     "IgstOnIntra": "Y" if custom_owner_details['billing_state_code'] !=
-#                                                           custom_shipping_details['shipping_state_code'] else "N"
-#                                 },
-#                                 "DocDtls": {
-#                                     "Typ": "INV",
-#                                     "No": custom.invoice_number,
-#                                     "Dt": custom.created_date_time.strftime('%d/%m/%Y')
-#                                 },
-#                                 "SellerDtls": {
-#                                     "Gstin": custom_owner_details['company_gst_num'],
-#                                     "LglNm": custom_owner_details['company_name'],
-#                                     "Addr1": custom_owner_details['billing_address'],
-#                                     "Loc": custom_owner_details['billing_state_city'],
-#                                     "Pin": custom_owner_details['billing_pincode'],
-#                                     "Stcd": custom_owner_details['billing_state_code']
-#                                 },
-#                                 "BuyerDtls": {
-#                                     "Gstin": custom_buyer_details['gst_number'],
-#                                     "LglNm": custom_buyer_details['company_name'],
-#                                     "Pos": custom_buyer_details['billing_state_code'],
-#                                     "Addr1": custom_buyer_details['billing_address'],
-#                                     "Loc": custom_buyer_details['billing_state_city'],
-#                                     "Pin": custom_buyer_details['billing_pincode'],
-#                                     "Stcd": custom_buyer_details['billing_state_code']
-#                                 },
-#                                 "ShipDtls": {
-#                                     "Gstin": custom_buyer_details['gst_number'],
-#                                     "LglNm": custom_buyer_details['company_name'],
-#                                     "Addr1": custom_buyer_details['shipping_address'],
-#                                     "Loc": custom_buyer_details['shipping_state_city'],
-#                                     "Pin": custom_buyer_details['shipping_pincode'],
-#                                     "Stcd": custom_buyer_details['shipping_state_code']
-#                                 },
-#                                 "ItemList": [
-#                                     {
-#                                         "SlNo": str(index + 1),
-#                                         "IsServc": "N",
-#                                         "HsnCd": str(custom_item_detail.get('hsn_number', '')),
-#                                         "Qty": str(custom_item_detail.get('quantity', 1)),
-#                                         "UnitPrice": str(custom_item_detail.get('price', 0)),
-#                                         # "Unit": "KGS",
-#                                         "Unit": str(custom_item_detail.get('units', '')),
-#                                         "TotAmt": str(custom_item_detail.get('item_total_price', '')),
-#                                         "AssAmt": custom_item_detail.get('price_after_discount', ''),
-#                                         "GstRt": str(custom_item_detail.get('igst', '')),
-#                                         "IgstAmt": str(custom_item_detail.get('igst_percentage', '')),
-#                                         "CgstAmt": str(custom_item_detail.get('cgst_percentage', '')),
-#                                         "SgstAmt": str(custom_item_detail.get('sgst_percentage', '')),
-#                                         "Discount": str(custom_item_detail.get('discount_amount', '')),
-#                                         "TotItemVal": custom_item_detail.get('total', '')
-#                                     }
-#                                     for index, custom_item_detail in enumerate(custom.custom_item_details)
-#                                 ],
-#                                 "ValDtls": {
-#                                     "AssVal": custom.sum_of_price_after_discount,
-#                                     "TotInvVal": custom.amount_to_pay
-#                                 },
-#                                 "PrecDocDtls": [{
-#                                     "InvNo": request.data.get('prec_doc_inv_no', '') or custom.invoice_number,
-#                                     "InvDt": custom.created_date_time.strftime('%d/%m/%Y')
-#                                 }]
-#                             }
-#
-#                             draft_status, _ = InvoiceStatus.objects.get_or_create(invoice_status_name='Draft')
-#                             custom.invoice_status = draft_status
-#                             custom.save()
-#
-#                             encrypted_payload = self.encrypt(custom.invoice_payload, sek_key)
-#                             formatted_payload = json.loads(json.dumps(custom.invoice_payload, separators=(',', ':')))
-#
-#                             # Prepare the data for the API request
-#                             api_url = "https://einv1api.gstsandbox.nic.in/eicore/v1.03/Invoice"
-#                             headers = {
-#                                 "client-id": auth_token.client_id,
-#                                 "client-secret": "76KkYyE3SGguAaOocIWw",
-#                                 "gstin": "29AAGCE4783K1Z1",
-#                                 "user_name": auth_token.user_name,
-#                                 "authtoken": auth_token.auth_token,
-#                             }
-#                             api_data = {
-#                                 "Data": encrypted_payload,
-#                                 "sek": sek_key
-#                             }
-#
-#                             # Make the POST request to the API endpoint
-#                             response = requests.post(api_url, headers=headers, json=api_data)
-#
-#                             if response.status_code == 200:
-#                                 api_response = response.json()
-#                                 response_data = api_response['Status']
-#                                 response_error_details = api_response['ErrorDetails']
-#
-#                                 if response_error_details:  # Check if error details are present
-#                                     error_details = response_error_details[0][
-#                                         'ErrorMessage']  # Accessing the first error message
-#                                 encrypted_data = api_response.get('Data')
-#
-#                                 # Check if encrypted data is available
-#                                 if encrypted_data:
-#                                     decrypted_data = self.decrypt_data(encrypted_data, sek_key)
-#
-#                                     if decrypted_data is not None:
-#                                         print(f"Decrypted Data: {decrypted_data}")
-#
-#                                         # Include decrypted data in the response
-#                                         api_response = {'DecryptedData': decrypted_data}
-#
-#                                 # Save API response as JSON string
-#                                 api_response_json = json.dumps(api_response)
-#
-#                                 # Check if the status is 1 or 0
-#                                 if response_data == 1:
-#                                     # Set invoice status to 2
-#                                     custom.invoice_status_id = 2
-#                                     custom.save(update_fields=['invoice_status_id'])
-#                                     custom.e_invoice_status = True
-#                                     custom.save(update_fields=['e_invoice_status'])
-#
-#                                     # ewaybill_status = True if 'EwbNo' in decrypted_data else False
-#
-#                                     # Update ewaybill_status in AddItem model
-#                                     # custom.ewaybill_status = ewaybill_status
-#                                     # custom.save(update_fields=['ewaybill_status'])
-#
-#                                     # Save api_response in EInvoice table
-#                                     e_invoice_instance = EInvoice.objects.create(
-#                                         invoice_number_custominvoice=custom,
-#                                         api_response=api_response_json,
-#                                         data=custom.invoice_payload
-#                                     )
-#
-#                                 # Check if the error message is 'Duplicate IRN'
-#                                 error_message = next(
-#                                     (error['ErrorMessage'] for error in api_response.get('ErrorDetails', []) if
-#                                      'Duplicate IRN' in error.get('ErrorMessage', '')), None)
-#                                 if response_data == 0 and error_message == 'Duplicate IRN':
-#                                     # Set invoice status to 2
-#                                     custom.invoice_status_id = 2
-#                                     custom.save(update_fields=['invoice_status_id'])
-#                                     # custom.ewaybill_status = True
-#                                     custom.save(update_fields=['e_invoice_status'])
-#
-#                                 if response_data == 0:
-#                                     return Response(
-#                                         {"message": error_details},
-#                                         status=status.HTTP_500_INTERNAL_SERVER_ERROR
-#                                     )
-#                                 # Prepare response data
-#                                 response_data = {
-#                                     "message": "E-Invoice generated successfully.",
-#                                     "Data": custom.invoice_payload,
-#                                     "sek": sek_key,
-#                                     "api_response": api_response,
-#                                     "Error_details": error_details
-#                                 }
-#                                 if response_data == 0:
-#                                     return Response(
-#                                         {"message": error_details},
-#                                         status=status.HTTP_500_INTERNAL_SERVER_ERROR
-#                                     )
-#
-#                                 return Response(response_data, status=status.HTTP_200_OK)
-#
-#                             else:
-#                                 return Response(
-#                                     {"error": f"API sheetal request failed with status code "},
-#                                     status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-#
-#                         else:
-#                             return Response({"error": "Details not found."}, status=status.HTTP_404_NOT_FOUND)
-#
-#                     else:
-#                         return Response({"error": "AuthToken not found."}, status=status.HTTP_404_NOT_FOUND)
-#
-#                 except Exception as e:
-#                     return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-#
-#         return Response({"error": "Invoice not found or invoice_type not supported."}, status=status.HTTP_404_NOT_FOUND)
-#
-#     def decrypt_data(self, encrypted_data, sek_key_base64):
-#         try:
-#             # Decode the base64 encoded sek key
-#             sek_key = base64.b64decode(sek_key_base64)
-#
-#             # Decode the base64 encoded data
-#             decoded_data = base64.b64decode(encrypted_data)
-#
-#             # Create AES cipher object with ECB mode
-#             cipher = AES.new(sek_key, AES.MODE_ECB)
-#
-#             # Decrypt the data
-#             decrypted_data = cipher.decrypt(decoded_data)
-#
-#             # Unpad the decrypted data
-#             unpadded_data = unpad(decrypted_data, AES.block_size)
-#
-#             # Convert decrypted data from bytes to string
-#             decrypted_string = unpadded_data.decode('utf-8')
-#
-#             # Convert decrypted string to JSON
-#             decrypted_json = json.loads(decrypted_string)
-#
-#             return decrypted_json
-#
-#         except Exception as e:
-#             print(f"Error decrypting data: {str(e)}")
-#             return None
-#
-#     def post(self, request, *args, **kwargs):
-#         invoice_number = request.data.get('invoice_number')
-#         invoice_type = request.data.get('invoice_type')
-#
-#         if not invoice_number:
-#             return Response({"error": "Missing invoice_number in the request body."},
-#                             status=status.HTTP_400_BAD_REQUEST)
-#
-#         if not invoice_type:
-#             return Response({"error": "Missing invoice_type in the request body."}, status=status.HTTP_400_BAD_REQUEST)
-#
-#         if invoice_type == "Drone":
-#             item = get_object_or_404(AddItem, invoice_number=invoice_number)
-#
-#             if item:
-#                 try:
-#                     auth_token = AuthToken.objects.first()
-#
-#                     if auth_token:
-#                         sek_key = auth_token.sek
-#
-#                         owner_details = CustomUser.objects.filter(id=item.owner_id.id).values(
-#                             'company_gst_num', 'company_name', 'company_address', 'location',
-#                             'billing_state_city', 'billing_pincode', 'billing_state_code', 'shipping_pincode',
-#                             'billing_address'
-#                         ).first()
-#
-#                         buyer_details = CustomUser.objects.filter(id=item.customer_id.id).values(
-#                             'gst_number', 'company_name', 'address', 'location', 'billing_pincode', 'state_code',
-#                             'billing_address', 'billing_state_city', 'billing_state_code', 'shipping_address',
-#                             'shipping_state_city', 'shipping_state_code', 'shipping_pincode'
-#                         ).first()
-#
-#                         shipping_details = CustomUser.objects.filter(id=item.customer_id.id).values(
-#                             'gst_number', 'company_name', 'address', 'location', 'billing_pincode', 'state_code',
-#                             'shipping_address', 'shipping_state_city', 'shipping_state_code', 'shipping_pincode'
-#                         ).first()
-#
-#                         if owner_details and buyer_details and shipping_details:
-#                             item.invoice_payload = {
-#                                 "Version": "1.1",
-#                                 "TranDtls": {
-#                                     "TaxSch": "GST",
-#                                     "SupTyp": "B2B",
-#                                     "RegRev": "Y",
-#                                     "EcmGstin": None,
-#                                     # "IgstOnIntra": "N"
-#                                     "IgstOnIntra": "Y" if owner_details['billing_state_code'] != shipping_details[
-#                                         'shipping_state_code'] else "N"
-#                                 },
-#                                 "DocDtls": {
-#                                     "Typ": "INV",
-#                                     "No": item.invoice_number,
-#                                     "Dt": item.created_date_time.strftime('%d/%m/%Y')
-#                                 },
-#                                 "SellerDtls": {
-#                                     "Gstin": owner_details['company_gst_num'],
-#                                     "LglNm": owner_details['company_name'],
-#                                     "Addr1": owner_details['billing_address'],
-#                                     "Loc": owner_details['billing_state_city'],
-#                                     "Pin": owner_details['billing_pincode'],
-#                                     "Stcd": owner_details['billing_state_code']
-#                                 },
-#                                 "BuyerDtls": {
-#                                     "Gstin": buyer_details['gst_number'],
-#                                     "LglNm": buyer_details['company_name'],
-#                                     "Pos": buyer_details['billing_state_code'],
-#                                     "Addr1": buyer_details['billing_address'],
-#                                     "Loc": buyer_details['billing_state_city'],
-#                                     "Pin": buyer_details['billing_pincode'],
-#                                     "Stcd": buyer_details['billing_state_code']
-#                                 },
-#                                 "ShipDtls": {
-#                                     "Gstin": buyer_details['gst_number'],
-#                                     "LglNm": buyer_details['company_name'],
-#                                     "Addr1": buyer_details['shipping_address'],
-#                                     "Loc": buyer_details['shipping_state_city'],
-#                                     "Pin": buyer_details['shipping_pincode'],
-#                                     "Stcd": buyer_details['shipping_state_code']
-#                                 },
-#                                 "ItemList": [
-#                                     {
-#                                         "SlNo": str(index + 1),
-#                                         "IsServc": "N",
-#                                         "HsnCd": str(drone_detail.get('hsn_number', '')),
-#                                         "Qty": str(drone_detail.get('quantity', 1)),
-#                                         "UnitPrice": str(drone_detail.get('price', 0)),
-#                                         # "Unit": "KGS",  # You can adjust this field based on your data
-#                                         "Unit": str(drone_detail.get('units', '')),
-#                                         "TotAmt": str(drone_detail.get('item_total_price', '')),
-#                                         "AssAmt": str(float(drone_detail.get('item_total_price', 0)) - float(
-#                                             item.discount_amount)),
-#                                         "GstRt": item.igst,
-#                                         "CgstAmt": item.cgst_amount,
-#                                         "SgstAmt": item.sgst_amount,
-#                                         "Discount": item.discount_amount,
-#                                         "TotItemVal": str(float(drone_detail.get('item_total_price', 0)) - float(
-#                                             item.discount_amount) + float(
-#                                             item.igst) + item.cgst_amount + item.sgst_amount)
-#                                     }
-#                                     for index, drone_detail in enumerate(item.dronedetails)
-#                                 ],
-#                                 "ValDtls": {
-#                                     "AssVal": str(sum(
-#                                         float(drone_detail.get('item_total_price', 0)) - float(item.discount_amount) for
-#                                         drone_detail in item.dronedetails)),
-#                                     "TotInvVal": str(sum(float(drone_detail.get('item_total_price', 0)) - float(
-#                                         item.discount_amount) + float(item.igst) + item.cgst_amount + item.sgst_amount
-#                                                          for drone_detail in item.dronedetails))
-#                                 },
-#                                 "PrecDocDtls": [{
-#                                     "InvNo": request.data.get('prec_doc_inv_no', '') or item.invoice_number,
-#                                     "InvDt": item.created_date_time.strftime('%d/%m/%Y')
-#                                 }]
-#                             }
-#
-#                             draft_status, _ = InvoiceStatus.objects.get_or_create(invoice_status_name='Draft')
-#                             item.invoice_status = draft_status
-#                             item.save()
-#
-#                             encrypted_payload = self.encrypt(item.invoice_payload, sek_key)
-#                             formatted_payload = json.loads(json.dumps(item.invoice_payload, separators=(',', ':')))
-#
-#                             # Prepare the data for the API request
-#                             api_url = "https://einv1api.gstsandbox.nic.in/eicore/v1.03/Invoice"
-#                             headers = {
-#                                 "client-id": auth_token.client_id,
-#                                 "client-secret": "76KkYyE3SGguAaOocIWw",
-#                                 "gstin": "29AAGCE4783K1Z1",
-#                                 "user_name": auth_token.user_name,
-#                                 "authtoken": auth_token.auth_token,
-#                             }
-#                             api_data = {
-#                                 "encrypted_payload": encrypted_payload,
-#                                 "sek": sek_key
-#                             }
-#
-#                             # Make the POST request to the API endpoint
-#                             response = requests.post(api_url, headers=headers, json=api_data)
-#
-#                             # Check if the request was successful
-#                             if response.status_code == 200:
-#                                 api_response = response.json()
-#                                 response_data = api_response['Status']
-#
-#                                 response_data = {
-#                                     "message": "Invoice saved to draft successfully.",
-#                                 }
-#                                 return Response(response_data, status=status.HTTP_200_OK)
-#                             else:
-#                                 return Response(
-#                                     {"error": f"API request failed with status code {response.status_code}"},
-#                                     status=response.status_code)
-#
-#                         else:
-#                             return Response({"error": "Details not found."}, status=status.HTTP_404_NOT_FOUND)
-#
-#                     else:
-#                         return Response({"error": "AuthToken not found."}, status=status.HTTP_404_NOT_FOUND)
-#
-#                 except Exception as e:
-#                     return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-#
-#             return Response({"error": "Invoice not found."}, status=status.HTTP_404_NOT_FOUND)
-#
-#         elif invoice_type == "Custom":
-#             custom = get_object_or_404(CustomInvoice, invoice_number=invoice_number)
-#
-#             if custom:
-#                 try:
-#                     auth_token = AuthToken.objects.first()
-#
-#                     if auth_token:
-#                         sek_key = auth_token.sek
-#
-#                         custom_owner_details = CustomUser.objects.filter(id=custom.owner_id.id).values(
-#                             'company_gst_num', 'company_name', 'company_address', 'location',
-#                             'billing_state_city', 'billing_pincode', 'billing_state_code', 'shipping_pincode',
-#                             'billing_address'
-#                         ).first()
-#
-#                         custom_buyer_details = CustomUser.objects.filter(id=custom.customer_id.id).values(
-#                             'gst_number', 'company_name', 'address', 'location', 'billing_pincode', 'state_code',
-#                             'billing_address', 'billing_state_city', 'billing_state_code', 'shipping_address',
-#                             'shipping_state_city', 'shipping_state_code', 'shipping_pincode'
-#                         ).first()
-#
-#                         custom_shipping_details = CustomUser.objects.filter(id=custom.customer_id.id).values(
-#                             'gst_number', 'company_name', 'address', 'location', 'billing_pincode', 'state_code',
-#                             'shipping_address', 'shipping_state_city', 'shipping_state_code', 'shipping_pincode'
-#                         ).first()
-#
-#                         if custom_owner_details and custom_buyer_details and custom_shipping_details:
-#                             custom.invoice_payload = {
-#                                 "Version": "1.1",
-#                                 "TranDtls": {
-#                                     "TaxSch": "GST",
-#                                     "SupTyp": "B2B",
-#                                     "RegRev": "Y",
-#                                     "EcmGstin": None,
-#                                     # "IgstOnIntra": "N"
-#                                     "IgstOnIntra": "Y" if custom_owner_details['billing_state_code'] !=
-#                                                           custom_shipping_details['shipping_state_code'] else "N"
-#
-#                                 },
-#                                 "DocDtls": {
-#                                     "Typ": "INV",
-#                                     "No": custom.invoice_number,
-#                                     "Dt": custom.created_date_time.strftime('%d/%m/%Y')
-#                                 },
-#                                 "SellerDtls": {
-#                                     "Gstin": custom_owner_details['company_gst_num'],
-#                                     "LglNm": custom_owner_details['company_name'],
-#                                     "Addr1": custom_owner_details['billing_address'],
-#                                     "Loc": custom_owner_details['billing_state_city'],
-#                                     "Pin": custom_owner_details['billing_pincode'],
-#                                     "Stcd": custom_owner_details['billing_state_code']
-#                                 },
-#                                 "BuyerDtls": {
-#                                     "Gstin": custom_buyer_details['gst_number'],
-#                                     "LglNm": custom_buyer_details['company_name'],
-#                                     "Pos": custom_buyer_details['billing_state_code'],
-#                                     "Addr1": custom_buyer_details['billing_address'],
-#                                     "Loc": custom_buyer_details['billing_state_city'],
-#                                     "Pin": custom_buyer_details['billing_pincode'],
-#                                     "Stcd": custom_buyer_details['billing_state_code']
-#                                 },
-#                                 "ShipDtls": {
-#                                     "Gstin": custom_buyer_details['gst_number'],
-#                                     "LglNm": custom_buyer_details['company_name'],
-#                                     "Addr1": custom_buyer_details['shipping_address'],
-#                                     "Loc": custom_buyer_details['shipping_state_city'],
-#                                     "Pin": custom_buyer_details['shipping_pincode'],
-#                                     "Stcd": custom_buyer_details['shipping_state_code']
-#                                 },
-#                                 "ItemList": [
-#                                     {
-#                                         "SlNo": str(index + 1),
-#                                         "IsServc": "N",
-#                                         "HsnCd": str(custom_item_detail.get('hsn_number', '')),
-#                                         "Qty": str(custom_item_detail.get('quantity', 1)),
-#                                         "UnitPrice": str(custom_item_detail.get('price', 0)),
-#                                         # "Unit": "KGS",  # You can adjust this field based on your data
-#                                         "Unit": str(custom_item_detail.get('units', '')),
-#                                         "TotAmt": str(custom_item_detail.get('item_total_price', '')),
-#                                         "AssAmt": str(float(custom_item_detail.get('item_total_price', 0)) - float(
-#                                             custom_item_detail.get('discount_amount', ''))),
-#                                         "GstRt": str(custom_item_detail.get('igst', '')),
-#                                         "IgstAmt": str(custom_item_detail.get('igst_percentage', '')),
-#                                         "CgstAmt": str(custom_item_detail.get('cgst_percentage', '')),
-#                                         "SgstAmt": str(custom_item_detail.get('sgst_percentage', '')),
-#                                         "Discount": str(custom_item_detail.get('discount_amount', '')),
-#                                         "TotItemVal": str(float(custom_item_detail.get('item_total_price', 0)) - float(
-#                                             custom_item_detail.get('discount_amount', '')) + float(
-#                                             custom_item_detail.get('igst', '')) + float(
-#                                             custom_item_detail.get('cgst_percentage', '')) + float(
-#                                             custom_item_detail.get('sgst_percentage', '')))
-#                                     }
-#                                     for index, custom_item_detail in enumerate(custom.custom_item_details)
-#                                 ],
-#                                 "ValDtls": {
-#                                     "AssVal": custom.sum_of_price_after_discount,
-#                                     "TotInvVal": custom.amount_to_pay
-#                                 },
-#                                 "PrecDocDtls": [{
-#                                     "InvNo": request.data.get('prec_doc_inv_no', '') or custom.invoice_number,
-#                                     "InvDt": custom.created_date_time.strftime('%d/%m/%Y')
-#                                 }]
-#                             }
-#
-#                             draft_status, _ = InvoiceStatus.objects.get_or_create(invoice_status_name='Draft')
-#                             custom.invoice_status = draft_status
-#                             custom.save()
-#
-#                             encrypted_payload = self.encrypt(custom.invoice_payload, sek_key)
-#                             formatted_payload = json.loads(json.dumps(custom.invoice_payload, separators=(',', ':')))
-#
-#                             # Prepare the data for the API request
-#                             api_url = "https://einv1api.gstsandbox.nic.in/eicore/v1.03/Invoice"
-#                             headers = {
-#                                 "client-id": auth_token.client_id,
-#                                 "client-secret": "76KkYyE3SGguAaOocIWw",
-#                                 "gstin": "29AAGCE4783K1Z1",
-#                                 "user_name": auth_token.user_name,
-#                                 "authtoken": auth_token.auth_token,
-#                             }
-#                             api_data = {
-#                                 "encrypted_payload": encrypted_payload,
-#                                 "sek": sek_key
-#                             }
-#
-#                             # Make the POST request to the API endpoint
-#                             response = requests.post(api_url, headers=headers, json=api_data)
-#
-#                             # Check if the request was successful
-#                             if response.status_code == 200:
-#                                 api_response = response.json()
-#                                 response_data = api_response['Status']
-#
-#                                 response_data = {
-#                                     "message": "Invoice saved to draft successfully.",
-#                                 }
-#                                 return Response(response_data, status=status.HTTP_200_OK)
-#                             else:
-#                                 return Response(
-#                                     {"error": f"API request failed with status code {response.status_code}"},
-#                                     status=response.status_code)
-#
-#                         else:
-#                             return Response({"error": "Details not found."}, status=status.HTTP_404_NOT_FOUND)
-#
-#                     else:
-#                         return Response({"error": "AuthToken not found."}, status=status.HTTP_404_NOT_FOUND)
-#
-#                 except Exception as e:
-#                     return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-#
-#             return Response({"error": "Invoice not found."}, status=status.HTTP_404_NOT_FOUND)
-#
-#         else:
-#             return Response({"error": "Invalid invoice_type provided."}, status=status.HTTP_400_BAD_REQUEST)
-
-
 import ast
 
 
-# class InvoiceHistoy(APIView):
-#     def get(self, request, owner_id=None, invoice_number=None):
-#         role_filter = request.query_params.get('filter', '').lower()
-#         partner_id = request.query_params.get('id', None)
-#         page = int(request.GET.get('page', 1))
-#         page_size = int(request.GET.get('page_size', 10))
-#
-#         if role_filter == 'all':
-#             if owner_id:
-#                 try:
-#                     owner = CustomUser.objects.get(id=owner_id)
-#                 except CustomUser.DoesNotExist:
-#                     return JsonResponse({"message": "Owner not found"}, status=404)
-#
-#                 # Assuming 'role' is a field in your user model
-#                 user_role = owner.role_id.role_name  # Replace 'role' with your actual field name for role
-#
-#                 if user_role != 'Super_admin':
-#                     return JsonResponse({"message": "Access denied"}, status=403)
-#
-#             # Display all data for super admin and partner with status as completed
-#             items = AddItem.objects.filter(invoice_status__invoice_status_name="Completed")
-#
-#         elif role_filter == 'partner':
-#             if partner_id and owner_id and CustomUser.objects.filter(id=owner_id,
-#                                                                      role_id__role_name='Super_admin').exists():
-#                 # Display all partners with status as completed based on the provided partner_id
-#                 items = AddItem.objects.filter(owner_id__role_id__role_name='Partner', owner_id=partner_id,
-#                                                invoice_status__invoice_status_name="Completed")
-#             else:
-#                 # Display all partners with status as completed
-#                 items = AddItem.objects.filter(owner_id__role_id__role_name='Partner',
-#                                                invoice_status__invoice_status_name="Completed")
-#
-#         elif owner_id:
-#             try:
-#                 owner = CustomUser.objects.get(id=owner_id)
-#             except CustomUser.DoesNotExist:
-#                 return JsonResponse({"message": "Owner not found"}, status=404)
-#
-#             items = AddItem.objects.filter(owner_id=owner, invoice_status__invoice_status_name="Completed")
-#
-#         elif invoice_number:
-#             try:
-#                 item = AddItem.objects.get(invoice_number=invoice_number,
-#                                            invoice_status__invoice_status_name="Completed")
-#             except AddItem.DoesNotExist:
-#                 return JsonResponse({"message": "Invoice not found"}, status=404)
-#             owner = item.owner_id
-#             items = [item]  # Since we are dealing with a single invoice
-#
-#         else:
-#             return JsonResponse({"message": "Invalid request"}, status=400)
-#         # items = items.order_by('-id')
-#         item_list = []
-#         for item in items:
-#             ewaybill_status = False
-#
-#             # Check if the invoice status is completed
-#             if item.invoice_status == "Completed":
-#                 # Set ewaybill_status to True
-#                 ewaybill_status = True
-#             # Your existing code to process owner_data, customer_data, etc.
-#             owner = item.owner_id
-#             owner_data = {
-#                 "id": owner.id,
-#                 "first_name": owner.first_name,
-#                 "last_name": owner.last_name,
-#                 "full_name": owner.get_full_name(),
-#                 "email": owner.email,
-#                 "mobile_number": owner.mobile_number,
-#                 "address": owner.address,
-#                 "pin_code": owner.pin_code,
-#                 "pan_number": owner.pan_number,
-#                 "profile_pic": f"/media/{owner.profile_pic}" if owner.profile_pic else None,
-#                 # "profile_pic": str(owner.profile_pic) if owner.profile_pic else None,
-#                 "company_name": owner.company_name,
-#                 "company_email": owner.company_email,
-#                 "company_address": owner.company_address,
-#                 "shipping_address": owner.shipping_address,
-#                 "billing_address": owner.billing_address,
-#                 "company_phn_number": owner.company_phn_number,
-#                 "company_gst_num": owner.company_gst_num,
-#                 "company_cin_num": owner.company_cin_num,
-#                 "company_logo": f"/media/{owner.company_logo}" if owner.company_logo else None,
-#                 # "company_logo": str(owner.company_logo) if owner.company_logo else None,
-#                 "role_id": owner.role_id.id if owner.role_id else None,
-#                 "location": owner.location,
-#                 "reason": owner.reason,
-#                 "partner_initial_update": owner.partner_initial_update,
-#                 "gst_number": owner.gst_number,
-#                 "inventory_count": owner.inventory_count,
-#                 "category_id": owner.category.id if owner.category else None,
-#                 "date_of_birth": owner.date_of_birth,
-#                 "gender": owner.gender,
-#                 "created_by_id": owner.created_by_id,
-#                 "state_name": owner.state_name,
-#                 "state_code": owner.state_code,
-#                 "shipping_pincode": owner.shipping_pincode,
-#                 "billing_pincode": owner.billing_pincode,
-#                 "shipping_state": owner.shipping_state,
-#                 "shipping_state_code": owner.shipping_state_code,
-#                 "shipping_state_city": owner.shipping_state_city,
-#                 "shipping_state_country": owner.shipping_state_country,
-#                 "billing_state": owner.billing_state,
-#                 "billing_state_code": owner.billing_state_code,
-#                 "billing_state_city": owner.billing_state_city,
-#                 "billing_state_country": owner.billing_state_country,
-#                 "gstin_reg_type": owner.gstin_reg_type,
-#             }
-#
-#             customer_data = {
-#                 "id": item.customer_id.id if item.customer_id else None,
-#                 "first_name": item.customer_id.first_name if item.customer_id else None,
-#                 "last_name": item.customer_id.last_name if item.customer_id else None,
-#                 "full_name": item.customer_id.get_full_name() if item.customer_id else None,
-#                 "email": item.customer_id.email if item.customer_id else None,
-#                 "mobile_number": item.customer_id.mobile_number if item.customer_id else None,
-#                 "address": item.customer_id.address if item.customer_id else None,
-#                 "pin_code": item.customer_id.pin_code if item.customer_id else None,
-#                 "pan_number": item.customer_id.pan_number if item.customer_id else None,
-#                 'profile_pic': f"/media/{item.customer_id.profile_pic}" if item.customer_id and item.customer_id.profile_pic else None,
-#
-#                 # "profile_pic": str(
-#                 #     item.customer_id.profile_pic) if item.customer_id and item.customer_id.profile_pic else None,
-#                 "company_name": item.customer_id.company_name if item.customer_id else None,
-#                 "company_email": item.customer_id.company_email if item.customer_id else None,
-#                 "company_address": item.customer_id.company_address if item.customer_id else None,
-#                 "shipping_address": item.customer_id.shipping_address if item.customer_id else None,
-#                 "billing_address": item.customer_id.billing_address if item.customer_id else None,
-#                 "company_phn_number": item.customer_id.company_phn_number if item.customer_id else None,
-#                 "company_gst_num": item.customer_id.company_gst_num if item.customer_id else None,
-#                 "company_cin_num": item.customer_id.company_cin_num if item.customer_id else None,
-#                 # "company_logo": str(
-#                 #     item.customer_id.company_logo) if item.customer_id and item.customer_id.company_logo else None,
-#                 'company_logo': f"/media/{item.customer_id.company_logo}" if item.customer_id and item.customer_id.company_logo else None,
-#                 "role_id": item.customer_id.role_id.id if item.customer_id and item.customer_id.role_id else None,
-#                 "created_date_time": item.customer_id.created_date_time if item.customer_id else None,
-#                 "updated_date_time": item.customer_id.updated_date_time if item.customer_id else None,
-#                 "status": item.customer_id.status if item.customer_id else None,
-#                 "location": item.customer_id.location if item.customer_id else None,
-#                 "reason": item.customer_id.reason if item.customer_id else None,
-#                 "partner_initial_update": item.customer_id.partner_initial_update if item.customer_id else None,
-#                 "gst_number": item.customer_id.gst_number if item.customer_id else None,
-#                 "inventory_count": item.customer_id.inventory_count if item.customer_id else None,
-#                 "category_id": item.customer_id.category.id if item.customer_id and item.customer_id.category else None,
-#                 "date_of_birth": item.customer_id.date_of_birth if item.customer_id else None,
-#                 "gender": item.customer_id.gender if item.customer_id else None,
-#                 "created_by_id": item.customer_id.created_by_id if item.customer_id else None,
-#                 "shipping_pincode": item.customer_id.shipping_pincode if item.customer_id else None,
-#                 "billing_pincode": item.customer_id.billing_pincode if item.customer_id else None,
-#                 "shipping_state": item.customer_id.shipping_state if item.customer_id else None,
-#                 "shipping_state_code": item.customer_id.shipping_state_code if item.customer_id else None,
-#                 "shipping_state_city": item.customer_id.shipping_state_city if item.customer_id else None,
-#                 "shipping_state_country": item.customer_id.shipping_state_country if item.customer_id else None,
-#                 "billing_state": item.customer_id.billing_state if item.customer_id else None,
-#                 "billing_state_code": item.customer_id.billing_state_code if item.customer_id else None,
-#                 "billing_state_city": item.customer_id.billing_state_city if item.customer_id else None,
-#                 "billing_state_country": item.customer_id.billing_state_country if item.customer_id else None,
-#                 "gstin_reg_type": item.customer_id.gstin_reg_type if item.customer_id else None,
-#             }
-#
-#             invoice_type_details = {
-#                 'id': item.invoice_type_id.id if item.invoice_type_id else None,
-#                 'name': item.invoice_type_id.invoice_type_name if item.invoice_type_id else None,
-#             }
-#
-#             customer_category = {
-#                 "category_id": item.customer_id.category.id if item.customer_id and item.customer_id.category else None,
-#                 "category_name": item.customer_id.category.name if item.customer_id and item.customer_id.category else None,
-#             }
-#             drone_details = item.dronedetails
-#             drone_info_list = []
-#
-#             if drone_details:
-#                 for drone_detail in drone_details:
-#                     drone_id = drone_detail["drone_id"]
-#                     quantity = drone_detail["quantity"]
-#                     price = drone_detail["price"]
-#                     serial_numbers = drone_detail.get("serial_numbers", [])
-#                     hsn_number = drone_detail["hsn_number"]
-#                     item_total_price = drone_detail.get("item_total_price", 0)
-#                     discount = drone_detail.get("discount", 0)
-#                     igst = drone_detail.get("igst", 0)
-#                     cgst = drone_detail.get("cgst", 0)
-#                     sgst = drone_detail.get("sgst", 0)
-#                     created_datetime = drone_detail.get("created_datetime")
-#                     updated_datetime = drone_detail.get("updated_datetime")
-#                     discount_amount = drone_detail.get("discount_amount")
-#                     price_after_discount = drone_detail.get("price_after_discount")
-#                     igst_percentage = drone_detail.get("igst_percentage", 0)
-#                     cgst_percentage = drone_detail.get("cgst_percentage", 0)
-#                     sgst_percentage = drone_detail.get("sgst_percentage", 0)
-#                     total = drone_detail.get("total", 0)
-#
-#                     try:
-#                         drone = Drone.objects.get(id=drone_id)
-#                         drone_ownership = DroneOwnership.objects.filter(user=owner, drone=drone_id).first()
-#                         remaining_quantity = drone_ownership.quantity if drone_ownership else 0
-#                         drone_info = {
-#                             "drone_id": drone.id,
-#                             "drone_name": drone.drone_name,
-#                             "drone_category": drone.drone_category.category_name if drone.drone_category else None,
-#                             "quantity": quantity,
-#                             "price": price,
-#                             "serial_numbers": drone_detail.get("serial_numbers", []),
-#                             "hsn_number": drone_detail["hsn_number"],
-#                             "item_total_price": drone_detail.get("item_total_price", 0),
-#                             "remaining_quantity": remaining_quantity,
-#                             "discount": discount,
-#                             "igst": igst,
-#                             "cgst": cgst,
-#                             "sgst": sgst,
-#                             "created_datetime": created_datetime,
-#                             "updated_datetime": updated_datetime,
-#                             "discount_amount": discount_amount,
-#                             "price_after_discount": price_after_discount,
-#                             "igst_percentage": igst_percentage,
-#                             "cgst_percentage": cgst_percentage,
-#                             "sgst_percentage": sgst_percentage,
-#                             "total": total
-#                         }
-#                         drone_info_list.append(drone_info)
-#                     except Drone.DoesNotExist:
-#                         pass
-#
-#             item_data = {
-#                 "id": item.id,
-#                 "customer_type_id": item.customer_type_id.id if item.customer_type_id else None,
-#                 "customer_details": customer_data,
-#                 "owner_id": owner.id if owner else None,
-#                 "owner_details": owner_data,
-#                 'invoice_type_details': invoice_type_details,
-#                 'customer_category': customer_category,
-#                 "dronedetails": drone_info_list,
-#                 "e_invoice_status": item.e_invoice_status,
-#                 "ewaybill_status": item.ewaybill_status,
-#                 "invoice_number": item.invoice_number,
-#                 "created_date_time": item.created_date_time,
-#                 "updated_date_time": item.updated_date_time,
-#                 "signature_url": item.signature.url if item.signature else None,
-#                 "invoice_status": item.invoice_status.invoice_status_name if item.invoice_status else None,
-#                 "invoice_status_id": item.invoice_status.id if item.invoice_status else None,
-#                 "amount_to_pay": item.amount_to_pay,
-#                 "sum_of_item_total_price": item.sum_of_item_total_price,
-#                 "sum_of_igst_percentage": item.sum_of_igst_percentage,
-#                 "sum_of_cgst_percentage": item.sum_of_cgst_percentage,
-#                 "sum_of_sgst_percentage": item.sum_of_sgst_percentage,
-#                 "sum_of_discount_amount": item.sum_of_discount_amount,
-#                 "sum_of_price_after_discount": item.sum_of_price_after_discount,
-#                 "transportation_details": item.transportation_details,
-#
-#             }
-#
-#             e_invoice_data = EInvoice.objects.filter(invoice_number=item).values('api_response', 'data',
-#                                                                                  'e_waybill').first()
-#
-#             # Check if e_invoice_data is not None
-#             if e_invoice_data:
-#                 # Parse JSON data if available
-#                 api_response_data = json.loads(e_invoice_data['api_response']) if e_invoice_data and e_invoice_data[
-#                     'api_response'] else None
-#
-#                 # Convert 'data' field from string to dictionary
-#                 data_dict = ast.literal_eval(e_invoice_data['data']) if e_invoice_data and e_invoice_data[
-#                     'data'] else None
-#
-#                 # Add EInvoice data to the item_data dictionary
-#                 item_data['e_invoice_data'] = {
-#                     'api_response': api_response_data,
-#                     'data': data_dict,
-#                 }
-#
-#                 # Convert 'e_waybill' field from string to dictionary
-#                 try:
-#                     e_waybill_dict = ast.literal_eval(e_invoice_data.get('e_waybill', '{}'))
-#                 except ValueError:
-#                     e_waybill_dict = {}
-#
-#                 # Add e_waybill outside e_invoice_data
-#                 item_data['ewaybill'] = {
-#                     'EwbNo': e_waybill_dict.get('EwbNo', None),
-#                     'EwbDt': e_waybill_dict.get('EwbDt', None),
-#                     'EwbValidTill': e_waybill_dict.get('EwbValidTill', None),
-#                 }
-#
-#             item_list.append(item_data)
-#         item_list.sort(key=lambda x: x['updated_date_time'], reverse=True)
-#
-#         # return JsonResponse({"items": item_list}, status=200)
-#         paginator = Paginator(item_list, page_size)
-#         try:  # return JsonResponse({"items": item_list}, status=200)
-#             items = paginator.page(page)
-#         except PageNotAnInteger:
-#             items = paginator.page(1)
-#         except EmptyPage:
-#             items = paginator.page(paginator.num_pages)
-#
-#         if items.number != page:
-#             return JsonResponse([], safe=False)
-#
-#         response_data = {
-#             "count": paginator.count,
-#             "count_in_current_page": len(items),
-#             "items": items.object_list
-#         }
-#         return JsonResponse(response_data, status=200)
 # @method_decorator([authorization_required], name='dispatch')
 class InvoiceHistoy(APIView):
     def get(self, request, owner_id=None, invoice_number=None):
@@ -10245,97 +8227,6 @@ class InvoiceHistoy(APIView):
                 "gstin_reg_type": item.customer_gstin_reg_type,
             }
 
-            # owner_data = {
-            #     "id": owner.id,
-            #     "first_name": owner.first_name,
-            #     "last_name": owner.last_name,
-            #     "full_name": owner.get_full_name(),
-            #     "email": owner.email,
-            #     "mobile_number": owner.mobile_number,
-            #     "address": owner.address,
-            #     "pin_code": owner.pin_code,
-            #     "pan_number": owner.pan_number,
-            #     "profile_pic": f"/media/{owner.profile_pic}" if owner.profile_pic else None,
-            #     "company_name": owner.company_name,
-            #     "company_email": owner.company_email,
-            #     "company_address": owner.company_address,
-            #     "shipping_address": owner.shipping_address,
-            #     "billing_address": owner.billing_address,
-            #     "company_phn_number": owner.company_phn_number,
-            #     "company_gst_num": owner.company_gst_num,
-            #     "company_cin_num": owner.company_cin_num,
-            #     "company_logo": f"/media/{owner.company_logo}" if owner.company_logo else None,
-            #     "role_id": owner.role_id.id if owner.role_id else None,
-            #     "location": owner.location,
-            #     "reason": owner.reason,
-            #     "partner_initial_update": owner.partner_initial_update,
-            #     "gst_number": owner.gst_number,
-            #     "inventory_count": owner.inventory_count,
-            #     "category_id": owner.category.id if owner.category else None,
-            #     "date_of_birth": owner.date_of_birth,
-            #     "gender": owner.gender,
-            #     "created_by_id": owner.created_by_id,
-            #     "state_name": owner.state_name,
-            #     "state_code": owner.state_code,
-            #     "shipping_pincode": owner.shipping_pincode,
-            #     "billing_pincode": owner.billing_pincode,
-            #     "shipping_state": owner.shipping_state,
-            #     "shipping_state_code": owner.shipping_state_code,
-            #     "shipping_state_city": owner.shipping_state_city,
-            #     "shipping_state_country": owner.shipping_state_country,
-            #     "billing_state": owner.billing_state,
-            #     "billing_state_code": owner.billing_state_code,
-            #     "billing_state_city": owner.billing_state_city,
-            #     "billing_state_country": owner.billing_state_country,
-            #     "gstin_reg_type": owner.gstin_reg_type,
-            # }
-            #
-            # customer_data = {
-            #     "id": item.customer_id.id if item.customer_id else None,
-            #     "first_name": item.customer_id.first_name if item.customer_id else None,
-            #     "last_name": item.customer_id.last_name if item.customer_id else None,
-            #     "full_name": item.customer_id.get_full_name() if item.customer_id else None,
-            #     "email": item.customer_id.email if item.customer_id else None,
-            #     "mobile_number": item.customer_id.mobile_number if item.customer_id else None,
-            #     "address": item.customer_id.address if item.customer_id else None,
-            #     "pin_code": item.customer_id.pin_code if item.customer_id else None,
-            #     "pan_number": item.customer_id.pan_number if item.customer_id else None,
-            #     'profile_pic': f"/media/{item.customer_id.profile_pic}" if item.customer_id and item.customer_id.profile_pic else None,
-            #     "company_name": item.customer_id.company_name if item.customer_id else None,
-            #     "company_email": item.customer_id.company_email if item.customer_id else None,
-            #     "company_address": item.customer_id.company_address if item.customer_id else None,
-            #     "shipping_address": item.customer_id.shipping_address if item.customer_id else None,
-            #     "billing_address": item.customer_id.billing_address if item.customer_id else None,
-            #     "company_phn_number": item.customer_id.company_phn_number if item.customer_id else None,
-            #     "company_gst_num": item.customer_id.company_gst_num if item.customer_id else None,
-            #     "company_cin_num": item.customer_id.company_cin_num if item.customer_id else None,
-            #     'company_logo': f"/media/{item.customer_id.company_logo}" if item.customer_id and item.customer_id.company_logo else None,
-            #     "role_id": item.customer_id.role_id.id if item.customer_id and item.customer_id.role_id else None,
-            #     "created_date_time": item.customer_id.created_date_time if item.customer_id else None,
-            #     "updated_date_time": item.customer_id.updated_date_time if item.customer_id else None,
-            #     "status": item.customer_id.status if item.customer_id else None,
-            #     "location": item.customer_id.location if item.customer_id else None,
-            #     "reason": item.customer_id.reason if item.customer_id else None,
-            #     "partner_initial_update": item.customer_id.partner_initial_update if item.customer_id else None,
-            #     "gst_number": item.customer_id.gst_number if item.customer_id else None,
-            #     "inventory_count": item.customer_id.inventory_count if item.customer_id else None,
-            #     "category_id": item.customer_id.category.id if item.customer_id and item.customer_id.category else None,
-            #     "date_of_birth": item.customer_id.date_of_birth if item.customer_id else None,
-            #     "gender": item.customer_id.gender if item.customer_id else None,
-            #     "created_by_id": item.customer_id.created_by_id if item.customer_id else None,
-            #     "shipping_pincode": item.customer_id.shipping_pincode if item.customer_id else None,
-            #     "billing_pincode": item.customer_id.billing_pincode if item.customer_id else None,
-            #     "shipping_state": item.customer_id.shipping_state if item.customer_id else None,
-            #     "shipping_state_code": item.customer_id.shipping_state_code if item.customer_id else None,
-            #     "shipping_state_city": item.customer_id.shipping_state_city if item.customer_id else None,
-            #     "shipping_state_country": item.customer_id.shipping_state_country if item.customer_id else None,
-            #     "billing_state": item.customer_id.billing_state if item.customer_id else None,
-            #     "billing_state_code": item.customer_id.billing_state_code if item.customer_id else None,
-            #     "billing_state_city": item.customer_id.billing_state_city if item.customer_id else None,
-            #     "billing_state_country": item.customer_id.billing_state_country if item.customer_id else None,
-            #     "gstin_reg_type": item.customer_id.gstin_reg_type if item.customer_id else None,
-            # }
-
             invoice_type_details = {
                 'id': item.invoice_type_id.id if item.invoice_type_id else None,
                 'name': item.invoice_type_id.invoice_type_name if item.invoice_type_id else None,
@@ -10378,7 +8269,7 @@ class InvoiceHistoy(APIView):
                         drone_info = {
                             "drone_id": drone.id,
                             "drone_name": drone_name,
-                            "drone_category":drone_category,
+                            "drone_category": drone_category,
                             "quantity": quantity,
                             "price": price,
                             "serial_numbers": drone_detail.get("serial_numbers", []),
@@ -10566,7 +8457,7 @@ class EwayBill(View):
                 decrypted_data = self.decrypt_data(response.json().get('Data'), sek_key)
 
                 response_data = {
-                    'message':"Ewaybill generated successfully",
+                    'message': "Ewaybill generated successfully",
                     # 'Error_details':error_details,
                     'ewaybill': response.json(),
                     'sek': sek_key,
@@ -10656,7 +8547,7 @@ class GstRateValuesAPI(APIView):
             # invoice_types = list(GstRateValues.objects.values())
             # return Response({'Result': invoice_types})
             # Change 1: Retrieve all objects and sort by gstrates in ascending order
-            invoice_types = GstRateValues.objects.order_by('gstrates').values('id','gstrates', 'created_date_time',
+            invoice_types = GstRateValues.objects.order_by('gstrates').values('id', 'gstrates', 'created_date_time',
                                                                               'updated_date_time')
             # Change 2: Return sorted and filtered response
             return Response({'Result': list(invoice_types)})
@@ -10705,7 +8596,7 @@ from decimal import Decimal, ROUND_HALF_UP
 
 
 # @method_decorator([authorization_required], name='dispatch')
-class   AddCustomItemAPI(APIView):
+class AddCustomItemAPI(APIView):
     def create_invoice_number(self):
         try:
             while True:
@@ -10730,214 +8621,6 @@ class   AddCustomItemAPI(APIView):
         total_price = Decimal(price) * Decimal(quantity)
         rounded_total_price = total_price.quantize(Decimal('0.00'), rounding=ROUND_HALF_UP)
         return float(rounded_total_price)
-
-    # def post(self, request):
-    #     data = request.data
-    #     items = data.get('items', [])
-    #     owner_id = data.get('owner_id')
-    #     customer_type_id = data.get('customer_type_id')
-    #     customer_id = data.get('customer_id')
-    #     invoice_type_id = data.get('invoice_type_id')
-    #     partner_instance = get_object_or_404(CustomUser, id=owner_id)
-    #     all_serialnumbers = []
-    #
-    #     custom_item_details_lists = CustomInvoice.objects.values_list('custom_item_details', flat=True)
-    #
-    #     for custom_item_details_list in custom_item_details_lists:
-    #         if custom_item_details_list:
-    #             serial_numbers = [serial_number for entry in custom_item_details_list for serial_number in
-    #                               entry.get('serial_numbers', [])]
-    #             all_serialnumbers.extend(serial_numbers)
-    #
-    #     all_items_except_given_id = AddItem.objects.all().values('id', 'dronedetails')
-    #     for item_data in all_items_except_given_id:
-    #         for drone_detail in item_data['dronedetails']:
-    #             serial_numbers = drone_detail.get('serial_numbers', [])
-    #             all_serialnumbers.extend(serial_numbers)
-    #
-    #     items_data = []
-    #     custom_item_details = []
-    #     all_serial_numbers = set()
-    #
-    #     is_super_admin = partner_instance.role_id.role_name == 'Super_admin'
-    #
-    #     with transaction.atomic():
-    #         entered_serial_numbers = []
-    #         for item_data in items:
-    #             item_name = item_data.get('item_name')
-    #             units = item_data.get('units')
-    #             quantity = item_data.get('quantity')
-    #             discount = item_data.get('discount')[0] if isinstance(item_data.get('discount'),
-    #                                                                   tuple) else item_data.get('discount')
-    #             igst = item_data.get('igst')[0] if isinstance(item_data.get('igst'), tuple) else item_data.get('igst')
-    #             cgst = item_data.get('cgst')[0] if isinstance(item_data.get('cgst'), tuple) else item_data.get('cgst')
-    #             sgst = item_data.get('sgst')[0] if isinstance(item_data.get('sgst'), tuple) else item_data.get('sgst')
-    #             item_total_price = round(quantity * item_data.get('price'), 2)
-    #             discount_amount = round((discount / 100) * item_total_price, 2)
-    #             user_id = get_object_or_404(CustomUser, id=customer_id)
-    #
-    #             serial_numbers = item_data.get('serial_numbers', [])
-    #             entered_serial_numbers.extend(serial_numbers)
-    #
-    #             # Check if quantity and serial numbers are equal
-    #             if quantity != len(serial_numbers):
-    #                 return Response(
-    #                     {'message': f"Quantity and the number of serial numbers must be equal in each drone entry"},
-    #                     status=status.HTTP_400_BAD_REQUEST)
-    #
-    #             # Check if serial numbers are unique within each drone entry
-    #             if len(set(serial_numbers)) != len(serial_numbers):
-    #                 return Response({'message': f"Serial numbers must be unique within each drone entry"},
-    #                                 status=status.HTTP_400_BAD_REQUEST)
-    #
-    #             # Check if serial numbers are unique across all drone entries
-    #             if any(serial_number in all_serial_numbers for serial_number in serial_numbers):
-    #                 return Response({'message': f"Serial numbers must be unique across all drone entries"},
-    #                                 status=status.HTTP_400_BAD_REQUEST)
-    #
-    #             all_serial_numbers.update(serial_numbers)
-    #             item_total_price = round((quantity) * (item_data.get('price')), 2)
-    #
-    #             custom_item_details.append({
-    #                 'item_name': item_name,
-    #                 'quantity': quantity,
-    #                 'price': item_data.get('price'),
-    #                 'serial_numbers': serial_numbers,
-    #                 'hsn_number': item_data.get('hsn_number'),
-    #                 'item_total_price': item_total_price,
-    #                 'discount': discount,
-    #                 'igst': igst,
-    #                 'cgst': cgst,
-    #                 'sgst': sgst,
-    #                 'units': units,
-    #                 'created_datetime': [timezone.now().isoformat()],
-    #                 'updated_datetime': [timezone.now().isoformat()],
-    #                 'discount_amount': round(discount_amount, 2),
-    #                 'price_after_discount': round(item_total_price - discount_amount, 2),
-    #                 'igst_percentage': round((igst / 100) * (item_total_price - discount_amount), 2),
-    #                 'cgst_percentage': round((cgst / 100) * (item_total_price - discount_amount), 2),
-    #                 'sgst_percentage': round((sgst / 100) * (item_total_price - discount_amount), 2),
-    #                 'total': round(
-    #                     (item_total_price - discount_amount) +
-    #                     (igst / 100) * (item_total_price - discount_amount) +
-    #                     (cgst / 100) * (item_total_price - discount_amount) +
-    #                     (sgst / 100) * (item_total_price - discount_amount),
-    #                     2
-    #                 )
-    #             })
-    #
-    #             items_data.append({
-    #                 'item_name': item_name,
-    #                 'price': item_data.get('price'),
-    #                 'serial_numbers': serial_numbers,
-    #                 'hsn_number': item_data.get('hsn_number'),
-    #                 'item_total_price': item_total_price,
-    #                 'discount': discount,
-    #                 'igst': igst,
-    #                 'cgst': cgst,
-    #                 'sgst': sgst,
-    #                 'units': units,
-    #                 'created_datetime': [timezone.now().isoformat()],
-    #                 'updated_datetime': [timezone.now().isoformat()],
-    #                 'discount_amount': round(discount_amount, 2),
-    #                 'price_after_discount': round(item_total_price - discount_amount, 2),
-    #                 'igst_percentage': round((igst / 100) * (item_total_price - discount_amount), 2),
-    #                 'cgst_percentage': round((cgst / 100) * (item_total_price - discount_amount), 2),
-    #                 'sgst_percentage': round((sgst / 100) * (item_total_price - discount_amount), 2),
-    #                 'total': round(
-    #                     (item_total_price - discount_amount) +
-    #                     (igst / 100) * (item_total_price - discount_amount) +
-    #                     (cgst / 100) * (item_total_price - discount_amount) +
-    #                     (sgst / 100) * (item_total_price - discount_amount),
-    #                     2
-    #                 )
-    #             })
-    #
-    #         duplicate_serial_numbers = []
-    #         for entered_serial in entered_serial_numbers:
-    #             if entered_serial in all_serialnumbers:
-    #                 duplicate_serial_numbers.append(entered_serial)
-    #
-    #         if duplicate_serial_numbers:
-    #             return Response({
-    #                 'message': f"Serial numbers {', '.join(map(str, duplicate_serial_numbers))} already exist in the table"},
-    #                 status=status.HTTP_400_BAD_REQUEST)
-    #
-    #         if len(custom_item_details) == 0:
-    #             return Response({'message': 'details cannot be empty'}, status=status.HTTP_400_BAD_REQUEST)
-    #
-    #         for item_data in items:
-    #             item_name = item_data.get('item_name')
-    #             quantity = item_data.get('quantity')
-    #             user_id = get_object_or_404(CustomUser, id=customer_id)
-    #
-    #         else:
-    #             try:
-    #                 draft_status = InvoiceStatus.objects.get(invoice_status_name='Inprogress')
-    #             except InvoiceStatus.DoesNotExist:
-    #                 # If 'Draft' status does not exist, create it
-    #                 draft_status = InvoiceStatus.objects.create(invoice_status_name='Inprogress')
-    #             new_item = CustomInvoice.objects.create(
-    #                 customer_type_id=get_object_or_404(CustomerCategory, id=customer_type_id),
-    #                 customer_id=get_object_or_404(CustomUser, id=customer_id),
-    #                 owner_id=partner_instance,
-    #                 invoice_type_id=get_object_or_404(InvoiceType, id=invoice_type_id),
-    #                 invoice_status=draft_status,
-    #             )
-    #
-    #             new_item.invoice_number = self.create_invoice_number()
-    #             new_item.save()
-    #
-    #             # If dronedetails is empty, return a response without creating the item
-    #             new_item.custom_item_details = custom_item_details
-    #             amount_to_pay = round(sum(item['total'] for item in custom_item_details), 2)
-    #             sum_of_item_total_price = round(sum(item['item_total_price'] for item in custom_item_details), 2)
-    #             sum_of_igst_percentage = round(sum(item['igst_percentage'] for item in custom_item_details), 2)
-    #             sum_of_cgst_percentage = round(sum(item['cgst_percentage'] for item in custom_item_details), 2)
-    #             sum_of_sgst_percentage = round(sum(item['sgst_percentage'] for item in custom_item_details), 2)
-    #             sum_of_discount_amount = round(sum(item['discount_amount'] for item in custom_item_details), 2)
-    #             sum_of_price_after_discount = round(sum(item['price_after_discount'] for item in custom_item_details),
-    #                                                 2)
-    #
-    #             new_item.amount_to_pay = amount_to_pay
-    #             new_item.sum_of_item_total_price = sum_of_item_total_price
-    #             new_item.sum_of_igst_percentage = sum_of_igst_percentage
-    #             new_item.sum_of_cgst_percentage = sum_of_cgst_percentage
-    #             new_item.sum_of_sgst_percentage = sum_of_sgst_percentage
-    #             new_item.sum_of_discount_amount = sum_of_discount_amount
-    #             new_item.sum_of_price_after_discount = sum_of_price_after_discount
-    #
-    #             new_item.save()
-    #             # total_amount = sum(item['total'] for item in dronedetails)
-    #             response_data = {
-    #                 'message': 'Items are created successfully!',
-    #                 'item_id': new_item.id,
-    #                 'items_data': [
-    #                     {
-    #                         'item_name': item_data['item_name'],
-    #                         'price': item_data['price'],
-    #                         'serial_numbers': item_data['serial_numbers'],
-    #                         'hsn_number': item_data['hsn_number'],
-    #                         'item_total_price': round(quantity * item_data.get('price'), 2),
-    #                         'discount': item_data.get('discount'),
-    #                         'igst': item_data.get('igst'),
-    #                         'cgst': item_data.get('cgst'),
-    #                         'sgst': item_data.get('sgst'),
-    #
-    #                     } for item_data in items_data
-    #                 ],
-    #                 'Amount_to_pay': amount_to_pay,
-    #                 "sum_of_item_total_price": sum_of_item_total_price,
-    #                 "sum_of_igst_percentage": sum_of_igst_percentage,
-    #                 "sum_of_cgst_percentage": sum_of_cgst_percentage,
-    #                 "sum_of_sgst_percentage": sum_of_sgst_percentage,
-    #                 "sum_of_discount_amount": sum_of_discount_amount,
-    #                 "sum_of_price_after_discount": sum_of_price_after_discount
-    #
-    #                 # 'total_price': total_price,
-    #                 # 'total_price_with_additional_percentages': total_price_with_additional_percentages
-    #             }
-    #             return Response(response_data, status=status.HTTP_201_CREATED)
 
     def post(self, request):
         data = request.data
@@ -11847,173 +9530,6 @@ class   AddCustomItemAPI(APIView):
 
         return Response(response_data, status=status.HTTP_200_OK)
 
-    # def put(self, request, item_id):
-    #
-    #     def check_unique_serial_numbers(new_items):
-    #         serial_numbers_set = set()
-    #
-    #         for entry in new_items:
-    #             for serial_number in entry['serial_numbers']:
-    #                 if serial_number in serial_numbers_set:
-    #                     return False  # Duplicate serial number found
-    #                 else:
-    #                     serial_numbers_set.add(serial_number)
-    #
-    #         return True
-    #
-    #     item = get_object_or_404(CustomInvoice, id=item_id)
-    #     data = request.data
-    #     new_items = data.get('items', [])
-    #
-    #     all_serial = []
-    #
-    #     all_items_except_given_id = AddItem.objects.all().values('id', 'dronedetails')
-    #     for item_data in all_items_except_given_id:
-    #         for drone_detail in item_data['dronedetails']:
-    #             serial_numbers = drone_detail.get('serial_numbers', [])
-    #             all_serial.extend(serial_numbers)
-    #
-    #     all_items_except_given_id = CustomInvoice.objects.exclude(id=item_id).values('id', 'custom_item_details')
-    #     for item_data in all_items_except_given_id:
-    #         for drone_detail in item_data['custom_item_details']:
-    #             serial_numbers = drone_detail.get('serial_numbers', [])
-    #             all_serial.extend(serial_numbers)
-    #
-    #     if not check_unique_serial_numbers(new_items):
-    #         return Response({'message': f"Serial numbers must be unique with all drone entry"},
-    #                         status=status.HTTP_400_BAD_REQUEST)
-    #     else:
-    #         pass
-    #
-    #     with transaction.atomic():
-    #         duplicate_serial = []
-    #         for j in new_items:
-    #             for serial_number in j.get('serial_numbers', []):
-    #                 if serial_number in all_serial:
-    #                     duplicate_serial.append(serial_number)
-    #             if duplicate_serial:
-    #                 error_message = f"Serial numbers {', '.join(map(repr, duplicate_serial))} already exist in other items."
-    #                 return Response({'message': error_message}, status=status.HTTP_400_BAD_REQUEST)
-    #
-    #             if len(j['serial_numbers']) != j['quantity']:
-    #                 return Response(
-    #                     {
-    #                         'message': f"The number of serial numbers must be equal to the quantity"},
-    #                     status=status.HTTP_400_BAD_REQUEST
-    #                 )
-    #         for new_item in new_items:
-    #             existing_item = next(
-    #                 (item for item in item.custom_item_details if item['item_name'] == new_item['item_name']), None
-    #             )
-    #             if existing_item:
-    #                 existing_item.update(new_item)
-    #
-    #                 # Calculate additional fields for existing_item
-    #                 existing_item['updated_datetime'] = timezone.now().isoformat()
-    #                 existing_item["item_total_price"] = round(self.calculate_item_total_price(existing_item["price"],
-    #                                                                                           existing_item[
-    #                                                                                               "quantity"]), 2)
-    #                 existing_item["discount_amount"] = round((existing_item["discount"] / 100) * (
-    #                     existing_item["quantity"]) * (existing_item["price"]), 2)
-    #                 existing_item["price_after_discount"] = round((existing_item["quantity"]) * (
-    #                     existing_item["price"]) - (existing_item["discount"] / 100) * (
-    #                                                                   existing_item["quantity"]) * (
-    #                                                                   existing_item["price"]), 2)
-    #                 existing_item["igst_percentage"] = round((existing_item["igst"] / 100) * (
-    #                         (existing_item["quantity"]) * (existing_item["price"]) - (
-    #                         existing_item["discount"] / 100) * (
-    #                             existing_item["quantity"]) * (
-    #                             existing_item["price"])), 2)
-    #                 existing_item["cgst_percentage"] = round((existing_item["cgst"] / 100) * (
-    #                         (existing_item["quantity"]) * (existing_item["price"]) - (
-    #                         existing_item["discount"] / 100) * (
-    #                             existing_item["quantity"]) * (
-    #                             existing_item["price"])), 2)
-    #                 existing_item["sgst_percentage"] = round((existing_item["sgst"] / 100) * (
-    #                         (existing_item["quantity"]) * (existing_item["price"]) - (
-    #                         existing_item["discount"] / 100) * (
-    #                             existing_item["quantity"]) * (
-    #                             existing_item["price"])), 2)
-    #                 existing_item["total"] = round(((existing_item["quantity"]) * (existing_item["price"]) - (
-    #                         existing_item["discount"] / 100) * (
-    #                                                     existing_item["quantity"]) * (
-    #                                                     existing_item["price"])) + existing_item[
-    #                                                    "igst_percentage"] + existing_item["cgst_percentage"] + \
-    #                                                existing_item["sgst_percentage"], 2)
-    #             else:
-    #                 new_item_data = {
-    #                     'item_name': new_item['item_name'],
-    #                     'units': new_item['units'],
-    #                     'quantity': new_item['quantity'],
-    #                     'price': new_item['price'],
-    #                     'serial_numbers': new_item['serial_numbers'],
-    #                     'hsn_number': new_item['hsn_number'],
-    #                     'discount': new_item.get('discount', 0),
-    #                     'igst': new_item.get('igst', 0),
-    #                     'cgst': new_item.get('cgst', 0),
-    #                     'sgst': new_item.get('sgst', 0),
-    #                     'updated_datetime': timezone.now().isoformat(),
-    #                 }
-    #                 new_item_data["item_total_price"] = round(self.calculate_item_total_price(new_item_data["price"],
-    #                                                                                           new_item_data[
-    #                                                                                               "quantity"]), 2)
-    #                 new_item_data["discount_amount"] = round((new_item_data["discount"] / 100) * (
-    #                     new_item_data["quantity"]) * (new_item_data["price"]), 2)
-    #                 new_item_data["price_after_discount"] = round((new_item_data["quantity"]) * (
-    #                     new_item_data["price"]) - (new_item_data["discount"] / 100) * (
-    #                                                                   new_item_data["quantity"]) * (
-    #                                                                   new_item_data["price"]), 2)
-    #                 new_item_data["igst_percentage"] = round((new_item_data["igst"] / 100) * (
-    #                         (new_item_data["quantity"]) * (new_item_data["price"]) - (
-    #                         new_item_data["discount"] / 100) * (
-    #                             new_item_data["quantity"]) * (
-    #                             new_item_data["price"])), 2)
-    #                 new_item_data["cgst_percentage"] = round((new_item_data["cgst"] / 100) * (
-    #                         (new_item_data["quantity"]) * (new_item_data["price"]) - (
-    #                         new_item_data["discount"] / 100) * (
-    #                             new_item_data["quantity"]) * (
-    #                             new_item_data["price"])), 2)
-    #                 new_item_data["sgst_percentage"] = round((new_item_data["sgst"] / 100) * (
-    #                         (new_item_data["quantity"]) * (new_item_data["price"]) - (
-    #                         new_item_data["discount"] / 100) * (
-    #                             new_item_data["quantity"]) * (
-    #                             new_item_data["price"])), 2)
-    #                 new_item_data["total"] = round(((new_item_data["quantity"]) * (new_item_data["price"]) - (
-    #                         new_item_data["discount"] / 100) * (
-    #                                                     new_item_data["quantity"]) * (
-    #                                                     new_item_data["price"])) + new_item_data[
-    #                                                    "igst_percentage"] + new_item_data["cgst_percentage"] + \
-    #                                                new_item_data["sgst_percentage"], 2)
-    #
-    #                 item.custom_item_details.append(new_item_data)
-    #
-    #         item.amount_to_pay = round(sum(i.get("total", 0) for i in item.custom_item_details), 2)
-    #         item.sum_of_item_total_price = round(
-    #             sum(float(i.get("item_total_price", 0)) for i in item.custom_item_details), 2)
-    #         item.sum_of_igst_percentage = round(
-    #             sum(float(i.get("igst_percentage", 0)) for i in item.custom_item_details), 2)
-    #         item.sum_of_cgst_percentage = round(
-    #             sum(float(i.get("cgst_percentage", 0)) for i in item.custom_item_details), 2)
-    #         item.sum_of_sgst_percentage = round(
-    #             sum(float(i.get("sgst_percentage", 0)) for i in item.custom_item_details), 2)
-    #         item.sum_of_discount_amount = round(
-    #             sum(float(i.get("discount_amount", 0)) for i in item.custom_item_details), 2)
-    #         item.sum_of_price_after_discount = round(
-    #             sum(float(i.get("price_after_discount", 0)) for i in item.custom_item_details), 2)
-    #
-    #         updated_datetime = timezone.now().isoformat()
-    #         for i in item.custom_item_details:
-    #             i["updated_datetime"] = [updated_datetime]
-    #
-    #         item.save()
-    #
-    #         response_data = {
-    #             'message': 'Items are updated successfully!',
-    #             'item_id': item.id,
-    #             'items_data': new_items
-    #         }
-    #         return Response(response_data, status=status.HTTP_200_OK)
-
     def delete(self, request, item_id):
         try:
             item_names_param = request.query_params.get('item_name', None)
@@ -12138,136 +9654,6 @@ class AddCustomInvoiceSignature(APIView):
         return Response(response_data, status=status.HTTP_200_OK)
 
 
-# class ALLinvoiceForSuperAdmin(APIView):
-#     def get(self, request, *args, **kwargs):
-#         try:
-#             add_items = AddItem.objects.select_related(
-#                 'customer_id',
-#                 'owner_id',
-#                 'invoice_type_id',
-#                 'invoice_status'
-#             ).filter(owner_id__role_id__role_name='Super_admin', invoice_status__invoice_status_name='Completed')
-#
-#             custom_invoices = CustomInvoice.objects.select_related(
-#                 'customer_id',
-#                 'owner_id',
-#                 'invoice_type_id',
-#                 'invoice_status'
-#             ).filter(owner_id__role_id__role_name='Super_admin', invoice_status__invoice_status_name='Completed')
-#
-#             response_data = []
-#             for add_item in add_items:
-#                 response_data.append(self.get_item_details(add_item))
-#
-#             for custom_invoice in custom_invoices:
-#                 response_data.append(self.get_item_details(custom_invoice))
-#
-#             response_data.sort(key=lambda x: x['updated_date_time'], reverse=True)
-#             return JsonResponse(response_data, safe=False)
-#
-#         except (AddItem.DoesNotExist, CustomInvoice.DoesNotExist):
-#             return JsonResponse({'error': 'Data not found'}, status=404)
-#
-#     def get_item_details(self, item):
-#         customer_details = self.get_custom_user_details(item.customer_id)
-#         owner_details = self.get_custom_user_details(item.owner_id)
-#         invoice_type_details = {
-#             'id': item.invoice_type_id.id,
-#             'name': item.invoice_type_id.invoice_type_name,
-#         }
-#         customer_category = {
-#             "category_id": item.customer_id.category.id if item.customer_id and item.customer_id.category else None,
-#             "category_name": item.customer_id.category.name if item.customer_id and item.customer_id.category else None,
-#         }
-#         if hasattr(item, 'transportation_details') and item.transportation_details:
-#             transportation_details = True
-#         else:
-#             transportation_details = False
-#
-#         item_data = {
-#             'id': item.id,
-#             'customer_details': customer_details,
-#             'owner_details': owner_details,
-#             # 'invoice_type_id': item.invoice_type_id.id,
-#             # 'invoice_type_name': item.invoice_type_id.invoice_type_name,
-#             # 'e_invoice_status': item.e_invoice_status,
-#             'dronedetails': item.dronedetails if hasattr(item, 'dronedetails') else [],
-#             "invoice_type_details": invoice_type_details,
-#             "e_invoice_status": item.e_invoice_status,
-#             "ewaybill_status": item.ewaybill_status,
-#             "customer_category": customer_category,
-#             'custom_item_details': item.custom_item_details if hasattr(item, 'custom_item_details') else [],
-#             'created_date_time': item.created_date_time,
-#             'updated_date_time': item.updated_date_time,
-#             'invoice_number': item.invoice_number,
-#             'signature': item.signature.url if item.signature else None,
-#             'invoice_payload': item.invoice_payload,
-#             'invoice_status': item.invoice_status.invoice_status_name,
-#             'ewaybill_payload': item.ewaybill_payload,
-#             'amount_to_pay': item.amount_to_pay,
-#             'sum_of_item_total_price': item.sum_of_item_total_price,
-#             'sum_of_igst_percentage': item.sum_of_igst_percentage,
-#             'sum_of_cgst_percentage': item.sum_of_cgst_percentage,
-#             'sum_of_sgst_percentage': item.sum_of_sgst_percentage,
-#             'sum_of_discount_amount': item.sum_of_discount_amount,
-#             'sum_of_price_after_discount': item.sum_of_price_after_discount,
-#             'transportation_details': item.transportation_details
-#
-#         }
-#
-#         return item_data
-#
-#     def get_custom_user_details(self, custom_user):
-#         if custom_user:
-#             return {
-#                 'id': custom_user.id,
-#                 'username': custom_user.username,
-#                 'email': custom_user.email,
-#                 'first_name': custom_user.first_name,
-#                 'last_name': custom_user.last_name,
-#                 'full_name': custom_user.get_full_name(),
-#                 'mobile_number': custom_user.mobile_number,
-#                 'address': custom_user.address,
-#                 'pin_code': custom_user.pin_code,
-#                 'pan_number': custom_user.pan_number,
-#                 'profile_pic': custom_user.profile_pic.url if custom_user.profile_pic else None,
-#                 'company_name': custom_user.company_name,
-#                 'company_email': custom_user.company_email,
-#                 'company_address': custom_user.company_address,
-#                 'shipping_address': custom_user.shipping_address,
-#                 'billing_address': custom_user.billing_address,
-#                 'company_phn_number': custom_user.company_phn_number,
-#                 'company_gst_num': custom_user.company_gst_num,
-#                 'company_cin_num': custom_user.company_cin_num,
-#                 'company_logo': custom_user.company_logo.url if custom_user.company_logo else None,
-#                 'role_id': custom_user.role_id.id,
-#                 'created_date_time': custom_user.created_date_time,
-#                 'updated_date_time': custom_user.updated_date_time,
-#                 'status': custom_user.status,
-#                 'location': custom_user.location,
-#                 'reason': custom_user.reason,
-#                 'partner_initial_update': custom_user.partner_initial_update,
-#                 'gst_number': custom_user.gst_number,
-#                 'category': custom_user.category.id if custom_user.category else None,
-#                 'date_of_birth': custom_user.date_of_birth,
-#                 'gender': custom_user.gender,
-#                 'created_by': custom_user.created_by.id if custom_user.created_by else None,
-#                 'invoice': custom_user.invoice.id if custom_user.invoice else None,
-#                 'shipping_pincode': custom_user.shipping_pincode,
-#                 'billing_pincode': custom_user.billing_pincode,
-#                 'shipping_state': custom_user.shipping_state,
-#                 'shipping_state_code': custom_user.shipping_state_code,
-#                 'shipping_state_city': custom_user.shipping_state_city,
-#                 'shipping_state_country': custom_user.shipping_state_country,
-#                 'billing_state': custom_user.billing_state,
-#                 'billing_state_code': custom_user.billing_state_code,
-#                 'billing_state_city': custom_user.billing_state_city,
-#                 'billing_state_country': custom_user.billing_state_country,
-#                 'gstin_reg_type': custom_user.gstin_reg_type,
-#
-#             }
-#         else:
-#             return {}
 # @method_decorator([authorization_required], name='dispatch')
 class ALLinvoiceForSuperAdmin(APIView):
     def get(self, request, *args, **kwargs):
@@ -12507,38 +9893,6 @@ class ALLinvoiceForSuperAdmin(APIView):
         else:
             return {}
 
-
-# class ExculdeInvoiceSuperAdmin(APIView):
-#     def get(self, request, *args, **kwargs):
-#         try:
-#             add_items = AddItem.objects.select_related(
-#                 'customer_id',
-#                 'owner_id',
-#                 'invoice_type_id',
-#                 'invoice_status'
-#             ).filter(owner_id__role_id__role_name='Super_admin').exclude(
-#                 invoice_status__invoice_status_name='Completed')
-#
-#             custom_invoices = CustomInvoice.objects.select_related(
-#                 'customer_id',
-#                 'owner_id',
-#                 'invoice_type_id',
-#                 'invoice_status'
-#             ).filter(owner_id__role_id__role_name='Super_admin').exclude(
-#                 invoice_status__invoice_status_name='Completed')
-#
-#             response_data = []
-#             for add_item in add_items:
-#                 response_data.append(self.get_item_details(add_item))
-#
-#             for custom_invoice in custom_invoices:
-#                 response_data.append(self.get_item_details(custom_invoice))
-#
-#             response_data.sort(key=lambda x: x['updated_date_time'], reverse=True)
-#             return JsonResponse(response_data, safe=False)
-#
-#         except (AddItem.DoesNotExist, CustomInvoice.DoesNotExist):
-#             return JsonResponse({'error': 'Data not found'}, status=404)
 
 # @method_decorator([authorization_required], name='dispatch')
 class ExculdeInvoiceSuperAdmin(APIView):
@@ -12942,7 +10296,8 @@ class GetByInvoiceNumber(View):
             'amount_to_pay': item.amount_to_pay,
             'amount_to_pay_words': num2words_inr(item.amount_to_pay),
             'sum_of_gst_percentages': item.sum_of_igst_percentage + item.sum_of_cgst_percentage + item.sum_of_sgst_percentage,
-            'sum_of_gst_percentages_words': num2words_inr(item.sum_of_igst_percentage + item.sum_of_cgst_percentage + item.sum_of_sgst_percentage),
+            'sum_of_gst_percentages_words': num2words_inr(
+                item.sum_of_igst_percentage + item.sum_of_cgst_percentage + item.sum_of_sgst_percentage),
             'sum_of_item_total_price': item.sum_of_item_total_price,
             'sum_of_igst_percentage': item.sum_of_igst_percentage,
             'sum_of_cgst_percentage': item.sum_of_cgst_percentage,
@@ -13337,46 +10692,9 @@ import base64
 @method_decorator([authorization_required], name='dispatch')
 class CompanydetailsSuperAdminAPIView(APIView):
     ENDPOINT = "https://api.postalpincode.in/pincode/"
+
     def get_state_code(self, state_name):
         # Define a dictionary mapping state names to their codes
-        # state_code_mapping = {
-        #     "Andaman and Nicobar Islands": "35",
-        #     "Andhra Pradesh": "28",
-        #     "Arunachal Pradesh": "12",
-        #     "Assam": "18",
-        #     "Bihar": "10",
-        #     "Chandigarh": "04",
-        #     "Chhattisgarh": "22",
-        #     "Dadra and Nagar Haveli and Daman and Diu": "26",
-        #     "Delhi": "07",
-        #     "Goa": "30",
-        #     "Gujarat": "24",
-        #     "Haryana": "06",
-        #     "Himachal Pradesh": "02",
-        #     "Jharkhand": "20",
-        #     "Karnataka": "29",
-        #     "Kerala": "32",
-        #     "Lakshadweep": "31",
-        #     "Madhya Pradesh": "23",
-        #     "Maharashtra": "27",
-        #     "Manipur": "14",
-        #     "Meghalaya": "17",
-        #     "Mizoram": "15",
-        #     "Nagaland": "13",
-        #     "Odisha": "21",
-        #     "Puducherry": "34",
-        #     "Punjab": "03",
-        #     "Rajasthan": "08",
-        #     "Sikkim": "11",
-        #     "Tamil Nadu": "33",
-        #     "Telangana": "36",
-        #     "Tripura": "16",
-        #     "Uttar Pradesh": "09",
-        #     "Uttarakhand": "05",
-        #     "West Bengal": "19",
-        #     "Jammu and Kashmir": "01",
-        #     "Ladakh": "02",
-        # }
         state_code_mapping = {
             "Jammu and Kashmir": "1",
             "Himachal Pradesh": "2",
@@ -13547,7 +10865,10 @@ class CompanydetailsSuperAdminAPIView(APIView):
 import qrcode
 from weasyprint import HTML
 
-# #original codee
+import os
+from rest_framework.response import Response
+
+
 # class MyAPIView(APIView):
 #     def generate_qr_code(self, data):
 #         qr = qrcode.QRCode(
@@ -13578,473 +10899,7 @@ from weasyprint import HTML
 #
 #     def get(self, request, invoice_number=None, *args, **kwargs):
 #         # Your HTML template path
-#         # html_template_path = '/amx-crm-dev/django/amx_crm_dev/Crm_app/templates/email/pdf-redesign.html'
-#         html_template_path = '/home/user/Documents/AMX_LATESTLOCAL/AMXLatest/amx_crm_dev/Crm_app/templates/email/pdf-redesign.html'
-#
-#         #base_url = 'https://amx-crm.thestorywallcafe.com'
-#         base_url = settings.CRM_PORTAL_DOMAIN
-#         invoice_data = {}
-#         EwbNo = None  # Initialize EwbNo
-#         EwbDt = None  # Initialize EwbDt
-#         EwbValidTill = None
-#         ack_no = None  # Initialize ack_no
-#         ack_dt = None  # Initialize ack_dt
-#         irn = None
-#         qr_code_path=None
-#         # Check if invoice_number is provided
-#         if invoice_number:
-#             try:
-#                 # Try to find the invoice_number in AddItem
-#                 add_item = AddItem.objects.get(invoice_number=invoice_number)
-#                 drone = add_item.dronedetails
-#
-#                 # Assuming dronedetails is a list of dictionaries
-#                 if drone:
-#                     for drone_detail in drone:
-#                         invoice_data.update({
-#                             'cgst': drone_detail.get('cgst', None),
-#                             'igst': drone_detail.get('igst', None),
-#                             'sgst': drone_detail.get('sgst', None),
-#                             'totaltax':drone_detail.get('cgst', None)+drone_detail.get('igst', None)+drone_detail.get('sgst', None),
-#                             'price': drone_detail.get('price', None),
-#                             'total': drone_detail.get('total', None),
-#                             'units': drone_detail.get('units', None),
-#                             'discount': int(drone_detail.get('discount', None)),
-#                             'drone_id': drone_detail.get('drone_id', None),
-#                             'quantity': drone_detail.get('quantity', None),
-#                             'hsn_number': drone_detail.get('hsn_number', None),
-#                             'serial_numbers': drone_detail.get('serial_numbers', None),
-#                             'cgst_percentage': drone_detail.get('cgst_percentage', None),
-#                             'discount_amount': drone_detail.get('discount_amount', None),
-#                             'igst_percentage': drone_detail.get('igst_percentage', None),
-#                             'sgst_percentage': drone_detail.get('sgst_percentage', None),
-#                             'tax_percentage_total':drone_detail.get('cgst_percentage', None)+drone_detail.get('igst_percentage', None)+drone_detail.get('sgst_percentage', None),
-#                             'created_datetime': drone_detail.get('created_datetime', None),
-#                             'item_total_price': drone_detail.get('item_total_price', None),
-#                             'updated_datetime': drone_detail.get('updated_datetime', None),
-#                             'price_after_discount': drone_detail.get('price_after_discount', None),
-#                             # Add other drone fields as needed
-#                         })
-#
-#                 if drone:
-#                     # Extracting the drone_id from the first item in the list
-#                     drone_id = drone[0].get('drone_id')
-#
-#                     if drone_id:
-#                         # Query the Drone model to get the drone details using the drone_id
-#                         drone = Drone.objects.get(pk=drone_id)
-#
-#                         # Now you can access the drone name and category
-#                         drone_name = drone.drone_name
-#                         drone_category = drone.drone_category.category_name if drone.drone_category else None
-#
-#                         # Update your invoice_data dictionary with drone_name and drone_category
-#                         invoice_data.update({
-#                             'drone_name': drone_name,
-#                             'drone_category': drone_category
-#                         })
-#
-#                 einvoice = add_item.einvoice_set.first()
-#                 print('einvoice--------------------', einvoice)
-#                 api_response = {}
-#                 e_waybill = {}
-#
-#                 if einvoice:
-#                     if einvoice.api_response:
-#                         api_response = json.loads(einvoice.api_response)
-#                     if einvoice.e_waybill:
-#                         e_waybill = json.loads(einvoice.e_waybill)
-#
-#                     if 'DecryptedData' in api_response:
-#                         decrypted_data = api_response['DecryptedData']
-#                         ack_no = decrypted_data.get('AckNo')
-#                         ack_dt = decrypted_data.get('AckDt')
-#                         irn = decrypted_data.get('Irn')
-#                         signed_qr_code = decrypted_data.get('SignedQRCode', '')
-#
-#                         # Generate QR code
-#                         qr_code_path = self.generate_qr_code(signed_qr_code)
-#
-#                         # Extract the URL part from the file path
-#                         qr_code_url = os.path.join(settings.MEDIA_URL,
-#                                                    os.path.relpath(qr_code_path, settings.MEDIA_ROOT))
-#
-#                         # Add QR code URL to invoice_data
-#                         invoice_data['qr_code_path'] = qr_code_url
-#
-#                         # Add QR code path to invoice_data
-#                         invoice_data['qr_code_path'] = qr_code_path
-#
-#                         if 'EwbNo' in e_waybill:
-#                             EwbNo = e_waybill['EwbNo']
-#                         if 'EwbDt' in e_waybill:
-#                             EwbDt = e_waybill['EwbDt']
-#                         if 'EwbValidTill' in e_waybill:
-#                             EwbValidTill = e_waybill['EwbValidTill']
-#
-#                 owner_company_logo = add_item.owner_id.company_logo.url if add_item.owner_id.company_logo else None
-#
-#                 # Check if owner_company_logo is not None
-#                 if owner_company_logo:
-#                     # Base URL
-#                     #base_url = "https://amx-crm.thestorywallcafe.com"
-#                     base_url = settings.CRM_PORTAL_DOMAIN
-#
-#                     # Concatenate the base URL with the owner_company_logo path
-#                     full_url = base_url + owner_company_logo
-#
-#                 else:
-#                     print("Owner Company Logo not available")
-#
-#                 invoice_data.update({
-#                     'invoice_id': add_item.id,
-#                     'customer_type_id': add_item.customer_type_id,
-#                     'customer_id': add_item.customer_id,
-#                     'owner_id': add_item.owner_id,
-#                     'invoice_type_id': add_item.invoice_type_id,
-#                     'e_invoice_status': add_item.e_invoice_status,
-#                     # 'custom_item_details': add_item.custom_item_details,
-#                     'created_date_time': add_item.created_date_time,
-#                     'updated_date_time': add_item.updated_date_time,
-#                     'invoice_number': add_item.invoice_number,
-#                     'signature': add_item.signature.url if add_item.signature else None,
-#                     'invoice_payload': add_item.invoice_payload,
-#                     'invoice_status': add_item.invoice_status,
-#                     'ewaybill_payload': add_item.ewaybill_payload,
-#                     'amount_to_pay': add_item.amount_to_pay,
-#                     # 'sum_gst_total_amount':add_item.sum_gst_total_amount+,
-#                     'sum_of_item_total_price': add_item.sum_of_item_total_price,
-#                     'sum_of_igst_percentage': add_item.sum_of_igst_percentage,
-#                     'sum_of_cgst_percentage': add_item.sum_of_cgst_percentage,
-#                     'sum_of_sgst_percentage': add_item.sum_of_sgst_percentage,
-#                     'sum_gst_total_amount':add_item.sum_of_igst_percentage+add_item.sum_of_cgst_percentage+add_item.sum_of_sgst_percentage,
-#                     'sum_of_discount_amount': add_item.sum_of_discount_amount,
-#                     'sum_of_price_after_discount': add_item.sum_of_price_after_discount,
-#                     'owner_id': add_item.owner_id.id,
-#                     'owner_username': add_item.owner_id.username,
-#                     'owner_email': add_item.owner_id.email,
-#                     'owner_first_name': add_item.owner_id.first_name,
-#                     'owner_last_name': add_item.owner_id.last_name,
-#                     'owner_mobile_number': add_item.owner_id.mobile_number,
-#                     'owner_address': add_item.owner_id.address,
-#                     'owner_pin_code': add_item.owner_id.pin_code,
-#                     'owner_pan_number': add_item.owner_id.pan_number,
-#                     'owner_profile_pic': add_item.owner_id.profile_pic.url if add_item.owner_id.profile_pic else None,
-#                     'owner_company_name': add_item.owner_id.company_name,
-#                     'owner_company_email': add_item.owner_id.company_email,
-#                     'owner_company_address': add_item.owner_id.company_address,
-#                     'owner_shipping_address': add_item.owner_id.shipping_address,
-#                     'owner_billing_address': add_item.owner_id.billing_address,
-#                     'owner_company_phn_number': add_item.owner_id.company_phn_number,
-#                     'owner_company_gst_num': add_item.owner_id.company_gst_num,
-#                     'owner_company_cin_num': add_item.owner_id.company_cin_num,
-#                     'owner_company_logo': add_item.owner_id.company_logo.url if add_item.owner_id.company_logo else None,
-#                     'owner_role_id': add_item.owner_id.role_id.id,
-#                     'owner_created_date_time': add_item.owner_id.created_date_time,
-#                     'owner_updated_date_time': add_item.owner_id.updated_date_time,
-#                     'owner_status': add_item.owner_id.status,
-#                     'owner_location': add_item.owner_id.location,
-#                     'owner_reason': add_item.owner_id.reason,
-#                     'owner_partner_initial_update': add_item.owner_id.partner_initial_update,
-#                     'owner_gst_number': add_item.owner_id.gst_number,
-#                     'owner_inventory_count': add_item.owner_id.inventory_count,
-#                     'owner_category': add_item.owner_id.category.id if add_item.owner_id.category else None,
-#                     'owner_date_of_birth': add_item.owner_id.date_of_birth,
-#                     'owner_gender': add_item.owner_id.gender,
-#                     'owner_created_by': add_item.owner_id.created_by.id if add_item.owner_id.created_by else None,
-#                     'owner_invoice': add_item.owner_id.invoice.id if add_item.owner_id.invoice else None,
-#                     'owner_state_name': add_item.owner_id.state_name,
-#                     'owner_state_code': add_item.owner_id.state_code,
-#                     'owner_shipping_pincode': add_item.owner_id.shipping_pincode,
-#                     'owner_billing_pincode': add_item.owner_id.billing_pincode,
-#                     'owner_shipping_state': add_item.owner_id.shipping_state,
-#                     'owner_shipping_state_code': add_item.owner_id.shipping_state_code,
-#                     'owner_shipping_state_city': add_item.owner_id.shipping_state_city,
-#                     'owner_shipping_state_country': add_item.owner_id.shipping_state_country,
-#                     'owner_billing_state': add_item.owner_id.billing_state,
-#                     'owner_billing_state_code': add_item.owner_id.billing_state_code,
-#                     'owner_billing_state_city': add_item.owner_id.billing_state_city,
-#                     'owner_billing_state_country': add_item.owner_id.billing_state_country,
-#                     'customer_id': add_item.customer_id.id,
-#                     'customer_username': add_item.customer_id.username,
-#                     'customer_email': add_item.customer_id.email,
-#                     'customer_first_name': add_item.customer_id.first_name,
-#                     'customer_last_name': add_item.customer_id.last_name,
-#                     'customer_mobile_number': add_item.customer_id.mobile_number,
-#                     'customer_address': add_item.customer_id.address,
-#                     'customer_pin_code': add_item.customer_id.pin_code,
-#                     'customer_pan_number': add_item.customer_id.pan_number,
-#                     'customer_profile_pic': add_item.customer_id.profile_pic.url if add_item.customer_id.profile_pic else None,
-#                     'customer_company_name': add_item.customer_id.company_name,
-#                     'customer_company_email': add_item.customer_id.company_email,
-#                     'customer_company_address': add_item.customer_id.company_address,
-#                     'customer_shipping_address': add_item.customer_id.shipping_address,
-#                     'customer_billing_address': add_item.customer_id.billing_address,
-#                     'customer_company_phn_number': add_item.customer_id.company_phn_number,
-#                     'customer_company_gst_num': add_item.customer_id.company_gst_num,
-#                     'customer_company_cin_num': add_item.customer_id.company_cin_num,
-#                     'customer_company_logo': add_item.customer_id.company_logo.url if add_item.customer_id.company_logo else None,
-#                     'customer_role_id': add_item.customer_id.role_id.id,
-#                     'customer_created_date_time': add_item.customer_id.created_date_time,
-#                     'customer_updated_date_time': add_item.customer_id.updated_date_time,
-#                     'customer_status': add_item.customer_id.status,
-#                     'customer_location': add_item.customer_id.location,
-#                     'customer_reason': add_item.customer_id.reason,
-#                     'customer_partner_initial_update': add_item.customer_id.partner_initial_update,
-#                     'customer_gst_number': add_item.customer_id.gst_number,
-#                     'customer_inventory_count': add_item.customer_id.inventory_count,
-#                     'customer_category': add_item.customer_id.category.id if add_item.customer_id.category else None,
-#                     'customer_date_of_birth': add_item.customer_id.date_of_birth,
-#                     'customer_gender': add_item.customer_id.gender,
-#                     'customer_created_by': add_item.customer_id.created_by.id if add_item.customer_id.created_by else None,
-#                     'customer_invoice': add_item.customer_id.invoice.id if add_item.customer_id.invoice else None,
-#                     'customer_state_name': add_item.customer_id.state_name,
-#                     'customer_state_code': add_item.customer_id.state_code,
-#                     'customer_shipping_pincode': add_item.customer_id.shipping_pincode,
-#                     'customer_billing_pincode': add_item.customer_id.billing_pincode,
-#                     'customer_shipping_state': add_item.customer_id.shipping_state,
-#                     'customer_shipping_state_code': add_item.customer_id.shipping_state_code,
-#                     'customer_shipping_state_city': add_item.customer_id.shipping_state_city,
-#                     'customer_shipping_state_country': add_item.customer_id.shipping_state_country,
-#                     'customer_billing_state': add_item.customer_id.billing_state,
-#                     'customer_billing_state_code': add_item.customer_id.billing_state_code,
-#                     'customer_billing_state_city': add_item.customer_id.billing_state_city,
-#                     'customer_billing_state_country': add_item.customer_id.billing_state_country,
-#                     'owner_user_signature': add_item.owner_id.user_signature.url if add_item.owner_id.user_signature else None,
-#                     'AckNo': ack_no,
-#                     'AckDt': ack_dt,
-#                     'Irn': irn,
-#                     'qr_code_path': qr_code_path,
-#                     'EwbNo': EwbNo,
-#                     'EwbDt': EwbDt,
-#                     'EwbValidTill': EwbValidTill,
-#                 })
-#                 print(invoice_data,"pppppppppppppppppppppppppppppppppppppppp")
-#
-#
-#
-#             except AddItem.DoesNotExist:
-#                 try:
-#                     custom_invoice = CustomInvoice.objects.get(invoice_number=invoice_number)
-#                     custom_invoice_details = custom_invoice.custom_item_details
-#
-#                     einvoice = custom_invoice.einvoice_set.first()
-#
-#                     api_response = {}
-#                     e_waybill = {}
-#                     qr_code_path = None
-#
-#                     if einvoice:
-#                         # Check if api_response and e_waybill are not None before loading JSON
-#                         if einvoice.api_response:
-#                             api_response = json.loads(einvoice.api_response)
-#                         if einvoice.e_waybill:
-#                             e_waybill = json.loads(einvoice.e_waybill)
-#
-#                         # Generate QR code if api_response exists
-#                         api_response_str = einvoice.api_response
-#                         if api_response_str:
-#                             api_response = json.loads(api_response_str)
-#                             decrypted_data = api_response.get('DecryptedData', {})
-#                             signed_qr_code = decrypted_data.get('SignedQRCode', '')
-#
-#                             # Generate QR code
-#                             qr_code_path = self.generate_qr_code(signed_qr_code)
-#
-#                     # Extract the URL part from the file path
-#                     qr_code_url = None
-#                     if qr_code_path:
-#                         qr_code_url = os.path.join(settings.MEDIA_URL, os.path.relpath(qr_code_path, settings.MEDIA_ROOT))
-#
-#                     # If found in CustomInvoice, fetch additional data
-#                     ack_no = api_response.get('DecryptedData', {}).get('AckNo')
-#                     ack_dt = api_response.get('DecryptedData', {}).get('AckDt')
-#                     irn = api_response.get('DecryptedData', {}).get('Irn')
-#                     ewb_no = e_waybill.get('EwbNo')
-#                     ewb_dt = e_waybill.get('EwbDt')
-#                     ewb_valid_till = e_waybill.get('EwbValidTill')
-#                     item_name = [item.get('item_name') for item in custom_invoice_details]
-#                     hsn_number = [item.get('hsn_number') for item in custom_invoice_details]
-#                     cgst_percentage = [item.get('cgst_percentage') for item in custom_invoice_details]
-#                     sgst_percentage = [item.get('sgst_percentage') for item in custom_invoice_details]
-#                     igst_percentage = [item.get('igst_percentage') for item in custom_invoice_details]
-#                     quantity = [item.get('quantity') for item in custom_invoice_details]
-#                     price = [item.get('price') for item in custom_invoice_details]
-#                     discount = [item.get('discount') for item in custom_invoice_details]
-#                     price_after_discount = [item.get('price_after_discount') for item in custom_invoice_details]
-#                     hsn_number_str = ', '.join(map(str, hsn_number))
-#                     quantity_str = ', '.join(map(str, quantity))
-#                     unit_price_str = ', '.join(map(str, price))
-#                     discount_str = ', '.join(map(str, discount))
-#                     item_name_str = ', '.join(map(str, item_name))
-#                     custom_item = custom_invoice.custom_item_details[0]
-#                     cgst = custom_item.get('cgst', 0)  # Default to 0 if cgst is not present
-#                     sgst = custom_item.get('sgst', 0)  # Default to 0 if sgst is not present
-#                     igst = custom_item.get('igst', 0)
-#                     item_total_price = custom_item.get('item_total_price', 0)
-#
-#                     invoice_data = {
-#                         'customer_type_id': custom_invoice.customer_type_id,
-#                         'item_name': item_name_str,
-#                         'hsn_number': hsn_number_str,
-#                         'cgst_percentage': cgst_percentage,
-#                         'sgst_percentage': sgst_percentage,
-#                         'igst_percentage': igst_percentage,
-#                         'quantity': quantity_str,
-#                         'price': unit_price_str,
-#                         'discount': int(discount_str),
-#                         'cgst': cgst,
-#                         'sgst': sgst,
-#                         'igst': igst,
-#                         'totaltax':int(cgst+sgst+igst),
-#                         'tax_percentage_total':int(cgst_percentage+sgst_percentage+igst_percentage),
-#                         'qr_code_path': qr_code_path,
-#                         'item_total_price': item_total_price,
-#                         'price_after_discount': price_after_discount,
-#                         'customer_id': custom_invoice.customer_id,
-#                         'owner_id': custom_invoice.owner_id,
-#                         'invoice_type_id': custom_invoice.invoice_type_id,
-#                         'e_invoice_status': custom_invoice.e_invoice_status,
-#                         'custom_item_details': custom_invoice.custom_item_details,
-#                         'created_date_time': custom_invoice.created_date_time,
-#                         'updated_date_time': custom_invoice.updated_date_time,
-#                         'invoice_number': custom_invoice.invoice_number,
-#                         'signature': custom_invoice.signature.url if custom_invoice.signature else None,
-#                         'invoice_payload': custom_invoice.invoice_payload,
-#                         'invoice_status': custom_invoice.invoice_status,
-#                         'ewaybill_payload': custom_invoice.ewaybill_payload,
-#                         'amount_to_pay': custom_invoice.amount_to_pay,
-#                         # 'sum_gst_total_amount':custom_invoice.sum_gst_total_amount,
-#                         'sum_of_item_total_price': custom_invoice.sum_of_item_total_price,
-#                         'sum_of_igst_percentage': custom_invoice.sum_of_igst_percentage,
-#                         'sum_of_cgst_percentage': custom_invoice.sum_of_cgst_percentage,
-#                         'sum_of_sgst_percentage': custom_invoice.sum_of_sgst_percentage,
-#                         'sum_gst_total_amount':custom_invoice.sum_of_igst_percentage+custom_invoice.sum_of_cgst_percentage+custom_invoice.sum_of_sgst_percentage,
-#                         'sum_of_discount_amount': custom_invoice.sum_of_discount_amount,
-#                         'sum_of_price_after_discount': custom_invoice.sum_of_price_after_discount,
-#                         'owner_id': custom_invoice.owner_id.id,
-#                         'owner_username': custom_invoice.owner_id.username,
-#                         'owner_email': custom_invoice.owner_id.email,
-#                         'owner_first_name': custom_invoice.owner_id.first_name,
-#                         'owner_last_name': custom_invoice.owner_id.last_name,
-#                         'owner_mobile_number': custom_invoice.owner_id.mobile_number,
-#                         'owner_address': custom_invoice.owner_id.address,
-#                         'owner_pin_code': custom_invoice.owner_id.pin_code,
-#                         'owner_pan_number': custom_invoice.owner_id.pan_number,
-#                         'owner_profile_pic': custom_invoice.owner_id.profile_pic.url if custom_invoice.owner_id.profile_pic else None,
-#                         'owner_company_name': custom_invoice.owner_id.company_name,
-#                         'owner_company_email': custom_invoice.owner_id.company_email,
-#                         'owner_company_address': custom_invoice.owner_id.company_address,
-#                         'owner_shipping_address': custom_invoice.owner_id.shipping_address,
-#                         'owner_billing_address': custom_invoice.owner_id.billing_address,
-#                         'owner_company_phn_number': custom_invoice.owner_id.company_phn_number,
-#                         'owner_company_gst_num': custom_invoice.owner_id.company_gst_num,
-#                         'owner_company_cin_num': custom_invoice.owner_id.company_cin_num,
-#                         'owner_company_logo': custom_invoice.owner_id.company_logo.url if custom_invoice.owner_id.company_logo else None,
-#                         'owner_role_id': custom_invoice.owner_id.role_id.id,
-#                         'owner_created_date_time': custom_invoice.owner_id.created_date_time,
-#                         'owner_updated_date_time': custom_invoice.owner_id.updated_date_time,
-#                         'owner_status': custom_invoice.owner_id.status,
-#                         'owner_location': custom_invoice.owner_id.location,
-#                         'owner_reason': custom_invoice.owner_id.reason,
-#                         'owner_partner_initial_update': custom_invoice.owner_id.partner_initial_update,
-#                         'owner_gst_number': custom_invoice.owner_id.gst_number,
-#                         'owner_inventory_count': custom_invoice.owner_id.inventory_count,
-#                         'owner_category': custom_invoice.owner_id.category.id if custom_invoice.owner_id.category else None,
-#                         'owner_date_of_birth': custom_invoice.owner_id.date_of_birth,
-#                         'owner_gender': custom_invoice.owner_id.gender,
-#                         'owner_created_by': custom_invoice.owner_id.created_by.id if custom_invoice.owner_id.created_by else None,
-#                         'owner_invoice': custom_invoice.owner_id.invoice.id if custom_invoice.owner_id.invoice else None,
-#                         'owner_state_name': custom_invoice.owner_id.state_name,
-#                         'owner_state_code': custom_invoice.owner_id.state_code,
-#                         'owner_shipping_pincode': custom_invoice.owner_id.shipping_pincode,
-#                         'owner_billing_pincode': custom_invoice.owner_id.billing_pincode,
-#                         'owner_shipping_state': custom_invoice.owner_id.shipping_state,
-#                         'owner_shipping_state_code': custom_invoice.owner_id.shipping_state_code,
-#                         'owner_shipping_state_city': custom_invoice.owner_id.shipping_state_city,
-#                         'owner_shipping_state_country': custom_invoice.owner_id.shipping_state_country,
-#                         'owner_billing_state': custom_invoice.owner_id.billing_state,
-#                         'owner_billing_state_code': custom_invoice.owner_id.billing_state_code,
-#                         'owner_billing_state_city': custom_invoice.owner_id.billing_state_city,
-#                         'owner_billing_state_country': custom_invoice.owner_id.billing_state_country,
-#                         'customer_id': custom_invoice.customer_id.id,
-#                         'customer_username': custom_invoice.customer_id.username,
-#                         'customer_email': custom_invoice.customer_id.email,
-#                         'customer_first_name': custom_invoice.customer_id.first_name,
-#                         'customer_last_name': custom_invoice.customer_id.last_name,
-#                         'customer_mobile_number': custom_invoice.customer_id.mobile_number,
-#                         'customer_address': custom_invoice.customer_id.address,
-#                         'customer_pin_code': custom_invoice.customer_id.pin_code,
-#                         'customer_pan_number': custom_invoice.customer_id.pan_number,
-#                         'customer_profile_pic': custom_invoice.customer_id.profile_pic.url if custom_invoice.customer_id.profile_pic else None,
-#                         'customer_company_name': custom_invoice.customer_id.company_name,
-#                         'customer_company_email': custom_invoice.customer_id.company_email,
-#                         'customer_company_address': custom_invoice.customer_id.company_address,
-#                         'customer_shipping_address': custom_invoice.customer_id.shipping_address,
-#                         'customer_billing_address': custom_invoice.customer_id.billing_address,
-#                         'customer_company_phn_number': custom_invoice.customer_id.company_phn_number,
-#                         'customer_company_gst_num': custom_invoice.customer_id.company_gst_num,
-#                         'customer_company_cin_num': custom_invoice.customer_id.company_cin_num,
-#                         'customer_company_logo': custom_invoice.customer_id.company_logo.url if custom_invoice.customer_id.company_logo else None,
-#                         'customer_role_id': custom_invoice.customer_id.role_id.id,
-#                         'customer_created_date_time': custom_invoice.customer_id.created_date_time,
-#                         'customer_updated_date_time': custom_invoice.customer_id.updated_date_time,
-#                         'customer_status': custom_invoice.customer_id.status,
-#                         'customer_location': custom_invoice.customer_id.location,
-#                         'customer_reason': custom_invoice.customer_id.reason,
-#                         'customer_partner_initial_update': custom_invoice.customer_id.partner_initial_update,
-#                         'customer_gst_number': custom_invoice.customer_id.gst_number,
-#                         'customer_inventory_count': custom_invoice.customer_id.inventory_count,
-#                         'customer_category': custom_invoice.customer_id.category.id if custom_invoice.customer_id.category else None,
-#                         'customer_date_of_birth': custom_invoice.customer_id.date_of_birth,
-#                         'customer_gender': custom_invoice.customer_id.gender,
-#                         'customer_created_by': custom_invoice.customer_id.created_by.id if custom_invoice.customer_id.created_by else None,
-#                         'customer_invoice': custom_invoice.customer_id.invoice.id if custom_invoice.customer_id.invoice else None,
-#                         'customer_state_name': custom_invoice.customer_id.state_name,
-#                         'customer_state_code': custom_invoice.customer_id.state_code,
-#                         'customer_shipping_pincode': custom_invoice.customer_id.shipping_pincode,
-#                         'customer_billing_pincode': custom_invoice.customer_id.billing_pincode,
-#                         'customer_shipping_state': custom_invoice.customer_id.shipping_state,
-#                         'customer_shipping_state_code': custom_invoice.customer_id.shipping_state_code,
-#                         'customer_shipping_state_city': custom_invoice.customer_id.shipping_state_city,
-#                         'customer_shipping_state_country': custom_invoice.customer_id.shipping_state_country,
-#                         'customer_billing_state': custom_invoice.customer_id.billing_state,
-#                         'customer_billing_state_code': custom_invoice.customer_id.billing_state_code,
-#                         'customer_billing_state_city': custom_invoice.customer_id.billing_state_city,
-#                         'customer_billing_state_country': custom_invoice.customer_id.billing_state_country,
-#
-#                         # Include other customer details as needed
-#                         'owner_user_signature': custom_invoice.owner_id.user_signature.url if custom_invoice.owner_id.user_signature else None,
-#
-#                         'AckNo': ack_no,
-#                         'AckDt': ack_dt,
-#                         'Irn': irn,
-#                         'EwbNo': ewb_no,
-#                         'EwbDt': ewb_dt,
-#                         'EwbValidTill': ewb_valid_till,
-#                     }
-#
-#
-#                 except CustomInvoice.DoesNotExist:
-#                     # If not found in CustomInvoice, raise Http404
-#                     raise Http404("Invoice not found for the given invoice_number")
-#         else:
-#             # If no invoice_number is provided, use default data
-#             invoice_data = {
-#                 'default_data': 'This is default data',
-#             }
-#
-#         # Render HTML content from the template with additional data
-#         html_content = render_to_string(html_template_path, {'invoice_data': invoice_data})
-#
-#         # Generate PDF from HTML content
-#         pdf_file = HTML(string=html_content).write_pdf()
-#
-#         # Set the Content-Disposition header to trigger download
-#         response = HttpResponse(pdf_file, content_type='application/pdf')
-#         response['Content-Disposition'] = f'attachment; filename="{invoice_number}.pdf"'
-#
-#         return response
+#         html_template_path = '/amx-crm-dev/django/amx_crm_dev/Crm_app/templates/email/pdf-redesign.html'
 
 class MyAPIView(APIView):
     def generate_qr_code(self, data):
@@ -14059,26 +10914,26 @@ class MyAPIView(APIView):
 
         img = qr.make_image(fill_color="black", back_color="white")
 
-        # Define the directory to save the QR code image
-        save_dir = '/amx-crm-dev/site/public/media/qrcode'
+        # Use directory from settings
+        save_dir = settings.QR_CODE_DIR
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
         qr_code_filename = "qr_code.png"
-        qr_code_path = os.path.join(save_dir, qr_code_filename)  # Save the QR code image
+        qr_code_path = os.path.join(save_dir, qr_code_filename)
         img.save(qr_code_path)
 
-        # Adjust the path to start from '/media/qrcode'
-        relative_path = os.path.relpath(qr_code_path, '/amx-crm-dev/site/public/media')
+        # Use MEDIA_BASE_PATH from settings for relative path
+        relative_path = os.path.relpath(qr_code_path, settings.MEDIA_BASE_PATH)
         qr_code_url = '/media/' + relative_path
 
         return qr_code_url
 
     def get(self, request, invoice_number=None, *args, **kwargs):
-        # Your HTML template path
-        html_template_path = '/amx-crm-dev/django/amx_crm_dev/Crm_app/templates/email/pdf-redesign.html'
+        # Use template path from settings
+        html_template_path = settings.PDF_TEMPLATE_PATH
         # html_template_path = '/home/user/Documents/AMX_LATESTLOCAL/AMXLatest/amx_crm_dev/Crm_app/templates/email/pdf-redesign.html'
-        #base_url = 'https://amx-crm.thestorywallcafe.com'
+        # base_url = 'https://amx-crm.thestorywallcafe.com'
         base_url = settings.CRM_PORTAL_DOMAIN
         invoice_data = {}
         EwbNo = None  # Initialize EwbNo
@@ -14087,7 +10942,7 @@ class MyAPIView(APIView):
         ack_no = None  # Initialize ack_no
         ack_dt = None  # Initialize ack_dt
         irn = None
-        qr_code_path=None
+        qr_code_path = None
         # Check if invoice_number is provided
         if invoice_number:
             try:
@@ -14102,7 +10957,9 @@ class MyAPIView(APIView):
                             'cgst': drone_detail.get('cgst', None),
                             'igst': drone_detail.get('igst', None),
                             'sgst': drone_detail.get('sgst', None),
-                            'totaltax':drone_detail.get('cgst', None)+drone_detail.get('igst', None)+drone_detail.get('sgst', None),
+                            'totaltax': drone_detail.get('cgst', None) + drone_detail.get('igst',
+                                                                                          None) + drone_detail.get(
+                                'sgst', None),
                             'price': drone_detail.get('price', None),
                             'total': drone_detail.get('total', None),
                             'units': drone_detail.get('units', None),
@@ -14115,7 +10972,8 @@ class MyAPIView(APIView):
                             'discount_amount': drone_detail.get('discount_amount', None),
                             'igst_percentage': drone_detail.get('igst_percentage', None),
                             'sgst_percentage': drone_detail.get('sgst_percentage', None),
-                            'tax_percentage_total':drone_detail.get('cgst_percentage', None)+drone_detail.get('igst_percentage', None)+drone_detail.get('sgst_percentage', None),
+                            'tax_percentage_total': drone_detail.get('cgst_percentage', None) + drone_detail.get(
+                                'igst_percentage', None) + drone_detail.get('sgst_percentage', None),
                             'created_datetime': drone_detail.get('created_datetime', None),
                             'item_total_price': drone_detail.get('item_total_price', None),
                             'updated_datetime': drone_detail.get('updated_datetime', None),
@@ -14187,7 +11045,7 @@ class MyAPIView(APIView):
                 # Check if owner_company_logo is not None
                 if owner_company_logo:
                     # Base URL
-                    #base_url = "https://amx-crm.thestorywallcafe.com"
+                    # base_url = "https://amx-crm.thestorywallcafe.com"
                     base_url = settings.CRM_PORTAL_DOMAIN
 
                     # Concatenate the base URL with the owner_company_logo path
@@ -14197,7 +11055,7 @@ class MyAPIView(APIView):
                     print("Owner Company Logo not available")
                 customer_type_name = add_item.customer_type_id.name if add_item.customer_type_id else None
 
-                print(customer_type_name,"llllllllllll")
+                print(customer_type_name, "llllllllllll")
                 if customer_type_name == "Individual":
                     customer_gst_number = None
                     customer_pan_number = add_item.customer_pan_number
@@ -14230,7 +11088,7 @@ class MyAPIView(APIView):
                     'sum_of_igst_percentage': add_item.sum_of_igst_percentage,
                     'sum_of_cgst_percentage': add_item.sum_of_cgst_percentage,
                     'sum_of_sgst_percentage': add_item.sum_of_sgst_percentage,
-                    'sum_gst_total_amount':add_item.sum_of_igst_percentage+add_item.sum_of_cgst_percentage+add_item.sum_of_sgst_percentage,
+                    'sum_gst_total_amount': add_item.sum_of_igst_percentage + add_item.sum_of_cgst_percentage + add_item.sum_of_sgst_percentage,
                     'sum_of_discount_amount': add_item.sum_of_discount_amount,
                     'sum_of_price_after_discount': add_item.sum_of_price_after_discount,
                     'owner_id': add_item.owner_id.id,
@@ -14487,7 +11345,8 @@ class MyAPIView(APIView):
                     # Extract the URL part from the file path
                     qr_code_url = None
                     if qr_code_path:
-                        qr_code_url = os.path.join(settings.MEDIA_URL, os.path.relpath(qr_code_path, settings.MEDIA_ROOT))
+                        qr_code_url = os.path.join(settings.MEDIA_URL,
+                                                   os.path.relpath(qr_code_path, settings.MEDIA_ROOT))
 
                     # If found in CustomInvoice, fetch additional data
                     ack_no = api_response.get('DecryptedData', {}).get('AckNo')
@@ -14555,99 +11414,100 @@ class MyAPIView(APIView):
                         'sum_of_discount_amount': custom_invoice.sum_of_discount_amount,
                         'sum_of_price_after_discount': custom_invoice.sum_of_price_after_discount,
                         'owner_id': custom_invoice.owner_id.id,
-                    'owner_username': custom_invoice.owner_username,
-                    'owner_email': custom_invoice.owner_email,
-                    'owner_first_name': custom_invoice.owner_first_name,
-                    'owner_last_name': custom_invoice.owner_last_name,
-                    'owner_mobile_number': custom_invoice.owner_mobile_number,
-                    'owner_address': custom_invoice.owner_address,
-                    'owner_pin_code': custom_invoice.owner_pin_code,
-                    'owner_pan_number': custom_invoice.owner_pan_number,
-                    'owner_profile_pic': custom_invoice.owner_profile_pic.url if custom_invoice.owner_profile_pic else None,
-                    'owner_company_name': custom_invoice.owner_company_name,
-                    'owner_company_email': custom_invoice.owner_company_email,
-                    'owner_company_address': custom_invoice.owner_company_address,
-                    'owner_shipping_address': custom_invoice.owner_shipping_address,
-                    'owner_billing_address': custom_invoice.owner_billing_address,
-                    'owner_company_phn_number': custom_invoice.owner_company_phn_number,
-                    'owner_company_gst_num': custom_invoice.owner_company_gst_num,
-                    'owner_company_cin_num': custom_invoice.owner_company_cin_num,
-                    'owner_company_logo': custom_invoice.owner_company_logo.url if custom_invoice.owner_company_logo else None,
-                    'owner_role_id': custom_invoice.owner_id.role_id.id,
-                    # 'owner_created_date_time': add_item.owner_id.created_date_time,
-                    # 'owner_updated_date_time': add_item.owner_id.updated_date_time,
-                    # 'owner_status': add_item.owner_id.status,
-                    'owner_location': custom_invoice.owner_location,
-                    # 'owner_reason': add_item.owner_id.reason,
-                    # 'owner_partner_initial_update': add_item.owner_id.partner_initial_update,
-                    'owner_gst_number': custom_invoice.owner_gst_number,
-                    # 'owner_inventory_count': add_item.owner_id.inventory_count,
-                    'owner_category': custom_invoice.owner_id.category.id if custom_invoice.owner_id.category else None,
-                    'owner_date_of_birth': custom_invoice.owner_date_of_birth,
-                    'owner_gender': custom_invoice.owner_gender,
-                    'owner_created_by': custom_invoice.owner_id.created_by.id if custom_invoice.owner_id.created_by else None,
-                    'owner_invoice': custom_invoice.owner_id.invoice.id if custom_invoice.owner_id.invoice else None,
-                    # 'owner_state_name': add_item.owner_id.state_name,
-                    # 'owner_state_code': add_item.owner_id.state_code,
-                    'owner_shipping_pincode': custom_invoice.owner_shipping_pincode,
-                    'owner_billing_pincode': custom_invoice.owner_billing_pincode,
-                    'owner_shipping_state': custom_invoice.owner_shipping_state,
-                    'owner_shipping_state_code': custom_invoice.owner_shipping_state_code,
-                    'owner_shipping_state_city': custom_invoice.owner_shipping_state_city,
-                    'owner_shipping_state_country': custom_invoice.owner_shipping_state_country,
-                    'owner_billing_state': custom_invoice.owner_billing_state,
-                    'owner_billing_state_code': custom_invoice.owner_billing_state_code,
-                    'owner_billing_state_city': custom_invoice.owner_billing_state_city,
-                    'owner_billing_state_country': custom_invoice.owner_billing_state_country,
-                    'customer_id': custom_invoice.customer_id.id,
-                    'customer_username': custom_invoice.customer_username,
-                    'customer_email': custom_invoice.customer_email,
-                    'customer_first_name': custom_invoice.customer_first_name,
-                    'customer_last_name': custom_invoice.customer_last_name,
-                    'customer_mobile_number': custom_invoice.customer_mobile_number,
-                    'customer_address': custom_invoice.customer_address,
-                    'customer_pin_code': custom_invoice.customer_pin_code,
-                    'customer_pan_number': customer_pan_number,
-                    'customer_profile_pic': custom_invoice.customer_profile_pic.url if custom_invoice.customer_profile_pic else None,
-                    'customer_company_name': custom_invoice.customer_company_name,
-                    'customer_company_email': custom_invoice.customer_company_email,
-                    'customer_company_address': custom_invoice.customer_company_address,
-                    'customer_shipping_address': custom_invoice.customer_shipping_address,
-                    'customer_billing_address': custom_invoice.customer_billing_address,
-                    'customer_company_phn_number': custom_invoice.customer_company_phn_number,
-                    'customer_company_gst_num': custom_invoice.customer_company_gst_num,
-                    'customer_company_cin_num': custom_invoice.customer_company_cin_num,
-                    'customer_company_logo': custom_invoice.customer_company_logo.url if custom_invoice.customer_company_logo else None,
-                    'customer_role_id': custom_invoice.customer_id.role_id.id,
-                    # 'customer_created_date_time': add_item.customer_id.created_date_time,
-                    # 'customer_updated_date_time': add_item.customer_id.updated_date_time,
-                    # 'customer_status': add_item.customer_id.status,
-                    'customer_location': custom_invoice.customer_location,
-                    # 'customer_reason': add_item.customer_id.reason,
-                    # 'customer_partner_initial_update': add_item.customer_id.partner_initial_update,
-                    'customer_gst_number': customer_gst_number,
-                    # 'customer_inventory_count': add_item.customer_id.inventory_count,
-                    'customer_category': custom_invoice.customer_id.category.id if custom_invoice.customer_id.category else None,
-                    'customer_date_of_birth': custom_invoice.customer_date_of_birth,
-                    'customer_gender': custom_invoice.customer_gender,
-                    'customer_created_by': custom_invoice.customer_id.created_by.id if custom_invoice.customer_id.created_by else None,
-                    'customer_invoice': custom_invoice.customer_id.invoice.id if custom_invoice.customer_id.invoice else None,
-                    # 'customer_state_name': add_item.customer_id.state_name,
-                    # 'customer_state_code': add_item.customer_id.state_code,
-                    'customer_shipping_pincode': custom_invoice.customer_shipping_pincode,
-                    'customer_billing_pincode': custom_invoice.customer_billing_pincode,
-                    'customer_shipping_state': custom_invoice.customer_shipping_state,
-                    'customer_shipping_state_code': custom_invoice.customer_shipping_state_code,
-                    'customer_shipping_state_city': custom_invoice.customer_shipping_state_city,
-                    'customer_shipping_state_country': custom_invoice.customer_shipping_state_country,
-                    'customer_billing_state': custom_invoice.customer_billing_state,
-                    'customer_billing_state_code': custom_invoice.customer_billing_state_code,
-                    'customer_billing_state_city': custom_invoice.customer_billing_state_city,
-                    'customer_billing_state_country': custom_invoice.customer_billing_state_country,
-                    'owner_user_signature': custom_invoice.owner_user_signature.url if custom_invoice.owner_user_signature else None,
+                        'owner_username': custom_invoice.owner_username,
+                        'owner_email': custom_invoice.owner_email,
+                        'owner_first_name': custom_invoice.owner_first_name,
+                        'owner_last_name': custom_invoice.owner_last_name,
+                        'owner_mobile_number': custom_invoice.owner_mobile_number,
+                        'owner_address': custom_invoice.owner_address,
+                        'owner_pin_code': custom_invoice.owner_pin_code,
+                        'owner_pan_number': custom_invoice.owner_pan_number,
+                        'owner_profile_pic': custom_invoice.owner_profile_pic.url if custom_invoice.owner_profile_pic else None,
+                        'owner_company_name': custom_invoice.owner_company_name,
+                        'owner_company_email': custom_invoice.owner_company_email,
+                        'owner_company_address': custom_invoice.owner_company_address,
+                        'owner_shipping_address': custom_invoice.owner_shipping_address,
+                        'owner_billing_address': custom_invoice.owner_billing_address,
+                        'owner_company_phn_number': custom_invoice.owner_company_phn_number,
+                        'owner_company_gst_num': custom_invoice.owner_company_gst_num,
+                        'owner_company_cin_num': custom_invoice.owner_company_cin_num,
+                        'owner_company_logo': custom_invoice.owner_company_logo.url if custom_invoice.owner_company_logo else None,
+                        'owner_role_id': custom_invoice.owner_id.role_id.id,
+                        # 'owner_created_date_time': add_item.owner_id.created_date_time,
+                        # 'owner_updated_date_time': add_item.owner_id.updated_date_time,
+                        # 'owner_status': add_item.owner_id.status,
+                        'owner_location': custom_invoice.owner_location,
+                        # 'owner_reason': add_item.owner_id.reason,
+                        # 'owner_partner_initial_update': add_item.owner_id.partner_initial_update,
+                        'owner_gst_number': custom_invoice.owner_gst_number,
+                        # 'owner_inventory_count': add_item.owner_id.inventory_count,
+                        'owner_category': custom_invoice.owner_id.category.id if custom_invoice.owner_id.category else None,
+                        'owner_date_of_birth': custom_invoice.owner_date_of_birth,
+                        'owner_gender': custom_invoice.owner_gender,
+                        'owner_created_by': custom_invoice.owner_id.created_by.id if custom_invoice.owner_id.created_by else None,
+                        'owner_invoice': custom_invoice.owner_id.invoice.id if custom_invoice.owner_id.invoice else None,
+                        # 'owner_state_name': add_item.owner_id.state_name,
+                        # 'owner_state_code': add_item.owner_id.state_code,
+                        'owner_shipping_pincode': custom_invoice.owner_shipping_pincode,
+                        'owner_billing_pincode': custom_invoice.owner_billing_pincode,
+                        'owner_shipping_state': custom_invoice.owner_shipping_state,
+                        'owner_shipping_state_code': custom_invoice.owner_shipping_state_code,
+                        'owner_shipping_state_city': custom_invoice.owner_shipping_state_city,
+                        'owner_shipping_state_country': custom_invoice.owner_shipping_state_country,
+                        'owner_billing_state': custom_invoice.owner_billing_state,
+                        'owner_billing_state_code': custom_invoice.owner_billing_state_code,
+                        'owner_billing_state_city': custom_invoice.owner_billing_state_city,
+                        'owner_billing_state_country': custom_invoice.owner_billing_state_country,
+                        'customer_id': custom_invoice.customer_id.id,
+                        'customer_username': custom_invoice.customer_username,
+                        'customer_email': custom_invoice.customer_email,
+                        'customer_first_name': custom_invoice.customer_first_name,
+                        'customer_last_name': custom_invoice.customer_last_name,
+                        'customer_mobile_number': custom_invoice.customer_mobile_number,
+                        'customer_address': custom_invoice.customer_address,
+                        'customer_pin_code': custom_invoice.customer_pin_code,
+                        'customer_pan_number': customer_pan_number,
+                        'customer_profile_pic': custom_invoice.customer_profile_pic.url if custom_invoice.customer_profile_pic else None,
+                        'customer_company_name': custom_invoice.customer_company_name,
+                        'customer_company_email': custom_invoice.customer_company_email,
+                        'customer_company_address': custom_invoice.customer_company_address,
+                        'customer_shipping_address': custom_invoice.customer_shipping_address,
+                        'customer_billing_address': custom_invoice.customer_billing_address,
+                        'customer_company_phn_number': custom_invoice.customer_company_phn_number,
+                        'customer_company_gst_num': custom_invoice.customer_company_gst_num,
+                        'customer_company_cin_num': custom_invoice.customer_company_cin_num,
+                        'customer_company_logo': custom_invoice.customer_company_logo.url if custom_invoice.customer_company_logo else None,
+                        'customer_role_id': custom_invoice.customer_id.role_id.id,
+                        # 'customer_created_date_time': add_item.customer_id.created_date_time,
+                        # 'customer_updated_date_time': add_item.customer_id.updated_date_time,
+                        # 'customer_status': add_item.customer_id.status,
+                        'customer_location': custom_invoice.customer_location,
+                        # 'customer_reason': add_item.customer_id.reason,
+                        # 'customer_partner_initial_update': add_item.customer_id.partner_initial_update,
+                        'customer_gst_number': customer_gst_number,
+                        # 'customer_inventory_count': add_item.customer_id.inventory_count,
+                        'customer_category': custom_invoice.customer_id.category.id if custom_invoice.customer_id.category else None,
+                        'customer_date_of_birth': custom_invoice.customer_date_of_birth,
+                        'customer_gender': custom_invoice.customer_gender,
+                        'customer_created_by': custom_invoice.customer_id.created_by.id if custom_invoice.customer_id.created_by else None,
+                        'customer_invoice': custom_invoice.customer_id.invoice.id if custom_invoice.customer_id.invoice else None,
+                        # 'customer_state_name': add_item.customer_id.state_name,
+                        # 'customer_state_code': add_item.customer_id.state_code,
+                        'customer_shipping_pincode': custom_invoice.customer_shipping_pincode,
+                        'customer_billing_pincode': custom_invoice.customer_billing_pincode,
+                        'customer_shipping_state': custom_invoice.customer_shipping_state,
+                        'customer_shipping_state_code': custom_invoice.customer_shipping_state_code,
+                        'customer_shipping_state_city': custom_invoice.customer_shipping_state_city,
+                        'customer_shipping_state_country': custom_invoice.customer_shipping_state_country,
+                        'customer_billing_state': custom_invoice.customer_billing_state,
+                        'customer_billing_state_code': custom_invoice.customer_billing_state_code,
+                        'customer_billing_state_city': custom_invoice.customer_billing_state_city,
+                        'customer_billing_state_country': custom_invoice.customer_billing_state_country,
+                        'owner_user_signature': custom_invoice.owner_user_signature.url if custom_invoice.owner_user_signature else None,
                         'AckNo': ack_no,
                         # 'AckDt': ack_dt,
-                        'AckDt': datetime.strptime(ack_dt, '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%d') if ack_dt else None,
+                        'AckDt': datetime.strptime(ack_dt, '%Y-%m-%d %H:%M:%S').strftime(
+                            '%Y-%m-%d') if ack_dt else None,
                         'Irn': irn,
                         'qr_code_path': qr_code_path,
                         'EwbNo': EwbNo,
@@ -14773,7 +11633,7 @@ class MyAPIView(APIView):
             }
 
         # Render HTML content from the template with additional data
-        html_content = render_to_string(html_template_path,  context)
+        html_content = render_to_string(html_template_path, context)
 
         # Generate PDF from HTML content
         pdf_file = HTML(string=html_content).write_pdf()
@@ -15537,284 +12397,336 @@ class FilterForSuperadmin(View):
 
             if query_key == 'einvoice':
                 add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
-                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                   invoice_status__invoice_status_name="Completed",
+                                                   customer_type_id__name="Organization")
                 custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
-                                                               invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                               invoice_status__invoice_status_name="Completed",
+                                                               customer_type_id__name="Organization")
             if response_type and query_key == 'einvoice':
                 if response_type == 'drone':
                     add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
-                                                       invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                       invoice_status__invoice_status_name="Completed",
+                                                       customer_type_id__name="Organization")
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
                     custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
-                                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                                   invoice_status__invoice_status_name="Completed",
+                                                                   customer_type_id__name="Organization")
 
             if customer_type_id and query_key == 'einvoice':
                 add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                    customer_type_id=customer_type_id,
-                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                   invoice_status__invoice_status_name="Completed",
+                                                   customer_type_id__name="Organization")
                 custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                customer_type_id=customer_type_id,
-                                                               invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                               invoice_status__invoice_status_name="Completed",
+                                                               customer_type_id__name="Organization")
 
             if invoice_status and query_key == 'einvoice':
                 add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                    invoice_status__in=invoice_status,
-                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                   invoice_status__invoice_status_name="Completed",
+                                                   customer_type_id__name="Organization")
                 custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                invoice_status__in=invoice_status,
-                                                               invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                               invoice_status__invoice_status_name="Completed",
+                                                               customer_type_id__name="Organization")
 
             if customer_ids and query_key == 'einvoice':
                 add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                    customer_id__in=customer_ids,
-                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                   invoice_status__invoice_status_name="Completed",
+                                                   customer_type_id__name="Organization")
                 custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                customer_id__in=customer_ids,
-                                                               invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                               invoice_status__invoice_status_name="Completed",
+                                                               customer_type_id__name="Organization")
 
             if search_invoice_number and query_key == 'einvoice':
                 add_items = AddItem.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                    owner_id__role_id__role_name='Super_admin',
-                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                   invoice_status__invoice_status_name="Completed",
+                                                   customer_type_id__name="Organization")
                 custom_invoices = CustomInvoice.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                                owner_id__role_id__role_name='Super_admin',
-                                                               invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                               invoice_status__invoice_status_name="Completed",
+                                                               customer_type_id__name="Organization")
             #######################2
             if response_type and customer_type_id and query_key == 'einvoice':
                 if response_type == 'drone':
                     add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                        customer_type_id=customer_type_id,
-                                                       invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                       invoice_status__invoice_status_name="Completed",
+                                                       customer_type_id__name="Organization")
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
                     custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                    customer_type_id=customer_type_id,
-                                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                                   invoice_status__invoice_status_name="Completed",
+                                                                   customer_type_id__name="Organization")
 
             if response_type and invoice_status and query_key == 'einvoice':
                 if response_type == 'drone':
                     add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                        invoice_status__in=invoice_status,
-                                                       invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                       invoice_status__invoice_status_name="Completed",
+                                                       customer_type_id__name="Organization")
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
                     custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                    invoice_status__in=invoice_status,
-                                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                                   invoice_status__invoice_status_name="Completed",
+                                                                   customer_type_id__name="Organization")
 
             if response_type and customer_ids and query_key == 'einvoice':
                 if response_type == 'drone':
                     add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                        customer_id__in=customer_ids,
-                                                       invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                       invoice_status__invoice_status_name="Completed",
+                                                       customer_type_id__name="Organization")
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
                     custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                    customer_id__in=customer_ids,
-                                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                                   invoice_status__invoice_status_name="Completed",
+                                                                   customer_type_id__name="Organization")
 
             if response_type and search_invoice_number and query_key == 'einvoice':
                 if response_type == 'drone':
                     add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                        invoice_number__istartswith=search_invoice_number,
-                                                       invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                       invoice_status__invoice_status_name="Completed",
+                                                       customer_type_id__name="Organization")
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
                     custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                    invoice_number__istartswith=search_invoice_number,
-                                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                                   invoice_status__invoice_status_name="Completed",
+                                                                   customer_type_id__name="Organization")
 
             if invoice_status and customer_type_id and query_key == 'einvoice':
                 add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                    invoice_status__in=invoice_status,
                                                    customer_type_id=customer_type_id,
-                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                   invoice_status__invoice_status_name="Completed",
+                                                   customer_type_id__name="Organization")
                 custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                invoice_status__in=invoice_status,
                                                                customer_type_id=customer_type_id,
-                                                               invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                               invoice_status__invoice_status_name="Completed",
+                                                               customer_type_id__name="Organization")
 
             if customer_ids and customer_type_id and query_key == 'einvoice':
                 add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                    customer_id__in=customer_ids, customer_type_id=customer_type_id,
-                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                   invoice_status__invoice_status_name="Completed",
+                                                   customer_type_id__name="Organization")
                 custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                customer_id__in=customer_ids,
                                                                customer_type_id=customer_type_id,
-                                                               invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                               invoice_status__invoice_status_name="Completed",
+                                                               customer_type_id__name="Organization")
 
             if search_invoice_number and customer_type_id and query_key == 'einvoice':
                 add_items = AddItem.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                    owner_id__role_id__role_name='Super_admin',
                                                    customer_type_id=customer_type_id,
-                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                   invoice_status__invoice_status_name="Completed",
+                                                   customer_type_id__name="Organization")
                 custom_invoices = CustomInvoice.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                                owner_id__role_id__role_name='Super_admin',
                                                                customer_type_id=customer_type_id,
-                                                               invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                               invoice_status__invoice_status_name="Completed",
+                                                               customer_type_id__name="Organization")
 
             if customer_ids and invoice_status and query_key == 'einvoice':
                 add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                    customer_id__in=customer_ids, invoice_status__in=invoice_status,
-                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                   invoice_status__invoice_status_name="Completed",
+                                                   customer_type_id__name="Organization")
                 custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                customer_id__in=customer_ids,
                                                                invoice_status__in=invoice_status,
-                                                               invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                               invoice_status__invoice_status_name="Completed",
+                                                               customer_type_id__name="Organization")
 
             if search_invoice_number and invoice_status and query_key == 'einvoice':
                 add_items = AddItem.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                    owner_id__role_id__role_name='Super_admin',
                                                    invoice_status__in=invoice_status,
-                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                   invoice_status__invoice_status_name="Completed",
+                                                   customer_type_id__name="Organization")
                 custom_invoices = CustomInvoice.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                                owner_id__role_id__role_name='Super_admin',
                                                                invoice_status__in=invoice_status,
-                                                               invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                               invoice_status__invoice_status_name="Completed",
+                                                               customer_type_id__name="Organization")
 
             if search_invoice_number and customer_ids and query_key == 'einvoice':
                 add_items = AddItem.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                    owner_id__role_id__role_name='Super_admin',
                                                    customer_id__in=customer_ids,
-                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                   invoice_status__invoice_status_name="Completed",
+                                                   customer_type_id__name="Organization")
                 custom_invoices = CustomInvoice.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                                owner_id__role_id__role_name='Super_admin',
                                                                customer_id__in=customer_ids,
-                                                               invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                               invoice_status__invoice_status_name="Completed",
+                                                               customer_type_id__name="Organization")
 
             if response_type and customer_type_id and invoice_status and query_key == 'einvoice':
                 if response_type == 'drone':
                     add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                        customer_type_id=customer_type_id,
                                                        invoice_status__in=invoice_status,
-                                                       invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                       invoice_status__invoice_status_name="Completed",
+                                                       customer_type_id__name="Organization")
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
                     custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                    customer_type_id=customer_type_id,
                                                                    invoice_status__in=invoice_status,
-                                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                                   invoice_status__invoice_status_name="Completed",
+                                                                   customer_type_id__name="Organization")
 
             if response_type and customer_type_id and customer_ids and query_key == 'einvoice':
                 if response_type == 'drone':
                     add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                        customer_type_id=customer_type_id,
                                                        customer_id__in=customer_ids,
-                                                       invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                       invoice_status__invoice_status_name="Completed",
+                                                       customer_type_id__name="Organization")
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
                     custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                    customer_type_id=customer_type_id,
                                                                    customer_id__in=customer_ids,
-                                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                                   invoice_status__invoice_status_name="Completed",
+                                                                   customer_type_id__name="Organization")
 
             if search_invoice_number and response_type and customer_type_id and query_key == 'einvoice':
                 if response_type == 'drone':
                     add_items = AddItem.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                        owner_id__role_id__role_name='Super_admin',
                                                        customer_type_id=customer_type_id,
-                                                       invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                       invoice_status__invoice_status_name="Completed",
+                                                       customer_type_id__name="Organization")
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
                     custom_invoices = CustomInvoice.objects.filter(
                         invoice_number__istartswith=search_invoice_number,
                         owner_id__role_id__role_name='Super_admin',
-                        customer_type_id=customer_type_id, invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                        customer_type_id=customer_type_id, invoice_status__invoice_status_name="Completed",
+                        customer_type_id__name="Organization")
 
             if response_type and customer_ids and invoice_status and query_key == 'einvoice':
                 if response_type == 'drone':
                     add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                        customer_id__in=customer_ids,
                                                        invoice_status__in=invoice_status,
-                                                       invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                       invoice_status__invoice_status_name="Completed",
+                                                       customer_type_id__name="Organization")
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
                     custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                    customer_id__in=customer_ids,
                                                                    invoice_status__in=invoice_status,
-                                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                                   invoice_status__invoice_status_name="Completed",
+                                                                   customer_type_id__name="Organization")
 
             if response_type and search_invoice_number and invoice_status and query_key == 'einvoice':
                 if response_type == 'drone':
                     add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                        invoice_number__istartswith=search_invoice_number,
                                                        invoice_status__in=invoice_status,
-                                                       invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                       invoice_status__invoice_status_name="Completed",
+                                                       customer_type_id__name="Organization")
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
                     custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                    invoice_number__istartswith=search_invoice_number,
                                                                    invoice_status__in=invoice_status,
-                                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                                   invoice_status__invoice_status_name="Completed",
+                                                                   customer_type_id__name="Organization")
             if response_type and search_invoice_number and customer_ids and query_key == 'einvoice':
                 if response_type == 'drone':
                     add_items = AddItem.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                        invoice_number__istartswith=search_invoice_number,
                                                        customer_id__in=customer_ids,
-                                                       invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                       invoice_status__invoice_status_name="Completed",
+                                                       customer_type_id__name="Organization")
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
                     custom_invoices = CustomInvoice.objects.filter(owner_id__role_id__role_name='Super_admin',
                                                                    invoice_number__istartswith=search_invoice_number,
                                                                    customer_id__in=customer_ids,
-                                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                                   invoice_status__invoice_status_name="Completed",
+                                                                   customer_type_id__name="Organization")
             if customer_ids and invoice_status and customer_type_id and query_key == 'einvoice':
                 add_items = AddItem.objects.filter(customer_id__in=customer_ids,
                                                    owner_id__role_id__role_name='Super_admin',
                                                    invoice_status__in=invoice_status,
                                                    customer_type_id=customer_type_id,
-                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                   invoice_status__invoice_status_name="Completed",
+                                                   customer_type_id__name="Organization")
                 custom_invoices = CustomInvoice.objects.filter(customer_id__in=customer_ids,
                                                                owner_id__role_id__role_name='Super_admin',
                                                                invoice_status__in=invoice_status,
                                                                customer_type_id=customer_type_id,
-                                                               invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                               invoice_status__invoice_status_name="Completed",
+                                                               customer_type_id__name="Organization")
 
             if search_invoice_number and invoice_status and customer_type_id and query_key == 'einvoice':
                 add_items = AddItem.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                    owner_id__role_id__role_name='Super_admin',
                                                    invoice_status__in=invoice_status,
                                                    customer_type_id=customer_type_id,
-                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                   invoice_status__invoice_status_name="Completed",
+                                                   customer_type_id__name="Organization")
                 custom_invoices = CustomInvoice.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                                owner_id__role_id__role_name='Super_admin',
                                                                invoice_status__in=invoice_status,
                                                                customer_type_id=customer_type_id,
-                                                               invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                               invoice_status__invoice_status_name="Completed",
+                                                               customer_type_id__name="Organization")
 
             if search_invoice_number and invoice_status and customer_ids and query_key == 'einvoice':
                 add_items = AddItem.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                    owner_id__role_id__role_name='Super_admin',
                                                    invoice_status__in=invoice_status, customer_id__in=customer_ids,
-                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                   invoice_status__invoice_status_name="Completed",
+                                                   customer_type_id__name="Organization")
                 custom_invoices = CustomInvoice.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                                owner_id__role_id__role_name='Super_admin',
                                                                invoice_status__in=invoice_status,
                                                                customer_id__in=customer_ids,
-                                                               invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                               invoice_status__invoice_status_name="Completed",
+                                                               customer_type_id__name="Organization")
 
             if search_invoice_number and customer_type_id and customer_ids and query_key == 'einvoice':
                 add_items = AddItem.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                    owner_id__role_id__role_name='Super_admin',
                                                    customer_type_id=customer_type_id, customer_id__in=customer_ids,
-                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                   invoice_status__invoice_status_name="Completed",
+                                                   customer_type_id__name="Organization")
                 custom_invoices = CustomInvoice.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                                owner_id__role_id__role_name='Super_admin',
                                                                customer_type_id=customer_type_id,
                                                                customer_id__in=customer_ids,
-                                                               invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                               invoice_status__invoice_status_name="Completed",
+                                                               customer_type_id__name="Organization")
 
             if response_type and customer_type_id and customer_ids and invoice_status and query_key == 'einvoice':
                 if response_type == 'drone':
@@ -15823,7 +12735,8 @@ class FilterForSuperadmin(View):
                                                        invoice_status__in=invoice_status,
                                                        customer_type_id=customer_type_id,
                                                        customer_id__in=customer_ids,
-                                                       invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                       invoice_status__invoice_status_name="Completed",
+                                                       customer_type_id__name="Organization")
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
@@ -15832,7 +12745,8 @@ class FilterForSuperadmin(View):
                                                                    invoice_status__in=invoice_status,
                                                                    customer_type_id=customer_type_id,
                                                                    customer_id__in=customer_ids,
-                                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                                   invoice_status__invoice_status_name="Completed",
+                                                                   customer_type_id__name="Organization")
 
             if response_type and customer_type_id and search_invoice_number and invoice_status and query_key == 'einvoice':
                 if response_type == 'drone':
@@ -15840,7 +12754,8 @@ class FilterForSuperadmin(View):
                                                        invoice_number__istartswith=search_invoice_number,
                                                        invoice_status__in=invoice_status,
                                                        customer_type_id=customer_type_id,
-                                                       invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                       invoice_status__invoice_status_name="Completed",
+                                                       customer_type_id__name="Organization")
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
@@ -15848,7 +12763,8 @@ class FilterForSuperadmin(View):
                                                                    invoice_number__istartswith=search_invoice_number,
                                                                    invoice_status__in=invoice_status,
                                                                    customer_type_id=customer_type_id,
-                                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                                   invoice_status__invoice_status_name="Completed",
+                                                                   customer_type_id__name="Organization")
 
             if response_type and customer_ids and search_invoice_number and invoice_status and query_key == 'einvoice':
                 if response_type == 'drone':
@@ -15856,7 +12772,8 @@ class FilterForSuperadmin(View):
                                                        invoice_number__istartswith=search_invoice_number,
                                                        invoice_status__in=invoice_status,
                                                        customer_id__in=customer_ids,
-                                                       invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                       invoice_status__invoice_status_name="Completed",
+                                                       customer_type_id__name="Organization")
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
@@ -15864,20 +12781,23 @@ class FilterForSuperadmin(View):
                                                                    invoice_number__istartswith=search_invoice_number,
                                                                    invoice_status__in=invoice_status,
                                                                    customer_id__in=customer_ids,
-                                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                                   invoice_status__invoice_status_name="Completed",
+                                                                   customer_type_id__name="Organization")
 
             if search_invoice_number and customer_type_id and invoice_status and customer_ids and query_key == 'einvoice':
                 add_items = AddItem.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                    owner_id__role_id__role_name='Super_admin',
                                                    customer_type_id=customer_type_id, customer_id__in=customer_ids,
                                                    invoice_status__in=invoice_status,
-                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                   invoice_status__invoice_status_name="Completed",
+                                                   customer_type_id__name="Organization")
                 custom_invoices = CustomInvoice.objects.filter(invoice_number__istartswith=search_invoice_number,
                                                                owner_id__role_id__role_name='Super_admin',
                                                                customer_type_id=customer_type_id,
                                                                customer_id__in=customer_ids,
                                                                invoice_status__in=invoice_status,
-                                                               invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                               invoice_status__invoice_status_name="Completed",
+                                                               customer_type_id__name="Organization")
 
             if response_type and customer_ids and customer_type_id and search_invoice_number and invoice_status and query_key == 'einvoice':
                 if response_type == 'drone':
@@ -15886,7 +12806,8 @@ class FilterForSuperadmin(View):
                                                        invoice_status__in=invoice_status,
                                                        customer_id__in=customer_ids,
                                                        customer_type_id=customer_type_id,
-                                                       invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                       invoice_status__invoice_status_name="Completed",
+                                                       customer_type_id__name="Organization")
                     custom_invoices = []
                 elif response_type == 'custom':
                     add_items = []
@@ -15895,7 +12816,8 @@ class FilterForSuperadmin(View):
                                                                    invoice_status__in=invoice_status,
                                                                    customer_id__in=customer_ids,
                                                                    customer_type_id=customer_type_id,
-                                                                   invoice_status__invoice_status_name="Completed",customer_type_id__name="Organization")
+                                                                   invoice_status__invoice_status_name="Completed",
+                                                                   customer_type_id__name="Organization")
 
             if query_key == 'partners':
                 add_items = AddItem.objects.filter(owner_id__role_id__role_name='Partner')
@@ -16467,11 +13389,13 @@ class InvoiceHistoyFilter(APIView):
         ######filter only Completed status ####
         if query_key == 'einvoice':
             items = AddItem.objects.filter(owner_id__role_id__role_name='Partner',
-                                           invoice_status__invoice_status_name="Completed", owner_id=user_id,customer_type_id__name="Organization")
+                                           invoice_status__invoice_status_name="Completed", owner_id=user_id,
+                                           customer_type_id__name="Organization")
 
         if query_key == 'einvoice' and customer_type_id:
             items = AddItem.objects.filter(owner_id__role_id__role_name='Partner', customer_type_id=customer_type_id,
-                                           invoice_status__invoice_status_name="Completed", owner_id=user_id,customer_type_id__name="Organization")
+                                           invoice_status__invoice_status_name="Completed", owner_id=user_id,
+                                           customer_type_id__name="Organization")
 
         # if query_key == 'einvoice' and invoice_status:
         #     items = AddItem.objects.filter(owner_id__role_id__role_name='Partner',
@@ -16479,12 +13403,14 @@ class InvoiceHistoyFilter(APIView):
 
         if query_key == 'einvoice' and customer_ids:
             items = AddItem.objects.filter(owner_id__role_id__role_name='Partner', customer_id__in=customer_ids,
-                                           invoice_status__invoice_status_name="Completed", owner_id=user_id,customer_type_id__name="Organization")
+                                           invoice_status__invoice_status_name="Completed", owner_id=user_id,
+                                           customer_type_id__name="Organization")
 
         if query_key == 'einvoice' and search_invoice_number:
             items = AddItem.objects.filter(invoice_number__istartswith=search_invoice_number,
                                            owner_id__role_id__role_name='Partner',
-                                           invoice_status__invoice_status_name="Completed", owner_id=user_id,customer_type_id__name="Organization")
+                                           invoice_status__invoice_status_name="Completed", owner_id=user_id,
+                                           customer_type_id__name="Organization")
 
         # if query_key == 'einvoice' and invoice_status and customer_type_id:
         #     items = AddItem.objects.filter(owner_id__role_id__role_name='Partner',
@@ -16493,13 +13419,15 @@ class InvoiceHistoyFilter(APIView):
         if query_key == 'einvoice' and customer_ids and customer_type_id:
             items = AddItem.objects.filter(owner_id__role_id__role_name='Partner',
                                            customer_id__in=customer_ids, customer_type_id=customer_type_id,
-                                           invoice_status__invoice_status_name="Completed", owner_id=user_id,customer_type_id__name="Organization")
+                                           invoice_status__invoice_status_name="Completed", owner_id=user_id,
+                                           customer_type_id__name="Organization")
 
         if query_key == 'einvoice' and search_invoice_number and customer_type_id:
             items = AddItem.objects.filter(invoice_number__istartswith=search_invoice_number,
                                            owner_id__role_id__role_name='Partner',
                                            customer_type_id=customer_type_id,
-                                           invoice_status__invoice_status_name="Completed", owner_id=user_id,customer_type_id__name="Organization")
+                                           invoice_status__invoice_status_name="Completed", owner_id=user_id,
+                                           customer_type_id__name="Organization")
 
         # if query_key == 'einvoice' and customer_ids and invoice_status:
         #     items = AddItem.objects.filter(owner_id__role_id__role_name='Partner',
@@ -16514,7 +13442,8 @@ class InvoiceHistoyFilter(APIView):
             items = AddItem.objects.filter(invoice_number__istartswith=search_invoice_number,
                                            owner_id__role_id__role_name='Partner',
                                            customer_id__in=customer_ids,
-                                           invoice_status__invoice_status_name="Completed", owner_id=user_id,customer_type_id__name="Organization")
+                                           invoice_status__invoice_status_name="Completed", owner_id=user_id,
+                                           customer_type_id__name="Organization")
 
         # if query_key == 'einvoice' and customer_ids and invoice_status and customer_type_id:
         #     items = AddItem.objects.filter(customer_id__in=customer_ids,
@@ -16535,7 +13464,8 @@ class InvoiceHistoyFilter(APIView):
             items = AddItem.objects.filter(invoice_number__istartswith=search_invoice_number,
                                            owner_id__role_id__role_name='Partner',
                                            customer_type_id=customer_type_id, customer_id__in=customer_ids,
-                                           invoice_status__invoice_status_name="Completed", owner_id=user_id,customer_type_id__name="Organization")
+                                           invoice_status__invoice_status_name="Completed", owner_id=user_id,
+                                           customer_type_id__name="Organization")
 
         # if query_key == 'einvoice' and search_invoice_number and customer_type_id and invoice_status and customer_ids:
         #     items = AddItem.objects.filter(invoice_number__istartswith=search_invoice_number,
@@ -17156,7 +14086,7 @@ def initiate_payment(request):
         user_id = json_data.get('user_id')
         end_date = json_data.get('end_date')
 
-        if Slot.objects.filter(batch_name=batch_name,user_id=user_id).exists():
+        if Slot.objects.filter(batch_name=batch_name, user_id=user_id).exists():
             return JsonResponse({'message': 'Batch name already exists'},
                                 status=status.HTTP_400_BAD_REQUEST)
 
@@ -17200,7 +14130,7 @@ def initiate_payment(request):
             batch_size=batch_size,
             batch_type=batch_type,
             order_id=order_id,
-            user_id=user_instance, # Assign the CustomUser instance
+            user_id=user_instance,  # Assign the CustomUser instance
             end_date=end_date
         )
 
@@ -17257,7 +14187,7 @@ def handle_payment_success(request):
                 batch_size=slot_order_instance.batch_size,
                 batch_type=slot_order_instance.batch_type,
                 user_id=slot_order_instance.user_id,
-                end_date = slot_order_instance.end_date
+                end_date=slot_order_instance.end_date
             )
 
             return JsonResponse({'message': 'Slot booked successfully.'}, status=status.HTTP_200_OK)
@@ -17339,45 +14269,6 @@ class UserSlotList(APIView):
 
         return Response(slot_data)
 
-
-# class SlotsWithStudents(APIView):
-#     def get(self, request, user_id):
-#         # Query slot dates with associated students for the given user ID
-#         slots_with_students = Slot.objects.filter(user_id=user_id).annotate(has_students=Exists(Student.objects.filter(slot_id=OuterRef('id')))).filter(has_students=True)
-#
-#         # Get the first created_date_time for each slot_date
-#         slots_with_students = slots_with_students.values('slot_date').annotate(first_created_date=Min('created_date_time'), id=Min('id')).order_by('first_created_date')
-#
-#         # Extract unique slot dates with the first created slot date and id
-#         unique_slot_dates = {}
-#         for slot in slots_with_students:
-#             slot_date = slot['slot_date']
-#             if slot_date not in unique_slot_dates:
-#                 unique_slot_dates[slot_date] = {
-#                     'id': slot['id'],
-#                     'created_date_time': slot['first_created_date']
-#                 }
-#
-#         # Restructure the data in the desired format
-#         response_data = []
-#         for slot_date, info in unique_slot_dates.items():
-#             slot_info = {
-#                 'id': info['id'],
-#                 'slot_date': slot_date,
-#                 'created_date_time': info['created_date_time'],
-#                 # Add any other slot details you want to include here
-#             }
-#
-#             # Get the slot instance
-#             slot_instance = Slot.objects.get(id=info['id'])
-#             # Create a serializer instance with the slot instance
-#             serializer = SlotStudentSerializer(slot_instance)
-#             # Validate and add slot_status to the response
-#             slot_info['slot_status'] = serializer.get_slot_status(slot_instance)
-#
-#             response_data.append(slot_info)
-#
-#         return Response(response_data)
 
 @method_decorator([authorization_required], name='dispatch')
 class SlotsWithStudents(APIView):
@@ -17480,236 +14371,6 @@ class SlotsWithoutStudents(APIView):
             response_data.append(slot_info)
 
         return Response(response_data)
-
-
-# @method_decorator([authorization_required], name='dispatch')
-# class StudentCreateAPIView(APIView):
-#     def post(self, request, *args, **kwargs):
-#         slot_id = request.data.get('slot_id')
-#         students_data = request.data.get('student_lists', [])
-#
-#         # Retrieve the Slot instance
-#         try:
-#             slot_instance = Slot.objects.get(id=slot_id)
-#         except Slot.DoesNotExist:
-#             return Response({'message': 'Slot not found'}, status=status.HTTP_404_NOT_FOUND)
-#
-#         # Validate unique mobile numbers, Aadhar numbers, and emails
-#         mobile_numbers = set()
-#         adhar_numbers = set()
-#         emails = set()
-#         duplicate_mobiles = []
-#         duplicate_adhars = []
-#         duplicate_emails = []
-#
-#         for student_data in students_data:
-#             student_id = student_data.get('id', None)
-#             if student_id == "":
-#                 student_id = None  # Treat empty string as None for validation purposes
-#
-#             student_mobile = student_data.get('student_mobile')
-#             student_adhar = student_data.get('student_adhar')
-#             student_email = student_data.get('student_email')
-#
-#             if student_mobile in mobile_numbers:
-#                 duplicate_mobiles.append(student_mobile)
-#             else:
-#                 mobile_numbers.add(student_mobile)
-#
-#             if student_adhar in adhar_numbers:
-#                 duplicate_adhars.append(student_adhar)
-#             else:
-#                 adhar_numbers.add(student_adhar)
-#
-#             if student_email in emails:
-#                 duplicate_emails.append(student_email)
-#             else:
-#                 emails.add(student_email)
-#
-#             # Validate ID
-#             if student_id is not None and Student.objects.filter(id=student_id).exists():
-#                 return Response({'message': f'Duplicate student ID found: {student_id}'},
-#                                 status=status.HTTP_400_BAD_REQUEST)
-#
-#         if duplicate_mobiles or duplicate_adhars or duplicate_emails:
-#             error_msg = ''
-#             if duplicate_mobiles:
-#                 error_msg += f'Duplicate mobile numbers: {", ".join(duplicate_mobiles)}. '
-#             if duplicate_adhars:
-#                 error_msg += f'Duplicate Aadhar numbers: {", ".join(duplicate_adhars)}. '
-#             if duplicate_emails:
-#                 error_msg += f'Duplicate emails: {", ".join(duplicate_emails)}'
-#             return Response({'message': error_msg}, status=status.HTTP_400_BAD_REQUEST)
-#
-#         # Check the data in the table for the same slot date and batch name
-#         for student_data in students_data:
-#             student_adhar = student_data.get('student_adhar')
-#             student_email = student_data.get('student_email')
-#             student_mobile = student_data.get('student_mobile')
-#
-#             if Student.objects.filter(student_adhar=student_adhar, slot_id__slot_date=slot_instance.slot_date,
-#                                       slot_id__batch_name=slot_instance.batch_name).exists():
-#                 error_msg = f'Duplicate Aadhar number found for the same batch name and slot date.'
-#                 return Response({'message': error_msg}, status=status.HTTP_400_BAD_REQUEST)
-#
-#             if Student.objects.filter(student_email=student_email, slot_id__slot_date=slot_instance.slot_date,
-#                                       slot_id__batch_name=slot_instance.batch_name).exists():
-#                 error_msg = f'Duplicate email found for the same batch name and slot date.'
-#                 return Response({'message': error_msg}, status=status.HTTP_400_BAD_REQUEST)
-#
-#             if Student.objects.filter(student_mobile=student_mobile, slot_id__slot_date=slot_instance.slot_date,
-#                                       slot_id__batch_name=slot_instance.batch_name).exists():
-#                 error_msg = f'Duplicate phone number found for the same batch name and slot date.'
-#                 return Response({'message': error_msg}, status=status.HTTP_400_BAD_REQUEST)
-#
-#         # Save students with the Slot instance
-#         created_students = []
-#         for student_data in students_data:
-#             student_data['slot_id'] = slot_instance  # Pass the Slot instance instead of ID
-#
-#             # Exclude the 'id' field if it's an empty string
-#             if student_data.get('id') == "":
-#                 student_data.pop('id')
-#
-#             student = Student.objects.create(**student_data)
-#             created_students.append(student)
-#             SlotStudentRelation.objects.create(slot=slot_instance, student=student)
-#
-#         # Return created students data
-#         response_data = []
-#         for student in created_students:
-#             student_info = {
-#                 'id': student.id,
-#                 'slot_id': student.slot_id.id,
-#                 'student_name': student.student_name,
-#                 'student_age': student.student_age,
-#                 'student_mobile': student.student_mobile,
-#                 'student_email': student.student_email,
-#                 'student_adhar': student.student_adhar,
-#                 'created_date_time': student.created_date_time,
-#                 'updated_date_time': student.updated_date_time
-#             }
-#             response_data.append(student_info)
-#
-#         return Response({'message': 'Students added successfully', 'students': response_data},
-#                         status=status.HTTP_201_CREATED)
-#
-#     def put(self, request, *args, **kwargs):
-#         slot_id = request.data.get('slot_id')
-#         students_data = request.data.get('student_lists', [])
-#
-#         # Retrieve the Slot instance
-#         try:
-#             slot_instance = Slot.objects.get(id=slot_id)
-#         except Slot.DoesNotExist:
-#             return Response({'message': 'Slot not found'}, status=status.HTTP_404_NOT_FOUND)
-#
-#         # Validate unique mobile numbers, Aadhar numbers, and emails within payload
-#         mobile_numbers = set()
-#         adhar_numbers = set()
-#         emails = set()
-#         for student_data in students_data:
-#             student_mobile = student_data.get('student_mobile')
-#             student_adhar = student_data.get('student_adhar')
-#             student_email = student_data.get('student_email')
-#
-#             if student_mobile in mobile_numbers or student_mobile == "":
-#                 return Response({'message': 'Duplicate or empty mobile numbers found in payload'},
-#                                 status=status.HTTP_400_BAD_REQUEST)
-#             mobile_numbers.add(student_mobile)
-#
-#             if student_adhar in adhar_numbers or student_adhar == "":
-#                 return Response({'message': 'Duplicate or empty Aadhar numbers found in payload'},
-#                                 status=status.HTTP_400_BAD_REQUEST)
-#             adhar_numbers.add(student_adhar)
-#
-#             if student_email in emails or student_email == "":
-#                 return Response({'message': 'Duplicate or empty emails found in payload'},
-#                                 status=status.HTTP_400_BAD_REQUEST)
-#             emails.add(student_email)
-#
-#         # Check uniqueness within the database for the slot date
-#         for student_data in students_data:
-#             student_adhar = student_data.get('student_adhar')
-#             student_email = student_data.get('student_email')
-#             student_mobile = student_data.get('student_mobile')
-#
-#             student_id = student_data.get('id')
-#
-#             # Check if id is empty
-#             if student_id == "":
-#                 # Check if the student details already exist for the same slot date
-#                 if Student.objects.filter(
-#                         Q(student_adhar=student_adhar) | Q(student_email=student_email) | Q(
-#                             student_mobile=student_mobile),
-#                         slot_id__slot_date=slot_instance.slot_date
-#                 ).exists():
-#                     return Response({'message': 'Duplicate student details found for the same slot date'},
-#                                     status=status.HTTP_400_BAD_REQUEST)
-#             else:
-#                 if Student.objects.filter(student_adhar=student_adhar,
-#                                           slot_id__slot_date=slot_instance.slot_date).exclude(
-#                         id=student_id).exists():
-#                     return Response({'message': 'Duplicate Aadhar number found for the same slot date'},
-#                                     status=status.HTTP_400_BAD_REQUEST)
-#
-#                 if Student.objects.filter(student_email=student_email,
-#                                           slot_id__slot_date=slot_instance.slot_date).exclude(
-#                         id=student_id).exists():
-#                     return Response({'message': 'Duplicate email found for the same slot date'},
-#                                     status=status.HTTP_400_BAD_REQUEST)
-#
-#                 if Student.objects.filter(student_mobile=student_mobile,
-#                                           slot_id__slot_date=slot_instance.slot_date).exclude(
-#                     id=student_id).exists():
-#                     return Response({'message': 'Duplicate phone number found for the same slot date'},
-#                                     status=status.HTTP_400_BAD_REQUEST)
-#
-#         # Update existing students and add new students
-#         created_students = []
-#         for student_data in students_data:
-#             student_id = student_data.get('id')
-#             if student_id == "":  # If id is an empty string, create a new student record
-#                 student_data['slot_id'] = slot_instance
-#                 student_data['updated_date_time'] = timezone.now()  # Set updated_date_time for new student
-#                 student_data.pop('id')  # Remove the 'id' field from the data
-#                 student = Student.objects.create(**student_data)
-#                 created_students.append(student)
-#                 # Create SlotStudentRelation for new student
-#                 SlotStudentRelation.objects.create(slot=slot_instance, student=student)
-#             else:
-#                 try:
-#                     student = Student.objects.get(id=student_id, slot_id=slot_instance)
-#                     student.student_name = student_data.get('student_name', student.student_name)
-#                     student.student_age = student_data.get('student_age', student.student_age)
-#                     student.student_mobile = student_data.get('student_mobile', student.student_mobile)
-#                     student.student_email = student_data.get('student_email', student.student_email)
-#                     student.student_adhar = student_data.get('student_adhar', student.student_adhar)
-#                     student.updated_date_time = timezone.now()  # Update updated_date_time automatically
-#                     student.save()
-#                     created_students.append(student)
-#                 except Student.DoesNotExist:
-#                     return Response({'message': f'Student with id {student_id} not found in this slot'},
-#                                     status=status.HTTP_404_NOT_FOUND)
-#
-#         # Return response
-#         response_data = []
-#         for student in created_students:
-#             student_info = {
-#                 'id': student.id,
-#                 'slot_id': student.slot_id.id,
-#                 'student_name': student.student_name,
-#                 'student_age': student.student_age,
-#                 'student_mobile': student.student_mobile,
-#                 'student_email': student.student_email,
-#                 'student_adhar': student.student_adhar,
-#                 'created_date_time': student.created_date_time,
-#                 'updated_date_time': student.updated_date_time
-#             }
-#             response_data.append(student_info)
-#
-#         return Response({'message': 'Students updated successfully', 'students': response_data},
-#                         status=status.HTTP_200_OK)
 
 
 @method_decorator([authorization_required], name='dispatch')
@@ -18013,7 +14674,6 @@ class StudentCreateAPIView(APIView):
         return Response({'message': 'Students updated successfully', 'students': response_data},
                         status=status.HTTP_200_OK)
 
-
     def delete(self, request):
         slot_id = request.query_params.get('slot_id')
         user_id = request.query_params.get('user_id')
@@ -18060,6 +14720,7 @@ class StudentCreateAPIView(APIView):
 
         return Response({'message': 'Students deleted successfully'}, status=status.HTTP_200_OK)
 
+
 class DeletePayeeStudent(APIView):
     def delete(self, request, slot_id, *args, **kwargs):
         # Retrieve and delete the PayeeStudent instance by slot_id
@@ -18070,97 +14731,15 @@ class DeletePayeeStudent(APIView):
         except PayeeStudent.DoesNotExist:
             return Response({'message': 'PayeeStudent not found'}, status=status.HTTP_404_NOT_FOUND)
 
+
 from django.db.models import Q
+
 
 class StudentPagination(PageNumberPagination):
     page_size = 2  # Number of students per page
     page_size_query_param = 'student_page_size'
     max_page_size = 100
 
-# @method_decorator([authorization_required], name='dispatch')
-# class SlotListStudents(APIView):
-#     def get(self, request, user_id):
-#         # Check if the user is a Super_admin
-#         is_super_admin = CustomUser.objects.filter(id=user_id, role_id__role_name="Super_admin").exists()
-#
-#         # If the user is a Super_admin, return all slots
-#         if is_super_admin:
-#             slots = Slot.objects.all()
-#         else:
-#             # Otherwise, return slots created by the user
-#             slots = Slot.objects.filter(user_id=user_id)
-#
-#         # Filter slots by slot_date and batch_name if provided in query parameters
-#         slot_date = request.query_params.get('slot_date')
-#         batch_name = request.query_params.get('batch_name')
-#         payment = request.query_params.get('payment')
-#         page_no = request.query_params.get('page')
-#         page_size = request.query_params.get('page_size')
-#         search = request.query_params.get('search')
-#
-#         if slot_date:
-#             slots = slots.filter(slot_date=slot_date)
-#         if batch_name:
-#             slots = slots.filter(batch_name=batch_name)
-#
-#         if search:
-#             # Search by batch name
-#             slots = slots.filter(batch_name__icontains=search)
-#
-#         # Filter slots that have associated students
-#         slots_with_students = slots.filter(student__isnull=False).distinct()
-#         if payment == 'True' and slot_date:
-#             filtered_slots = []
-#             for slot in slots_with_students:
-#                 students = Student.objects.filter(slot_id=slot.id)
-#                 all_success = all(student.stupayment_status == 'Success' for student in students)
-#                 if not all_success:
-#                     filtered_slots.append(slot)
-#             slots_with_students = filtered_slots
-#
-#         # Serialize the queryset
-#         serializer = SlotStudentSerializer(slots_with_students, many=True)
-#
-#         # Prepare paginated response with student count
-#         paginated_slots = []
-#         for slot_data in serializer.data:
-#             students = slot_data['student_lists']
-#
-#             # Initialize default values for pagination
-#             paginated_student_list = students
-#             total_students_count = len(students)
-#
-#             # Check if page and page_size are provided
-#             if page_no is not None and page_size is not None:
-#                 paginator = Paginator(students, page_size)
-#                 paginated_students = paginator.get_page(page_no)
-#
-#                 # Prepare paginated student list
-#                 paginated_student_list = [student for student in paginated_students]
-#                 total_students_count = paginator.count
-#
-#             # Prepare final data for the slot
-#             paginated_slot_data = {
-#                 'id': slot_data['id'],
-#                 'batch_name': slot_data['batch_name'],
-#                 'slot_date': slot_data['slot_date'],
-#                 'batch_size': slot_data['batch_size'],
-#                 'batch_type': slot_data['batch_type'],
-#                 'user_id': slot_data['user_id'],
-#                 'partner_name': slot_data['partner_name'],
-#                 'partner_mobile': slot_data['partner_mobile'],
-#                 'partner_email': slot_data['partner_email'],
-#                 'created_date_time': slot_data['created_date_time'],
-#                 'updated_date_time': slot_data['updated_date_time'],
-#                 'batch_type_name': slot_data['batch_type_name'],
-#                 'student_lists': paginated_student_list,
-#                 'total_students_count': total_students_count,
-#                 'slot_status': slot_data['slot_status']
-#             }
-#
-#             paginated_slots.append(paginated_slot_data)
-#
-#         return Response(paginated_slots)
 
 class SlotListStudents(APIView):
     def get(self, request, user_id):
@@ -18193,7 +14772,8 @@ class SlotListStudents(APIView):
             # Check if any slots exist for the search term
             if not slots.exists():
                 return Response(
-                    {"message": "No slots found with the exact batch name provided. Please enter the correct batch name"},
+                    {
+                        "message": "No slots found with the exact batch name provided. Please enter the correct batch name"},
                     status=status.HTTP_404_NOT_FOUND
                 )
 
@@ -18234,7 +14814,9 @@ class SlotListStudents(APIView):
             if not filtered_slots:
                 # raise NotFound(
                 #     "No slots found with the exact batch name provided. Please enter the correct batch name.")
-                return Response({'message': 'No slots found with the exact batch name provided. Please enter the correct batch name.'}, status=status.HTTP_404_NOT_FOUND)
+                return Response({
+                                    'message': 'No slots found with the exact batch name provided. Please enter the correct batch name.'},
+                                status=status.HTTP_404_NOT_FOUND)
             slots_with_students = filtered_slots
 
         # Serialize the queryset
@@ -18288,80 +14870,6 @@ class SlotListStudents(APIView):
 
         return Response(paginated_slots)
 
-# class SlotListStudents(APIView):
-#     def get(self, request, user_id):
-#         # Check if the user is a Super_admin
-#         is_super_admin = CustomUser.objects.filter(id=user_id, role_id__role_name="Super_admin").exists()
-#
-#         # If the user is a Super_admin, return all slots
-#         if is_super_admin:
-#             slots = Slot.objects.all()
-#         else:
-#             # Otherwise, return slots created by the user
-#             slots = Slot.objects.filter(user_id=user_id)
-#
-#         # Filter slots by slot_date and batch_name if provided in query parameters
-#         slot_date = request.query_params.get('slot_date')
-#         batch_name = request.query_params.get('batch_name')
-#         payment = request.query_params.get('payment')
-#         page_no = request.query_params.get('page')
-#         page_size = request.query_params.get('page_size')
-#
-#         if slot_date:
-#             slots = slots.filter(slot_date=slot_date)
-#         if batch_name:
-#             slots = slots.filter(batch_name=batch_name)
-#
-#         # Filter slots that have associated students
-#         slots_with_students = slots.filter(student__isnull=False).distinct()
-#         if payment == 'True' and slot_date:
-#             filtered_slots = []
-#             for slot in slots_with_students:
-#                 students = Student.objects.filter(slot_id=slot.id)
-#                 all_success = all(student.stupayment_status == 'Success' for student in students)
-#                 if not all_success:
-#                     filtered_slots.append(slot)
-#             slots_with_students = filtered_slots
-#
-#         # Serialize the queryset
-#         serializer = SlotStudentSerializer(slots_with_students, many=True)
-#
-#         # Prepare paginated response with student count
-#         paginated_slots = []
-#         for slot_data in serializer.data:
-#             students = slot_data['student_lists']
-#             paginator = Paginator(students, page_size)
-#             paginated_students = paginator.get_page(page_no)
-#
-#             # Prepare paginated student list
-#             paginated_student_list = [student for student in paginated_students]
-#
-#             # Count of all students
-#             total_students_count = len(students)
-#
-#             # Prepare final data for the slot
-#             paginated_slot_data = {
-#                 'id': slot_data['id'],
-#                 'batch_name': slot_data['batch_name'],
-#                 'slot_date': slot_data['slot_date'],
-#                 'batch_size': slot_data['batch_size'],
-#                 'batch_type': slot_data['batch_type'],
-#                 'user_id': slot_data['user_id'],
-#                 'partner_name': slot_data['partner_name'],
-#                 'partner_mobile': slot_data['partner_mobile'],
-#                 'partner_email': slot_data['partner_email'],
-#                 'created_date_time': slot_data['created_date_time'],
-#                 'updated_date_time': slot_data['updated_date_time'],
-#                 'batch_type_name': slot_data['batch_type_name'],
-#                 'student_lists': paginated_student_list,
-#                 'total_students_count': total_students_count,
-#                 'slot_status': slot_data['slot_status']
-#             }
-#
-#             paginated_slots.append(paginated_slot_data)
-#
-#         return Response(paginated_slots)
-
 
 @method_decorator([authorization_required], name='dispatch')
 class SlotDetailsAPIView(APIView):
@@ -18397,7 +14905,7 @@ class SlotDetailsAPIView(APIView):
             response_data = {
                 'slot_details': slot_data,
                 'students_details': students_data,
-                'payee_details': payee_data   ###newwwwwwwwwwwww
+                'payee_details': payee_data  ###newwwwwwwwwwwww
             }
 
             return Response(response_data, status=status.HTTP_200_OK)
@@ -18487,7 +14995,7 @@ class SlotSwapAPIView(APIView):
                 id__in=students_slot1_ids).values_list('student_email', flat=True)
             duplicates_in_slot1 = set(emails_slot2).intersection(existing_emails_slot1)
             # duplicates_in_slot1=list(duplicates_in_slot1)
-            print(duplicates_in_slot1,"kkkkkk")
+            print(duplicates_in_slot1, "kkkkkk")
 
             if duplicates_in_slot1:
                 duplicate_emails_str = ','.join(duplicates_in_slot1)
@@ -18789,166 +15297,6 @@ class PaymentLinkStatusAPI(APIView):
             return Response({'message': 'Payment status does not exist'}, status=status.HTTP_404_NOT_FOUND)
 
 
-
-################################################olddd##############################################################3
-#
-# @api_view(['POST'])
-# def generate_payment_links_view(request):
-#     try:
-#         # Get student IDs from request data
-#         student_ids = request.data.get('student_ids', [])
-#
-#         # Retrieve the price for payment link based on batch type
-#         try:
-#             individual_price = PayUrl.objects.get(batch_type__name='Individual').payment_link_price
-#         except PayUrl.DoesNotExist:
-#             return Response({'message': 'Individual PayUrl does not exist.'}, status=status.HTTP_400_BAD_REQUEST)
-#
-#         try:
-#             group_price = PayUrl.objects.get(batch_type__name='Group').payment_link_price
-#         except PayUrl.DoesNotExist:
-#             return Response({'message': 'Group PayUrl does not exist.'}, status=status.HTTP_400_BAD_REQUEST)
-#
-#         # Initialize Razorpay client
-#         client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
-#
-#         # List to store payment link details
-#         payment_links = []
-#
-#         # Iterate over each student ID
-#         for student_id in student_ids:
-#             try:
-#                 # Retrieve student details
-#                 student = Student.objects.get(id=student_id)
-#
-#                 # Determine the payment link price based on batch type
-#                 price = individual_price if student.slot_id.batch_type.name == 'Individual' else group_price
-#
-#                 # Check if payment link already exists and emails match
-#                 if student.testemail and student.testemail == student.student_email and student.stupayment_status == 'Pending':
-#                     # Use existing order ID and payment link
-#                     payment_link = student.payment_url
-#                 else:
-#                     # Create new order ID using Razorpay
-#                     order_data = {
-#                         'amount': price * 100,  # Razorpay accepts amount in paise
-#                         'currency': 'INR',
-#                         'receipt': f'order_{student_id}',
-#                         'payment_capture': 1  # Auto capture payment
-#                     }
-#                     order = client.order.create(data=order_data)
-#
-#                     # Save new order ID in student object
-#                     student.order_id = order['id']
-#
-#                     # Generate new payment link
-#                     # payment_link = f' https://amx-crm-dev.thestorywallcafe.com/#/payment-link?order_id={order["id"]}'
-#                     payment_link = f'{settings.CRM_PORTAL_DOMAIN}/#/payment-link?order_id={order["id"]}'  # Changed line
-#
-#                     # Save the new payment link and other details
-#                     student.payment_url = payment_link
-#                     student.paylinkdate = timezone.now()  # Capture the current datetime
-#                     student.stupayment_status = 'Pending'
-#                     student.testemail = student.student_email  # Update the testemail field
-#
-#                 student.save()
-#
-#                 # Send email to student with payment link
-#                 subject = 'Payment Link for Course'
-#                 message = f"Dear {student.student_name},\n\nHere is your payment link for the course: {payment_link}\n\nRegards,\nAMX"
-#                 send_mail(subject, message, settings.EMAIL_HOST_USER, [student.student_email])
-#
-#                 # Save payment link details in the response list
-#                 payment_links.append({
-#                     'student_id': student_id,
-#                     'order_id': student.order_id,
-#                     'amount': price
-#                 })
-#
-#             except Student.DoesNotExist:
-#                 pass  # Handle the case where the student with given ID doesn't exist
-#
-#         return Response({'message': 'Email for payment sent successfully'},
-#                         status=status.HTTP_200_OK)
-#
-#     except Exception as e:
-#         return Response({'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-#
-#
-# @csrf_exempt
-# @api_view(['GET'])
-# def payment_details_view(request, order_id):
-#     try:
-#         # Retrieve student details based on the order ID
-#         student = Student.objects.filter(order_id=order_id).first()
-#         # payment_status = "Pending"
-#         if student:
-#             student_name = student.student_name
-#             student_id = student.id
-#             student_mobile = student.student_mobile
-#             student_email = student.student_email
-#             stupayment_status = student.stupayment_status
-#
-#             # Fetch the associated PayUrl instance
-#             pay_url = PayUrl.objects.filter(batch_type=student.slot_id.batch_type).first()
-#             if pay_url:
-#                 amount = pay_url.payment_link_price
-#             else:
-#                 amount = 0  # Set a default value or handle the case when PayUrl is not found
-#
-#             return JsonResponse({'order_id': order_id, 'student_name': student_name, 'amount': amount,
-#                                  "payment_status": stupayment_status, "student_id": student_id,
-#                                  "student_mobile": student_mobile, "student_email": student_email})
-#         else:
-#             return JsonResponse({'message': 'Student not found for the given order ID'},
-#                                 status=status.HTTP_404_NOT_FOUND)
-#
-#     except Exception as e:
-#         return JsonResponse({'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-#
-#
-# class CheckPaymentStatusView(APIView):
-#     def post(self, request, student_id):
-#         try:
-#             # Get payment details from the request data
-#             razorpay_payment_id = request.data.get('razorpay_payment_id')
-#             razorpay_order_id = request.data.get('razorpay_order_id')
-#             razorpay_signature = request.data.get('razorpay_signature')
-#
-#             # Initialize Razorpay client
-#             client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
-#
-#             # Verify the payment signature
-#             params_dict = {
-#                 'razorpay_order_id': razorpay_order_id,
-#                 'razorpay_payment_id': razorpay_payment_id,
-#                 'razorpay_signature': razorpay_signature
-#             }
-#             client.utility.verify_payment_signature(params_dict)
-#
-#             # Fetch payment details
-#             payment = client.payment.fetch(razorpay_payment_id)
-#
-#             # Extract payment status
-#             payment_status = payment.get('status')
-#
-#             # Update the student's payment status in the database
-#             student = Student.objects.get(id=student_id)
-#             student.razorpay_payment_id = razorpay_payment_id
-#             student.razorpay_signature = razorpay_signature
-#             student.stupayment_status = 'Success'
-#             student.save()
-#
-#             return Response({'payment_status': payment_status, 'student_id': student_id})
-#
-#         except Exception as e:
-#             return Response({'message': str(e)}, status=400)
-#
-#
-# from dateutil import parser as date_parser
-#########olddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-
-
 @api_view(['POST'])
 def generate_payment_links_view(request):
     try:
@@ -19043,8 +15391,8 @@ def generate_payment_links_view(request):
                     if student.stupayment_status == 'Success':
                         # If the payment is already successful, throw an error message
                         return Response({
-                                            'message': f'Payment has already been made for student ID {student_id}. No new link will be generated.'},
-                                        status=status.HTTP_400_BAD_REQUEST)
+                            'message': f'Payment has already been made for student ID {student_id}. No new link will be generated.'},
+                            status=status.HTTP_400_BAD_REQUEST)
 
                     # Check if payment link already exists and emails match
                     if student.testemail == student.student_email and student.stupayment_status == 'Pending':
@@ -19226,293 +15574,8 @@ class CheckPaymentStatusView(APIView):
             return Response({'message': str(e)}, status=400)
 
 
-
-
-
-# @method_decorator([authorization_required], name='dispatch')
-# class FilterData(APIView):
-#     def get(self, request, user_id):
-#         try:
-#             user = get_object_or_404(CustomUser, id=user_id)
-#
-#             if user.role_id.role_name == 'Super_admin':
-#                 partner_id = request.query_params.get('partner_id')
-#                 slot_date = request.query_params.get('slot_date')
-#                 batchtype_id = request.query_params.get('batchtype_id')
-#                 batch_name = request.query_params.get('batch_name')
-#                 search_query = request.query_params.get('search')
-#
-#                 slots = Slot.objects.all()
-#
-#                 if partner_id and slot_date and batchtype_id and batch_name and search_query:
-#                     slots = slots.filter(user_id=partner_id, slot_date=date_parser.parse(slot_date).date(),
-#                                          batch_type_id=batchtype_id, batch_name=batch_name)
-#
-#                     slots = slots.exclude(slotstudentrelation__isnull=True)
-#
-#                     slot_data = []
-#                     for slot in slots:
-#                         pay_url = PayUrl.objects.filter(batch_type_id=slot.batch_type_id).first()
-#                         payment_link_price = pay_url.payment_link_price if pay_url else None
-#                         # Filter students based on search query
-#                         students = Student.objects.filter(slot_id=slot.id, student_name__istartswith=search_query)
-#                         student_details = []
-#                         for student in students:
-#                             student_details.append({
-#                                 'id': student.id,
-#                                 'student_name': student.student_name,
-#                                 'student_age': student.student_age,
-#                                 'student_mobile': student.student_mobile,
-#                                 'student_email': student.student_email,
-#                                 'student_adhar': student.student_adhar,
-#                                 'created_date_time': student.created_date_time,
-#                                 'updated_date_time': student.updated_date_time,
-#                                 'payment_url': student.payment_url,
-#                                 'order_id': student.order_id,
-#                                 'razorpay_signature': student.razorpay_signature,
-#                                 'stupayment_status': student.stupayment_status,
-#                                 'paylinkdate': student.paylinkdate,
-#                                 'payment_link_price': payment_link_price,
-#                                 'razorpay_payment_id': student.razorpay_payment_id,
-#                             })
-#
-#                         if student_details:
-#                             batch_type_name = slot.batch_type.name
-#                             userid = slot.user_id.first_name
-#
-#                             slot_data.append({
-#                                 'slot_id': slot.id,
-#                                 'slot_name': slot.batch_name,
-#                                 'slot_date': slot.slot_date,
-#                                 'batch_size': slot.batch_size,
-#                                 'batch_type': batch_type_name,
-#                                 'user_id': userid,
-#                                 'created_date_time': slot.created_date_time,
-#                                 'updated_date_time': slot.updated_date_time,
-#                                 'slot_status': slot.slot_status,
-#                                 'students': student_details
-#                                 # Include all students whose names start with the search query
-#                             })
-#
-#                     return Response({'slots': slot_data})
-#
-#                 elif partner_id and slot_date and batchtype_id and batch_name:
-#                     slots = slots.filter(user_id=partner_id, slot_date=date_parser.parse(slot_date).date(),
-#                                          batch_type_id=batchtype_id, batch_name=batch_name)
-#
-#                     slots = slots.exclude(slotstudentrelation__isnull=True)
-#                     slot_data = []
-#                     for slot in slots:
-#                         pay_url = PayUrl.objects.filter(batch_type_id=slot.batch_type_id).first()
-#                         payment_link_price = pay_url.payment_link_price if pay_url else None
-#                         students = Student.objects.filter(slot_id=slot)
-#                         student_details = [{
-#                             'id': student.id,
-#                             'student_name': student.student_name,
-#                             'student_age': student.student_age,
-#                             'student_mobile': student.student_mobile,
-#                             'student_email': student.student_email,
-#                             'student_adhar': student.student_adhar,
-#                             'created_date_time': student.created_date_time,
-#                             'updated_date_time': student.updated_date_time,
-#                             'payment_url': student.payment_url,
-#                             'order_id': student.order_id,
-#                             'razorpay_signature': student.razorpay_signature,
-#                             'stupayment_status': student.stupayment_status,
-#                             'paylinkdate': student.paylinkdate,
-#                             'payment_link_price': payment_link_price,
-#                             'razorpay_payment_id': student.razorpay_payment_id,
-#                         } for student in students]
-#                         batch_type_name = slot.batch_type.name
-#                         userid = slot.user_id.first_name
-#
-#                         slot_data.append({
-#                             'slot_id': slot.id,
-#                             'slot_name': slot.batch_name,
-#                             'slot_date': slot.slot_date,
-#                             'batch_size': slot.batch_size,
-#                             'batch_type': batch_type_name,
-#                             'user_id': userid,
-#                             'created_date_time': slot.created_date_time,
-#                             'updated_date_time': slot.updated_date_time,
-#                             'slot_status': slot.slot_status,
-#                             'students': student_details
-#                         })
-#
-#                     return Response({'slots': slot_data})
-#
-#                 # If partner_id, slot_date, and batchtype_id are provided
-#                 elif partner_id and slot_date and batchtype_id:
-#                     # Filter slots by partner_id, slot_date, and batchtype_id
-#                     slots = slots.filter(user_id=partner_id, slot_date=date_parser.parse(slot_date).date(),
-#                                          batch_type_id=batchtype_id)
-#                     slots = slots.exclude(slotstudentrelation__isnull=True)
-#
-#                     # Get distinct batch names related to the provided parameters
-#                     batch_names = slots.values_list('batch_name', flat=True).distinct()
-#
-#                     batch_names_list = [{'batch_names': name} for name in batch_names]
-#
-#                     return Response(batch_names_list)
-#
-#                 elif partner_id and slot_date:
-#                     # Filter slots by partner_id and slot_date
-#                     slots = slots.filter(user_id=partner_id, slot_date=date_parser.parse(slot_date).date())
-#
-#                     slots = slots.exclude(slotstudentrelation__isnull=True)
-#
-#                     # Get distinct batch names related to the provided parameters
-#                     batch_names = slots.values_list('batch_name', flat=True).distinct()
-#
-#                     batch_names_list = [{'batch_names': name} for name in batch_names]
-#
-#                     return Response(batch_names_list)
-#
-#                 elif partner_id:
-#                     slots = slots.filter(user_id=partner_id)
-#
-#                     # Filter out slots that don't have any associated students
-#                     slots = slots.exclude(slotstudentrelation__isnull=True)
-#
-#                     # Get distinct slot dates created by the partner
-#                     slot_dates = slots.values_list('slot_date', flat=True).distinct()
-#
-#                     # Serialize slot dates
-#                     slot_dates_list = [{'slot_date': slot_date.strftime('%Y-%m-%d')} for slot_date in slot_dates]
-#
-#                     return Response(slot_dates_list)
-#                 else:
-#                     raise Http404("Missing parameters")
-#
-#             elif user.role_id.role_name == 'Partner':
-#                 slot_date = request.query_params.get('slot_date')
-#                 batchtype_id = request.query_params.get('batchtype_id')
-#                 batch_name = request.query_params.get('batch_name')
-#                 search_query = request.query_params.get('search')
-#                 batch_names = []
-#
-#                 slots = Slot.objects.filter(user_id=user_id)
-#
-#                 if slot_date and batchtype_id and batch_name and search_query:
-#                     slots = slots.filter(slot_date=date_parser.parse(slot_date).date(),
-#                                          batch_type_id=batchtype_id, batch_name=batch_name)
-#                     slots = slots.exclude(slotstudentrelation__isnull=True)
-#
-#                     slot_data = []
-#                     for slot in slots:
-#                         pay_url = PayUrl.objects.filter(batch_type_id=slot.batch_type_id).first()
-#                         payment_link_price = pay_url.payment_link_price if pay_url else None
-#                         students = Student.objects.filter(slot_id=slot.id, student_name__istartswith=search_query)
-#                         student_details = []
-#                         for student in students:
-#                             student_details.append({
-#                                 'id': student.id,
-#                                 'student_name': student.student_name,
-#                                 'student_age': student.student_age,
-#                                 'student_mobile': student.student_mobile,
-#                                 'student_email': student.student_email,
-#                                 'student_adhar': student.student_adhar,
-#                                 'created_date_time': student.created_date_time,
-#                                 'updated_date_time': student.updated_date_time,
-#                                 'payment_url': student.payment_url,
-#                                 'order_id': student.order_id,
-#                                 'razorpay_signature': student.razorpay_signature,
-#                                 'stupayment_status': student.stupayment_status,
-#                                 'paylinkdate': student.paylinkdate,
-#                                 'payment_link_price': payment_link_price,
-#                                 'razorpay_payment_id': student.razorpay_payment_id,
-#                             })
-#
-#                         if student_details:
-#                             slot_data.append({
-#                                 'slot_id': slot.id,
-#                                 'slot_name': slot.batch_name,
-#                                 'slot_date': slot.slot_date,
-#                                 'batch_size': slot.batch_size,
-#                                 'created_date_time': slot.created_date_time,
-#                                 'updated_date_time': slot.updated_date_time,
-#                                 'slot_status': slot.slot_status,
-#                                 'students': student_details
-#                             })
-#
-#                     return Response({'slots': slot_data})
-#
-#                 elif slot_date and batchtype_id and batch_name:
-#                     # Filter slots by slot_date, batch_type_id, batch_name, and user_id (partner's ID)
-#                     slots = Slot.objects.filter(slot_date=date_parser.parse(slot_date).date(),
-#                                                 batch_type_id=batchtype_id, batch_name=batch_name, user_id=user_id)
-#                     slots = slots.exclude(slotstudentrelation__isnull=True)
-#
-#                     slot_data = []
-#                     for slot in slots:
-#                         pay_url = PayUrl.objects.filter(batch_type_id=slot.batch_type_id).first()
-#                         payment_link_price = pay_url.payment_link_price if pay_url else None
-#                         students = Student.objects.filter(slot_id=slot)
-#                         student_details = [{
-#                             'id': student.id,
-#                             'student_name': student.student_name,
-#                             'student_age': student.student_age,
-#                             'student_mobile': student.student_mobile,
-#                             'student_email': student.student_email,
-#                             'student_adhar': student.student_adhar,
-#                             'created_date_time': student.created_date_time,
-#                             'updated_date_time': student.updated_date_time,
-#                             'payment_url': student.payment_url,
-#                             'order_id': student.order_id,
-#                             'razorpay_signature': student.razorpay_signature,
-#                             'stupayment_status': student.stupayment_status,
-#                             'paylinkdate': student.paylinkdate,
-#                             'payment_link_price': payment_link_price,
-#                             'razorpay_payment_id': student.razorpay_payment_id,
-#                         } for student in students]
-#                         batch_type_name = slot.batch_type.name
-#                         userid = slot.user_id.first_name
-#
-#                         slot_data.append({
-#                             'slot_id': slot.id,
-#                             'slot_name': slot.batch_name,
-#                             'slot_date': slot.slot_date,
-#                             'batch_size': slot.batch_size,
-#                             'batch_type': batch_type_name,
-#                             'user_id': userid,
-#                             'created_date_time': slot.created_date_time,
-#                             'updated_date_time': slot.updated_date_time,
-#                             'slot_status': slot.slot_status,
-#                             'students': student_details
-#                         })
-#
-#                     return Response({'slots': slot_data})
-#
-#                 elif slot_date and batchtype_id:
-#                     # Filter slots by slot_date, batch_type_id, and user_id (partner's ID)
-#                     slots = Slot.objects.filter(slot_date=date_parser.parse(slot_date).date(),
-#                                                 batch_type_id=batchtype_id, user_id=user_id)
-#                     slots = slots.exclude(slotstudentrelation__isnull=True)
-#
-#                     # Get distinct batch names related to the provided slot date and batch type
-#                     batch_names = slots.values_list('batch_name', flat=True).distinct()
-#
-#                     batch_names_list = [{'batch_names': name} for name in batch_names]
-#
-#                     return Response(batch_names_list)
-#
-#                 elif slot_date:
-#                     # Filter slots by slot_date and user_id (partner's ID)
-#                     slots = Slot.objects.filter(slot_date=date_parser.parse(slot_date).date(), user_id=user_id)
-#                     slots = slots.exclude(slotstudentrelation__isnull=True)
-#
-#                     # Get distinct batch names related to the provided slot date
-#                     batch_names = slots.values_list('batch_name', flat=True).distinct()
-#
-#                     batch_names_list = [{'batch_names': name} for name in batch_names]
-#
-#                     return Response(batch_names_list)
-#             else:
-#                 return Response({'message': 'Invalid user role'}, status=status.HTTP_400_BAD_REQUEST)
-#
-#         except Exception as e:
-#             return Response({'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 from dateutil import parser as date_parser
+
 
 @method_decorator([authorization_required], name='dispatch')
 class FilterData(APIView):
@@ -19714,13 +15777,13 @@ class FilterData(APIView):
 
                 elif partner_id and batch_search:
                     # slots = slots.filter(user_id=partner_id,batch_name__icontains=batch_search)
-                    slots = slots.filter(user_id=partner_id,batch_name__iexact=batch_search)
+                    slots = slots.filter(user_id=partner_id, batch_name__iexact=batch_search)
                     slots = slots.exclude(slotstudentrelation__isnull=True)
                     # Check if no slots were found with the provided batch name
                     if not slots.exists():
                         return Response({
-                                            'message': 'No slots found with the exact batch name provided. Please enter the correct batch name.'},
-                                        status=status.HTTP_404_NOT_FOUND)
+                            'message': 'No slots found with the exact batch name provided. Please enter the correct batch name.'},
+                            status=status.HTTP_404_NOT_FOUND)
                     slot_data = []
                     for slot in slots:
                         #######new code of payee ############
@@ -19876,13 +15939,13 @@ class FilterData(APIView):
                                 'slot_date': slot.slot_date,
                                 'end_date': slot.end_date,
                                 'batch_size': slot.batch_size,
-                                'batch_type':slot.batch_type.name,
+                                'batch_type': slot.batch_type.name,
                                 'created_date_time': slot.created_date_time,
                                 'updated_date_time': slot.updated_date_time,
                                 'slot_status': slot.slot_status,
                                 'students': student_details,
                                 'total_students_count': paginator.count,
-                                'payee_details': payee_serializer.data ### newwww
+                                'payee_details': payee_serializer.data  ### newwww
                                 # 'has_next': paginated_students.has_next(),
                                 # 'has_previous': paginated_students.has_previous(),
                                 # 'page_number': paginated_students.number,
@@ -19960,7 +16023,7 @@ class FilterData(APIView):
                             'slot_status': slot.slot_status,
                             'students': student_details,
                             'total_students_count': paginator.count,
-                            'payee_details': payee_serializer.data ### newwww ####
+                            'payee_details': payee_serializer.data  ### newwww ####
                             # 'has_next': paginated_students.has_next(),
                             # 'has_previous': paginated_students.has_previous(),
                             # 'page_number': paginated_students.number,
@@ -20070,110 +16133,12 @@ class FilterData(APIView):
         except Exception as e:
             return Response({'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
 from django.db.models.functions import ExtractMonth
 from calendar import monthrange
-import calendar
-import datetime
 
 
 @method_decorator([authorization_required], name='dispatch')
-# class getcalendarAPI(APIView):
-#     def get(self, request):
-#         # Get the user_id and date from query parameters
-#         user_id = request.query_params.get('user_id')
-#         date_param = request.query_params.get('date')
-#
-#         # Check if user_id is provided
-#         if user_id:
-#             # Fetch the user's role ID based on the user ID
-#             try:
-#                 role_id = CustomUser.objects.get(id=user_id).role_id_id
-#             except CustomUser.DoesNotExist:
-#                 return JsonResponse({'error': 'User not found'}, status=404)
-#
-#             # Check if the user has the role 'Partner'
-#             if role_id and Role.objects.filter(id=role_id, role_name='Partner').exists():
-#                 # Check if date is also provided
-#                 if date_param:
-#                     # Filter slots based on date and user_id
-#                     slots = Slot.objects.filter(slot_date=date_param, user_id=user_id)
-#
-#                     # Check if any slots are found
-#                     if slots.exists():
-#                         # Prepare the response data with full details
-#                         slot_values = slots.values('id', 'batch_name', 'batch_size', 'batch_type_id',
-#                                                    'batch_type__name', 'slot_date', 'user_id')
-#
-#                         # Add 'pay' key to each slot
-#                         slot_values_with_pay = []
-#                         for slot in slot_values:
-#                             students = Student.objects.filter(slot_id=slot['id'])
-#                             pay_status = students.filter(stupayment_status='Success').exists()
-#                             slot_with_pay = dict(slot, pay=pay_status)
-#                             slot_values_with_pay.append(slot_with_pay)
-#
-#                         return JsonResponse(slot_values_with_pay, safe=False)
-#                     else:
-#                         return JsonResponse({'error': 'No data found for the given date and user ID'}, status=404)
-#
-#                 else:
-#                     # Filter slots based on user_id and get the count per date
-#                     # slots_count_per_date = Slot.objects.filter(user_id=user_id).values('slot_date').annotate(
-#                     #     total=Count('id'))
-#                     #
-#                     # # Filter slots where title is greater than 1
-#                     # response_data = [
-#                     #     {'title': str(slot_count['total']), 'date': slot_count['slot_date'].strftime("%Y-%m-%d")} for
-#                     #     slot_count in slots_count_per_date if slot_count['total'] > 1]
-#                     # return JsonResponse(response_data, safe=False)
-#                     slots_count_per_date = Slot.objects.filter(user_id=user_id).values('slot_date').annotate(
-#                         total=Count('id'))
-#
-#                     # Create the response_data list using list comprehension
-#                     response_data = [
-#                         {'title': str(slot_count['total']), 'date': slot_count['slot_date'].strftime("%Y-%m-%d")}
-#                         for slot_count in slots_count_per_date]
-#                     return JsonResponse(response_data, safe=False)
-#             else:
-#                 # User does not have the role 'Partner', return slots with limited details
-#                 if not date_param:
-#                     slots = Slot.objects.all()
-#
-#                     # Calculate the total count per date
-#                     slots_count_per_date = Slot.objects.all().values('slot_date').annotate(total=models.Count('id'))
-#
-#                     # Create the response_data list using list comprehension
-#                     response_data = [
-#                         {'title': str(slot_count['total']), 'date': slot_count['slot_date'].strftime("%Y-%m-%d")}
-#                         for slot_count in slots_count_per_date]
-#
-#                     return JsonResponse(response_data, safe=False)
-#                 if date_param:
-#                     # Filter slots based on date
-#                     slots = Slot.objects.filter(slot_date=date_param)
-#
-#                     # Check if any slots are found
-#                     if slots.exists():
-#                         # Prepare the response data with full details
-#                         slot_values = slots.values('id', 'batch_name', 'batch_size', 'batch_type_id',
-#                                                    'batch_type__name', 'slot_date', 'user_id')
-#
-#                         # Add 'pay' key to each slot
-#                         slot_values_with_pay = []
-#                         for slot in slot_values:
-#                             students = Student.objects.filter(slot_id=slot['id'])
-#                             pay_status = students.filter(stupayment_status='Success').exists()
-#                             slot_with_pay = dict(slot, pay=pay_status)
-#                             slot_values_with_pay.append(slot_with_pay)
-#
-#                         return JsonResponse(slot_values_with_pay, safe=False)
-#                     else:
-#                         return JsonResponse({'error': 'No data found for the given date'}, status=404)
-#
-#         else:
-#             return JsonResponse({'error': 'User ID parameter is required'}, status=400)
-
-
 class getcalendarAPI(APIView):
     def get(self, request):
         # Get the user_id and date from query parameters
@@ -20281,80 +16246,6 @@ class getcalendarAPI(APIView):
 
         else:
             return JsonResponse({'error': 'User ID parameter is required'}, status=400)
-
-# class getcalendarAPI(APIView):
-#     def get(self, request):
-#         # Get the user_id and date from query parameters
-#         user_id = request.query_params.get('user_id')
-#         date_param = request.query_params.get('date')
-#
-#         # Check if user_id is provided
-#         if user_id:
-#             # Fetch the user's role ID based on the user ID
-#             try:
-#                 role_id = CustomUser.objects.get(id=user_id).role_id_id
-#                 print('role_id--------------,,,,.,.', role_id)
-#             except CustomUser.DoesNotExist:
-#                 return JsonResponse({'error': 'User not found'}, status=404)
-#
-#             # Check if the user has the role 'Partner'
-#             if role_id and Role.objects.filter(id=role_id, role_name='Partner').exists():
-#                 # Check if date is also provided
-#                 if date_param:
-#                     # Filter slots based on date and user_id
-#                     slots = Slot.objects.filter(slot_date=date_param, user_id=user_id)
-#
-#                     # Check if any slots are found
-#                     if slots.exists():
-#                         # Prepare the response data with full details
-#                         slot_values = slots.values('id', 'batch_name', 'batch_size', 'batch_type_id',
-#                                                    'batch_type__name', 'slot_date', 'user_id')
-#                         return JsonResponse(list(slot_values), safe=False)
-#                     else:
-#                         return JsonResponse({'error': 'No data found for the given date and user ID'}, status=404)
-#
-#                 else:
-#                     # Filter slots based on user_id and get the count per date
-#                     slots_count_per_date = Slot.objects.filter(user_id=user_id).values('slot_date').annotate(
-#                         total=Count('id'))
-#
-#                     # Filter slots where title is greater than 1
-#                     response_data = [
-#                         {'title': str(slot_count['total']), 'date': slot_count['slot_date'].strftime("%Y-%m-%d")} for
-#                         slot_count in slots_count_per_date if slot_count['total'] > 1]
-#                     print('response_data--------------->>>>>>>>>>>>', response_data)
-#                     return JsonResponse(response_data, safe=False)
-#             else:
-#                 # User does not have the role 'Partner', return slots with limited details
-#                 if not date_param:
-#                     slots = Slot.objects.all()
-#
-#                     # Calculate the total count per date
-#                     slots_count_per_date = Slot.objects.all().values('slot_date').annotate(total=models.Count('id'))
-#
-#                     # Create the response_data list using list comprehension
-#                     response_data = [
-#                         {'title': str(slot_count['total']), 'date': slot_count['slot_date'].strftime("%Y-%m-%d")}
-#                         for slot_count in slots_count_per_date]
-#
-#                     return JsonResponse(response_data, safe=False)
-#                 if date_param:
-#                     # Filter slots based on date and user_id
-#                     slots = Slot.objects.filter(slot_date=date_param)
-#
-#                     # Check if any slots are found
-#                     if slots.exists():
-#                         # Prepare the response data with full details
-#                         slot_values = slots.values('id', 'batch_name', 'batch_size', 'batch_type_id',
-#                                                    'batch_type__name', 'slot_date', 'user_id')
-#                         return JsonResponse(list(slot_values), safe=False)
-#                 else:
-#                     slots_count_per_date = Slot.objects.filter(user_id=user_id).values('slot_date').annotate(
-#                         total=Count('id'))
-#                     return JsonResponse(list(slot_values), safe=False)
-#
-#         else:
-#             return JsonResponse({'error': 'User ID parameter is required'}, status=400)
 
 
 @method_decorator([authorization_required], name='dispatch')
@@ -21047,27 +16938,6 @@ class DeleteInvoice(APIView):
         return Response({'message': 'Invoice not found.'}, status=status.HTTP_404_NOT_FOUND)
 
 
-from datetime import datetime
-from django.utils.dateparse import parse_date
-
-from django.db.models.functions import TruncDate
-from django.db.models import Count, Sum
-import datetime
-from datetime import datetime
-from django.utils.dateparse import parse_date
-
-
-# @method_decorator([authorization_required], name='dispatch')
-from django.db.models.functions import TruncMonth
-from datetime import datetime
-
-from datetime import datetime, timedelta
-from django.db.models import Count
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from .models import CustomUser, Slot
-
-
 class SlotFilterAPIView(APIView):
     def get(self, request):
         role = request.query_params.get('role_name')
@@ -21410,7 +17280,8 @@ class SlotFilterAPIView(APIView):
                     # Annotate and group by month
                     individual_slot_counts = individual_slots.values('slot_date__month').annotate(
                         count=Count('slot_date')).order_by('slot_date__month')
-                    group_slot_counts = group_slots.values('slot_date__month').annotate(count=Count('slot_date')).order_by(
+                    group_slot_counts = group_slots.values('slot_date__month').annotate(
+                        count=Count('slot_date')).order_by(
                         'slot_date__month')
                     # Create dictionaries with month numbers and their counts
                     individual_slot_dict = {slot['slot_date__month']: slot['count'] for slot in individual_slot_counts}
@@ -21449,129 +17320,6 @@ class SlotFilterAPIView(APIView):
         else:
             return Response({'message': 'Invalid role'}, status=400)
 
-
-###sheetal's code
-# class SlotFilterAPIView(APIView):
-#     def get(self, request):
-#         role = request.query_params.get('role_name')
-#         user_id = request.query_params.get('user_id')
-#         start_date_str = request.query_params.get('start_time')
-#         end_date_str = request.query_params.get('end_time')
-#         partner_id = request.query_params.get('partner_id')
-#
-#         if not role or not user_id:
-#             return Response({'message': 'Role and user_id are required'}, status=400)
-#
-#         try:
-#             user_id = int(user_id)
-#         except ValueError:
-#             return Response({'message': 'Invalid user_id format'}, status=400)
-#
-#         # Check if the user exists
-#         try:
-#             user = CustomUser.objects.get(id=user_id)
-#         except CustomUser.DoesNotExist:
-#             return Response({'message': 'User does not exist'}, status=404)
-#
-#         # Parse the start_date and end_date if provided, otherwise use default range
-#         current_date = timezone.now().date()
-#         if start_date_str and end_date_str:
-#             try:
-#                 start_date = datetime.strptime(start_date_str, "%d-%m-%Y").date()
-#                 end_date = datetime.strptime(end_date_str, "%d-%m-%Y").date()
-#             except ValueError:
-#                 return Response({'message': 'Invalid date format. Use DD-MM-YYYY'}, status=400)
-#         else:
-#             start_date = current_date + timedelta(days=0)
-#             end_date = current_date + timedelta(days=9)
-#
-#         if role == 'Partner' and user.role_id.role_name == 'Super_admin' and partner_id:
-#             try:
-#                 partner_id = int(partner_id)
-#             except ValueError:
-#                 return Response({'message': 'Invalid partner_id format'}, status=400)
-#
-#             # Filter slots by partner_id and date range
-#             slots = Slot.objects.filter(
-#                 user_id=partner_id,
-#                 slot_date__range=[start_date, end_date]
-#             )
-#
-#         elif role == 'Partner':
-#             # Filter slots by user_id and date range for Partner role
-#             slots = Slot.objects.filter(
-#                 user_id=user_id,
-#                 slot_date__range=[start_date, end_date]
-#             )
-#
-#         elif role == 'Super_admin':
-#             # Check if the user is actually a Super Admin
-#             if user.role_id.role_name != 'Super_admin':
-#                 return Response({'message': 'User is not a Super_admin'}, status=403)
-#
-#             # Get the Role object for Partner
-#             try:
-#                 partner_role = Role.objects.get(role_name='Partner')
-#             except Role.DoesNotExist:
-#                 return Response({'message': 'Partner role does not exist'}, status=404)
-#
-#             # Get all partner users
-#             partners = CustomUser.objects.filter(role_id=partner_role)
-#
-#             # Filter slots by date range for all partners
-#             slots = Slot.objects.filter(
-#                 user_id__in=partners,
-#                 slot_date__range=[start_date, end_date]
-#             )
-#
-#         else:
-#             return Response({'message': 'Invalid role'}, status=400)
-#
-#         # Separate slots by batch types
-#         individual_slots = slots.filter(batch_type__name='Individual')
-#         group_slots = slots.filter(batch_type__name='Group')
-#
-#         # Annotate and group by slot_date
-#         individual_slot_counts = individual_slots.values('slot_date').annotate(count=Count('slot_date')).order_by('-slot_date')
-#         group_slot_counts = group_slots.values('slot_date').annotate(count=Count('slot_date')).order_by('-slot_date')
-#
-#         # Create dictionaries with dates and their counts
-#         individual_slot_dict = {slot['slot_date']: slot['count'] for slot in individual_slot_counts}
-#         group_slot_dict = {slot['slot_date']: slot['count'] for slot in group_slot_counts}
-#
-#         # Generate the list of dates within the specified range
-#         all_dates = [start_date + timedelta(days=i) for i in range((end_date - start_date).days + 1)]
-#
-#         # Format the response including dates with zero count for both batch types
-#         individual_slots_data = [
-#             {
-#                 'month': date.strftime("%d-%m-%Y"),
-#                 'count': individual_slot_dict.get(date, 0)
-#             }
-#             for date in all_dates
-#         ]
-#
-#         group_slots_data = [
-#             {
-#                 'month': date.strftime("%d-%m-%Y"),
-#                 'count': group_slot_dict.get(date, 0)
-#             }
-#             for date in all_dates
-#         ]
-#
-#         response_data = {
-#             'student_training': [
-#                 {
-#                     'slots': individual_slots_data,
-#                     'label': 'Individual Slots'
-#                 },
-#                 {
-#                     'slots': group_slots_data,
-#                     'label': 'Group Slots'
-#                 }
-#             ]
-#         }
-#         return Response(response_data)
 
 @method_decorator([authorization_required], name='dispatch')
 class CustomersByRoleView(APIView):
@@ -21632,134 +17380,8 @@ class PurchasedDroneCategoriesView(APIView):
 
         return Response({"message": "Invalid role"}, status=status.HTTP_400_BAD_REQUEST)
 
+
 from dateutil.relativedelta import relativedelta
-
-# class GetDroneOrdersGraph(APIView):
-#     def get(self, request):
-#         query_params = request.query_params
-#         filters = Q()
-#
-#         user_id = query_params.get('user_id')
-#         role_name = query_params.get('role_name')
-#         drone_model_str = query_params.get('drone_model')
-#         start_time_str = query_params.get('start_time')
-#         end_time_str = query_params.get('end_time')
-#         partner_id = query_params.get('partner_id')
-#
-#         current_year = datetime.now().year
-#
-#         if start_time_str and end_time_str:
-#             start_time = datetime.strptime(start_time_str, '%d-%m-%Y').date()
-#             end_time = datetime.strptime(end_time_str, '%d-%m-%Y').date()
-#         else:
-#             start_time = datetime(current_year, 1, 1).date()
-#             end_time = datetime(current_year, 12, 31).date()
-#
-#         filters &= Q(created_date_time__date__gte=start_time, created_date_time__date__lte=end_time)
-#
-#         # Adjust filters based on role_name and partner_id
-#         if role_name == "Partner" and user_id:
-#             filters &= Q(user_id=user_id)
-#             label = "Purchased Drones"
-#         elif role_name == "Super_admin":
-#             label = 'Drone Sales'
-#         else:
-#             label = 'Drone Sales'
-#             filters &= Q(user_id=user_id)
-#
-#         purchased_drones_graph = []
-#         drone_model_ids = [int(model_id) for model_id in drone_model_str.split(',')] if drone_model_str else []
-#
-#         purchased_drones_count = 0
-#
-#         for model_id in drone_model_ids or [None]:
-#             model_filters = filters
-#
-#             if model_id:
-#                 drone_category = DroneCategory.objects.get(id=model_id)
-#                 label = drone_category.category_name
-#                 model_filters = filters & Q(drone_id__drone_category__id=model_id)
-#
-#             graph_data = []
-#             if start_time_str and end_time_str:
-#                 for single_date in (start_time + timedelta(n) for n in range((end_time - start_time).days + 1)):
-#                     order_filter = model_filters & Q(created_date_time__date=single_date,
-#                                                      order_status__status_name='Shipped')
-#                     count = Order.objects.filter(order_filter).aggregate(total_quantity=Sum('quantity'))['total_quantity'] or 0
-#                     graph_data.append({'date': single_date.strftime('%d-%m-%Y'), 'count': count})
-#                     purchased_drones_count += count
-#             else:
-#                 for month in range(1, 13):
-#                     month_start = datetime(current_year, month, 1)
-#                     month_end = month_start.replace(day=calendar.monthrange(current_year, month)[1])
-#                     order_filter = model_filters & Q(created_date_time__date__gte=month_start,
-#                                                      created_date_time__date__lte=month_end,
-#                                                      order_status__status_name='Shipped')
-#                     count = Order.objects.filter(order_filter).aggregate(total_quantity=Sum('quantity'))['total_quantity'] or 0
-#                     graph_data.append({'date': calendar.month_name[month], 'count': count})
-#                     purchased_drones_count += count
-#
-#             purchased_drones_graph.append({'label': label, 'Purchased_drones': graph_data})
-#
-#         # Billing Graph
-#         billing_graph_data = []
-#         total_billing = 0
-#
-#         completed_status = InvoiceStatus.objects.get(invoice_status_name='Completed')
-#         add_items = AddItem.objects.filter(created_date_time__date__gte=start_time,
-#                                            created_date_time__date__lte=end_time,
-#                                            invoice_status=completed_status)
-#
-#         # Adjust add_items based on role
-#         if role_name == "Partner" and partner_id:
-#             add_items = add_items.filter(owner_id=partner_id)
-#         elif role_name == "Super_admin":
-#             if partner_id:
-#                 add_items = add_items.filter(owner_id=partner_id)
-#             # No filter by user_id for Super_admin to show all users
-#         else:
-#             add_items = add_items.filter(owner_id=user_id)
-#
-#         if start_time_str and end_time_str:
-#             date_wise_billing_quantities = {single_date: 0 for single_date in (start_time + timedelta(n) for n in range((end_time - start_time).days + 1))}
-#             for item in add_items:
-#                 date_wise_billing_quantities[item.created_date_time.date()] += 1
-#
-#             for date, count in date_wise_billing_quantities.items():
-#                 billing_graph_data.append({
-#                     'date': date.strftime('%d-%m-%Y'),
-#                     'count': count
-#                 })
-#             total_billing = sum(date_wise_billing_quantities.values())
-#         else:
-#             date_wise_billing_quantities = {month: 0 for month in range(1, 13)}
-#             for item in add_items:
-#                 month = item.created_date_time.month
-#                 date_wise_billing_quantities[month] += 1
-#
-#             for month in range(1, 13):
-#                 billing_graph_data.append({
-#                     'date': calendar.month_name[month],
-#                     'count': date_wise_billing_quantities[month]
-#                 })
-#             total_billing = sum(date_wise_billing_quantities.values())
-#
-#         response_data = {
-#             'result': {
-#                 'data': {
-#                     'inventory_count': purchased_drones_count,  # Count of purchased drones
-#                     'total_billing': total_billing,  # Total count of billing
-#                     'Purchased_drones_Graph': purchased_drones_graph,
-#                     'Billing_graph': [{
-#                         'labels': 'Invoice Billing Count',
-#                         'Billing_Invoice_Graph': billing_graph_data
-#                     }],
-#                 }
-#             }
-#         }
-#
-#         return Response(response_data)
-
 
 
 class GetDroneOrdersGraphSuperAdmin(APIView):
@@ -22277,948 +17899,14 @@ class GetDroneOrdersGraphSuperAdmin(APIView):
                         return Response({"result": {"data": response_data}}, status=status.HTTP_200_OK)
 
         return Response({'error': 'Missing user ID or role name.'}, status=status.HTTP_400_BAD_REQUEST)
-    # def get(self, request):
-    #     query_params = request.query_params
-    #     filters = Q()
-    #
-    #     role_name = query_params.get('role_name')
-    #     user_id = query_params.get('user_id')
-    #     partner_id = query_params.get('partner_id')  # Add partner_id handling
-    #
-    #     # Validate that user_id is an integer
-    #     try:
-    #         user_id = int(user_id)
-    #     except (ValueError, TypeError):
-    #         return Response({"error": "Invalid user_id: must be a number."}, status=400)
-    #
-    #     # Check if user_id is a super admin
-    #     is_superadmin = CustomUser.objects.filter(id=user_id, role_id__role_name='Super_admin').exists()
-    #
-    #     # Validate user_id for Super_admin role
-    #     if role_name == "Super_admin" and not is_superadmin:
-    #         return Response({"error": "Unauthorized: user_id does not belong to a Super Admin."}, status=403)
-    #
-    #     drone_model_str = query_params.get('drone_model')
-    #     start_time_str = query_params.get('start_time')
-    #     end_time_str = query_params.get('end_time')
-    #
-    #     current_year = datetime.now().year
-    #
-    #     if start_time_str and end_time_str:
-    #         try:
-    #             start_time = datetime.strptime(start_time_str, '%d-%m-%Y').date()
-    #             end_time = datetime.strptime(end_time_str, '%d-%m-%Y').date()
-    #         except ValueError:
-    #             return Response({"error": "Invalid date format. Use DD-MM-YYYY."}, status=400)
-    #     else:
-    #         start_time = datetime(current_year, 1, 1).date()
-    #         end_time = datetime(current_year, 12, 31).date()
-    #
-    #     filters &= Q(created_date_time__date__gte=start_time, created_date_time__date__lte=end_time)
-    #
-    #     # Adjust filters based on role_name and input parameters
-    #     if role_name == "Partner":
-    #         if is_superadmin:
-    #             if partner_id:
-    #                 # If both user_id and partner_id are passed, return data for that specific partner
-    #                 filters &= Q(user_id=partner_id)
-    #             else:
-    #                 # If only user_id is passed and user is a Super Admin, return data for all partners
-    #                 partners = CustomUser.objects.filter(role_id__role_name='Partner')
-    #                 filters &= Q(user_id__in=partners.values_list('id', flat=True))
-    #         else:
-    #             # If user is a partner, return data for that specific partner
-    #             filters &= Q(user_id=user_id)
-    #
-    #     elif role_name == "Super_admin":
-    #         # If role is Super Admin, return data only for the specified Super Admin (user_id)
-    #         filters &= Q(user_id=user_id)
-    #
-    #     purchased_drones_graph = []
-    #     drone_model_ids = [int(model_id) for model_id in drone_model_str.split(',')] if drone_model_str else []
-    #
-    #     purchased_drones_count = 0
-    #
-    #     for model_id in drone_model_ids or [None]:
-    #         model_filters = filters
-    #
-    #         if model_id:
-    #             try:
-    #                 drone_category = DroneCategory.objects.get(id=model_id)
-    #             except DroneCategory.DoesNotExist:
-    #                 return Response({"error": f"Drone category with id {model_id} does not exist."}, status=404)
-    #
-    #             label = drone_category.category_name
-    #             model_filters = filters & Q(drone_id__drone_category__id=model_id)
-    #         else:
-    #             label = "Purchased Drones"
-    #
-    #         graph_data = []
-    #         if start_time_str and end_time_str:
-    #             for single_date in (start_time + timedelta(n) for n in range((end_time - start_time).days + 1)):
-    #                 order_filter = model_filters & Q(created_date_time__date=single_date, order_status__status_name='Shipped')
-    #                 count = Order.objects.filter(order_filter).aggregate(total_quantity=Sum('quantity'))['total_quantity'] or 0
-    #                 graph_data.append({'date': single_date.strftime('%d-%m-%Y'), 'count': count})
-    #                 purchased_drones_count += count
-    #         else:
-    #             for month in range(1, 12):
-    #                 month_start = datetime(current_year, month, 1)
-    #                 month_end = month_start.replace(day=calendar.monthrange(current_year, month)[1])
-    #                 order_filter = model_filters & Q(created_date_time__date__gte=month_start, created_date_time__date__lte=month_end, order_status__status_name='Shipped')
-    #                 count = Order.objects.filter(order_filter).aggregate(total_quantity=Sum('quantity'))['total_quantity'] or 0
-    #                 graph_data.append({'date': calendar.month_name[month], 'count': count})
-    #                 purchased_drones_count += count
-    #
-    #         purchased_drones_graph.append({'label': label, 'Purchased_drones': graph_data})
-    #
-    #     # Billing Graph
-    #     billing_graph_data = []
-    #     total_billing = 0
-    #
-    #     completed_status = InvoiceStatus.objects.get(invoice_status_name='Completed')
-    #     add_items = AddItem.objects.filter(created_date_time__date__gte=start_time, created_date_time__date__lte=end_time, invoice_status=completed_status)
-    #
-    #     # Adjust add_items based on role
-    #     if role_name == "Partner":
-    #         if is_superadmin:
-    #             if partner_id:
-    #                 # If partner_id is provided, filter billing for that specific partner
-    #                 add_items = add_items.filter(owner_id=partner_id)
-    #             elif user_id:
-    #                 add_items=add_items
-    #
-    #             else:
-    #                 # If Super Admin and no partner_id, get billing for all partners
-    #                 add_items = add_items.filter(owner_id__in=partners.values_list('id', flat=True))
-    #         else:
-    #             # If user is a Partner, return billing for the specific partner
-    #             add_items = add_items.filter(owner_id=user_id)
-    #
-    #     elif role_name == "Super_admin":
-    #         # If Super Admin, return billing for the specific Super Admin user_id
-    #         add_items = add_items.filter(owner_id=user_id)
-    #
-    #     if start_time_str and end_time_str:
-    #         date_wise_billing_quantities = {single_date: 0 for single_date in (start_time + timedelta(n) for n in range((end_time - start_time).days + 1))}
-    #         for item in add_items:
-    #             date_wise_billing_quantities[item.created_date_time.date()] += 1
-    #
-    #         for date, count in date_wise_billing_quantities.items():
-    #             billing_graph_data.append({
-    #                 'date': date.strftime('%d-%m-%Y'),
-    #                 'count': count
-    #             })
-    #         total_billing = sum(date_wise_billing_quantities.values())
-    #     else:
-    #         date_wise_billing_quantities = {month: 0 for month in range(1, 13)}
-    #         for item in add_items:
-    #             month = item.created_date_time.month
-    #             date_wise_billing_quantities[month] += 1
-    #
-    #         for month in range(1, 13):
-    #             billing_graph_data.append({
-    #                 'date': calendar.month_name[month],
-    #                 'count': date_wise_billing_quantities[month]
-    #             })
-    #         total_billing = sum(date_wise_billing_quantities.values())
-    #
-    #     response_data = {
-    #         'result': {
-    #             'data': {
-    #                 'inventory_count': purchased_drones_count,  # Count of purchased drones
-    #                 'total_billing': total_billing,  # Total count of billing
-    #                 'Purchased_drones_Graph': purchased_drones_graph,
-    #                 'Billing_graph': [{
-    #                     'labels': 'Invoice Billing Count',
-    #                     'Billing_Invoice_Graph': billing_graph_data
-    #                 }],
-    #             }
-    #         }
-    #     }
-    #
-    #     return Response(response_data)
+
 
 from django.db.models.functions import TruncDate
 from django.db.models import Count, Sum
 import datetime
 from datetime import datetime
 from django.utils.dateparse import parse_date
-# @method_decorator([authorization_required], name='dispatch')
-#sheetal's code
-# class GetDroneOrdersGraph(APIView):
-#     def get(self, request):
-#         query_params = request.query_params
-#         filters = Q()
-#
-#         user_id = query_params.get('user_id')
-#         role_name = query_params.get('role_name')
-#         drone_model_str = query_params.get('drone_model')
-#         start_time_str = query_params.get('start_time')
-#         end_time_str = query_params.get('end_time')
-#         partner_id = query_params.get('partner_id')
-#
-#         if start_time_str and end_time_str:
-#             start_time = datetime.strptime(start_time_str, '%d-%m-%Y').date()
-#             end_time = datetime.strptime(end_time_str, '%d-%m-%Y').date()
-#         else:
-#             end_time = datetime.now().date()
-#             start_time = end_time - timedelta(days=9)
-#
-#         filters &= Q(created_date_time__date__gte=start_time, created_date_time__date__lte=end_time)
-#
-#         if role_name == "Partner" and partner_id:
-#             filters &= Q(user_id=partner_id)
-#             label = "Purchased Drones"
-#         elif role_name != "Super_admin":
-#             label = 'Drone Sales'
-#             filters &= Q(user_id=user_id)
-#
-#         date_range = [(start_time + timedelta(days=i)).strftime('%d-%m-%Y') for i in range((end_time - start_time).days + 1)]
-#
-#         purchased_drones_graph = []
-#         billing_graph = []
-#
-#         drone_model_ids = [int(model_id) for model_id in drone_model_str.split(',')] if drone_model_str else []
-#
-#         purchased_drones_count = 0  # Initialize the count for purchased drones
-#
-#         for model_id in drone_model_ids or [None]:
-#             label = "Purchased Drones"
-#             labels = 'Invoice Billing Count'
-#             if model_id:
-#                 drone_category = DroneCategory.objects.get(id=model_id)
-#                 label = drone_category.category_name
-#                 labels = drone_category.category_name
-#                 model_filters = filters & Q(drone_id__drone_category__id=model_id)
-#             else:
-#                 model_filters = filters
-#
-#             graph_data = []
-#             for date in date_range:
-#                 order_filter = model_filters & Q(created_date_time__date=datetime.strptime(date, '%d-%m-%Y').date(), order_status__status_name='Shipped')
-#                 print(order_filter,"oooooooooooo")
-#                 count = Order.objects.filter(order_filter).aggregate(total_quantity=Sum('quantity'))['total_quantity'] or 0
-#                 print(count,"cccccccccccc")
-#                 graph_data.append({'date': date, 'count': count})
-#                 purchased_drones_count += count  # Add to the total purchased drones count
-#             purchased_drones_graph.append({'label': label, 'Purchased_drones': graph_data})
-#
-#         completed_status = InvoiceStatus.objects.get(invoice_status_name='Completed')
-#
-#         # Determine the correct owner(s) to filter by based on role and partner_ids
-#         if role_name == "Partner" and partner_id:
-#             owners = [partner_id]
-#             label = "Purchased Drones"
-#         elif role_name == "Super_admin":
-#             owners = None  # Include all users
-#             label = 'Drone Sales'
-#         else:
-#             owners = [user_id]
-#         add_items = AddItem.objects.filter(invoice_status=completed_status, created_date_time__date__gte=start_time, created_date_time__date__lte=end_time)
-#
-#         if owners is not None:
-#             add_items = add_items.filter(owner_id__in=owners)
-#
-#         date_wise_billing_quantities = {model_id: {date: 0 for date in date_range} for model_id in drone_model_ids or [None]}
-#
-#         drone_count = defaultdict(int)
-#         for item in add_items:
-#             item_date = item.created_date_time.strftime('%d-%m-%Y')
-#             for drone in item.dronedetails:
-#                 if drone.get('drone_id'):
-#                     drone_id = drone['drone_id']
-#                     quantity = drone.get('quantity', 0)
-#                     if drone_model_ids:
-#                         for model_id in drone_model_ids:
-#                             if Drone.objects.filter(id=drone_id, drone_category_id=model_id).exists():
-#                                 drone_count[model_id] += quantity
-#                                 if item_date in date_wise_billing_quantities[model_id]:
-#                                     date_wise_billing_quantities[model_id][item_date] += quantity
-#                     else:
-#                         drone_count[None] += quantity
-#                         if item_date in date_wise_billing_quantities[None]:
-#                             date_wise_billing_quantities[None][item_date] += quantity
-#
-#         for model_id in drone_model_ids or [None]:
-#             labels = 'Invoice Billing Count'
-#             if model_id:
-#                 drone_category = DroneCategory.objects.get(id=model_id)
-#                 labels = drone_category.category_name
-#             billing_graph_data = []
-#             for date in date_range:
-#                 count = date_wise_billing_quantities[model_id][date]
-#                 billing_graph_data.append({'date': date, 'count': count})
-#
-#             billing_graph.append({'labels': labels, 'Billing_Invoice_Graph': billing_graph_data})
-#
-#         # Calculate overall inventory count based on drone_model and ownerships
-#         ownership_filters = Q(drone_id__drone_category__id__in=drone_model_ids) if drone_model_ids else Q()
-#         if owners is not None:
-#             ownership_filters &= Q(user_id__in=owners)
-#         ownership_filters &= Q(created_date_time__date__gte=start_time, created_date_time__date__lte=end_time)
-#
-#         overall_inventory_count = DroneOwnership.objects.filter(ownership_filters).aggregate(Sum('quantity'))['quantity__sum'] or 0
-#
-#         # Additems count for in-progress, draft, pending statuses
-#         additems_filters = Q(invoice_status__invoice_status_name__in=['Inprogress', 'Draft', 'Pending'])
-#         if drone_model_ids:
-#             additems_filters &= Q(dronedetails__drone_category__id__in=drone_model_ids)
-#         if owners is not None:
-#             additems_filters &= Q(owner_id__in=owners)
-#         additems_filters &= Q(created_date_time__date__gte=start_time, created_date_time__date__lte=end_time)
-#
-#         additems_count = AddItem.objects.filter(additems_filters).count()
-#
-#         total_count = overall_inventory_count + additems_count
-#
-#         # Add counts from purchased_drones_graph to inventory_count if role_name is Super_admin
-#         if role_name == "Super_admin":
-#             total_count = purchased_drones_count
-#             additems_count = AddItem.objects.filter(
-#                 owner_id__id=user_id,
-#                 invoice_status__invoice_status_name='Completed',
-#                 owner_id__role_id__role_name='Super_admin'
-#             ).count()
-#
-#         # Set total_billing to additems_count if role_name is Super_admin
-#         if role_name == "Super_admin":
-#             total_billing = additems_count
-#         else:
-#             total_billing = sum(drone_count.values())  # Set total_billing to sum of drone counts
-#
-#         response_data = {
-#             'result': {
-#                 'data': {
-#                     'inventory_count': total_count,
-#                     'total_billing': total_billing,  # Set total_billing to additems_count if role_name is Super_admin
-#                     'Purchased_drones_Graph': purchased_drones_graph,
-#                     'Billing_graph': billing_graph,
-#                 }
-#             }
-#         }
-#
-#         return Response(response_data)
 
-
-# class GetDroneOrdersGraph(APIView):
-#     def get(self, request):
-#         query_params = request.query_params
-#         filters = Q()
-#
-#         user_id = query_params.get('user_id')
-#         role_name = query_params.get('role_name')
-#         drone_model_str = query_params.get('drone_model')
-#         start_time_str = query_params.get('start_time')
-#         end_time_str = query_params.get('end_time')
-#         partner_id = query_params.get('partner_id')
-#
-#         if start_time_str and end_time_str:
-#             start_time = datetime.strptime(start_time_str, '%d-%m-%Y').date()
-#             end_time = datetime.strptime(end_time_str, '%d-%m-%Y').date()
-#         else:
-#             end_time = datetime.now().date()
-#             start_time = end_time - timedelta(days=291)
-#
-#         filters &= Q(created_date_time__date__gte=start_time, created_date_time__date__lte=end_time)
-#
-#         if role_name == "Partner" and partner_id:
-#             filters &= Q(user_id=partner_id)
-#             label = "Purchased Drones"
-#         elif role_name != "Super_admin":
-#             label = 'Drone Sales'
-#             filters &= Q(user_id=user_id)
-#
-#         date_range = [(start_time + timedelta(days=i)).strftime('%d-%m-%Y') for i in range((end_time - start_time).days + 1)]
-#
-#         purchased_drones_graph = []
-#         billing_graph = []
-#
-#         drone_model_ids = [int(model_id) for model_id in drone_model_str.split(',')] if drone_model_str else []
-#
-#         purchased_drones_count = 0  # Initialize the count for purchased drones
-#
-#         for model_id in drone_model_ids or [None]:
-#             label = "Purchased Drones"
-#             labels = 'Invoice Billing Count'
-#             if model_id:
-#                 drone_category = DroneCategory.objects.get(id=model_id)
-#                 label = drone_category.category_name
-#                 labels = drone_category.category_name
-#                 model_filters = filters & Q(drone_id__drone_category__id=model_id)
-#             else:
-#                 model_filters = filters
-#
-#             graph_data = []
-#             for date in date_range:
-#                 order_filter = model_filters & Q(created_date_time__date=datetime.strptime(date, '%d-%m-%Y').date(), order_status__status_name='Shipped')
-#                 count = Order.objects.filter(order_filter).aggregate(total_quantity=Sum('quantity'))['total_quantity'] or 0
-#                 graph_data.append({'date': date, 'count': count})
-#                 purchased_drones_count += count  # Add to the total purchased drones count
-#             purchased_drones_graph.append({'label': label, 'Purchased_drones': graph_data})
-#
-#         completed_status = InvoiceStatus.objects.get(invoice_status_name='Completed')
-#
-#         # Determine the correct owner(s) to filter by based on role and partner_ids
-#         if role_name == "Partner" and partner_id:
-#             owners = [partner_id]
-#             label = "Purchased Drones"
-#         elif role_name == "Super_admin":
-#             owners = None  # Include all users
-#             label = 'Drone Sales'
-#         else:
-#             owners = [user_id]
-#         add_items = AddItem.objects.filter(invoice_status=completed_status, created_date_time__date__gte=start_time, created_date_time__date__lte=end_time)
-#
-#         if owners is not None:
-#             add_items = add_items.filter(owner_id__in=owners)
-#
-#         date_wise_billing_quantities = {model_id: {date: 0 for date in date_range} for model_id in drone_model_ids or [None]}
-#
-#         drone_count = defaultdict(int)
-#         for item in add_items:
-#             item_date = item.created_date_time.strftime('%d-%m-%Y')
-#             for drone in item.dronedetails:
-#                 if drone.get('drone_id'):
-#                     drone_id = drone['drone_id']
-#                     quantity = drone.get('quantity', 0)
-#                     if drone_model_ids:
-#                         for model_id in drone_model_ids:
-#                             if Drone.objects.filter(id=drone_id, drone_category_id=model_id).exists():
-#                                 drone_count[model_id] += quantity
-#                                 if item_date in date_wise_billing_quantities[model_id]:
-#                                     date_wise_billing_quantities[model_id][item_date] += quantity
-#                     else:
-#                         drone_count[None] += quantity
-#                         if item_date in date_wise_billing_quantities[None]:
-#                             date_wise_billing_quantities[None][item_date] += quantity
-#
-#         for model_id in drone_model_ids or [None]:
-#             labels = 'Invoice Billing Count'
-#             if model_id:
-#                 drone_category = DroneCategory.objects.get(id=model_id)
-#                 labels = drone_category.category_name
-#             billing_graph_data = []
-#             for date in date_range:
-#                 count = date_wise_billing_quantities[model_id][date]
-#                 billing_graph_data.append({'date': date, 'count': count})
-#
-#             billing_graph.append({'labels': labels, 'Billing_Invoice_Graph': billing_graph_data})
-#
-#         # Calculate overall inventory count based on drone_model and ownerships
-#         ownership_filters = Q(drone_id__drone_category__id__in=drone_model_ids) if drone_model_ids else Q()
-#         if owners is not None:
-#             ownership_filters &= Q(user_id__in=owners)
-#         ownership_filters &= Q(created_date_time__date__gte=start_time, created_date_time__date__lte=end_time)
-#
-#         overall_inventory_count = DroneOwnership.objects.filter(ownership_filters).aggregate(Sum('quantity'))['quantity__sum'] or 0
-#
-#         # Additems count for in-progress, draft, pending statuses
-#         additems_filters = Q(invoice_status__invoice_status_name__in=['Inprogress', 'Draft', 'Pending'])
-#         if drone_model_ids:
-#             additems_filters &= Q(dronedetails__drone_category__id__in=drone_model_ids)
-#         if owners is not None:
-#             additems_filters &= Q(owner_id__in=owners)
-#         additems_filters &= Q(created_date_time__date__gte=start_time, created_date_time__date__lte=end_time)
-#
-#         additems_count = AddItem.objects.filter(additems_filters).count()
-#
-#         total_count = overall_inventory_count + additems_count
-#
-#         # Add counts from purchased_drones_graph to inventory_count if role_name is Super_admin
-#         if role_name == "Super_admin":
-#             total_count = purchased_drones_count
-#             additems_count = AddItem.objects.filter(
-#                 owner_id__id=user_id,
-#                 invoice_status__invoice_status_name='Completed',
-#                 owner_id__role_id__role_name='Super_admin'
-#             ).count()
-#
-#         # Set total_billing to additems_count if role_name is Super_admin
-#         if role_name == "Super_admin":
-#             total_billing = additems_count
-#         else:
-#             total_billing = sum(drone_count.values())  # Set total_billing to sum of drone counts
-#
-#         response_data = {
-#             'result': {
-#                 'data': {
-#                     'inventory_count': total_count,
-#                     'total_billing': total_billing,  # Set total_billing to additems_count if role_name is Super_admin
-#                     'Purchased_drones_Graph': purchased_drones_graph,
-#                     'Billing_graph': billing_graph,
-#                 }
-#             }
-#         }
-#
-#         return Response(response_data)
-
-
-# try 1
-# class GetDroneOrdersGraph(APIView):
-#     def get(self, request):
-#         query_params = request.query_params
-#         filters = Q()
-#
-#         user_id = query_params.get('user_id')
-#         role_name = query_params.get('role_name')
-#         drone_model_str = query_params.get('drone_model')
-#         start_time_str = query_params.get('start_time')
-#         end_time_str = query_params.get('end_time')
-#         partner_id = query_params.get('partner_id')
-#
-#         # Handle date parsing
-#         if start_time_str and end_time_str:
-#             start_time = datetime.strptime(start_time_str, '%d-%m-%Y').date()
-#             end_time = datetime.strptime(end_time_str, '%d-%m-%Y').date()
-#             group_by = "day"
-#         else:
-#             end_time = datetime.now().date()
-#             start_time = end_time - timedelta(days=291)
-#             group_by = "month"  # Aggregate by month if no date range provided
-#
-#         filters &= Q(created_date_time__date__gte=start_time, created_date_time__date__lte=end_time)
-#
-#         # Role-based filtering
-#         if role_name == "Partner" and partner_id:
-#             filters &= Q(user_id=partner_id)
-#             label = "Purchased Drones"
-#         elif role_name != "Super_admin":
-#             label = 'Drone Sales'
-#             filters &= Q(user_id=user_id)
-#
-#         # Determine the date range for day-wise or month-wise aggregation
-#         if group_by == "day":
-#             date_range = [(start_time + timedelta(days=i)).strftime('%d-%m-%Y') for i in
-#                           range((end_time - start_time).days + 1)]
-#         else:
-#             # Generate actual date objects for months and sort by actual date
-#             date_range = [start_time + timedelta(days=i) for i in range((end_time - start_time).days + 1)]
-#             date_range = sorted(set(date.replace(day=1) for date in date_range))  # Set day=1 for month aggregation
-#             formatted_date_range = [date.strftime('%B %Y') for date in date_range]  # Store formatted months
-#
-#         purchased_drones_graph = []
-#         billing_graph = []
-#
-#         drone_model_ids = [int(model_id) for model_id in drone_model_str.split(',')] if drone_model_str else []
-#
-#         purchased_drones_count = 0  # Initialize the count for purchased drones
-#
-#         # Loop through drone models and fetch data
-#         for model_id in drone_model_ids or [None]:
-#             model_filters = filters & Q(drone_id__drone_category__id=model_id) if model_id else filters
-#             drone_category = DroneCategory.objects.filter(id=model_id).first() if model_id else None
-#             label = drone_category.category_name if drone_category else "Purchased Drones"
-#
-#             graph_data = defaultdict(int)  # Use defaultdict for easy summing
-#
-#             for date in date_range:
-#                 if group_by == "day":
-#                     date_obj = date
-#                 else:
-#                     date_obj = date
-#
-#                 if group_by == "day":
-#                     order_filter = model_filters & Q(created_date_time__date=date_obj,
-#                                                      order_status__status_name='Shipped')
-#                 else:
-#                     order_filter = model_filters & Q(created_date_time__year=date_obj.year,
-#                                                      created_date_time__month=date_obj.month,
-#                                                      order_status__status_name='Shipped')
-#
-#                 count = Order.objects.filter(order_filter).aggregate(total_quantity=Sum('quantity'))[
-#                             'total_quantity'] or 0
-#                 graph_data[date_obj] += count
-#                 purchased_drones_count += count
-#
-#             # Convert defaultdict to list of dictionaries
-#             graph_data_list = [{'date': date.strftime('%B %Y'), 'count': value} for date, value in graph_data.items()]
-#             purchased_drones_graph.append({'label': label, 'Purchased_drones': graph_data_list})
-#
-#         # Billing Graph Data
-#         completed_status = InvoiceStatus.objects.get(invoice_status_name='Completed')
-#         add_items = AddItem.objects.filter(invoice_status=completed_status, created_date_time__date__gte=start_time,
-#                                            created_date_time__date__lte=end_time)
-#         if role_name == "Partner" and partner_id:
-#             add_items = add_items.filter(owner_id=partner_id)
-#         elif role_name != "Super_admin":
-#             add_items = add_items.filter(owner_id=user_id)
-#
-#         date_wise_billing_quantities = {model_id: {date.strftime('%B %Y'): 0 for date in date_range} for model_id in
-#                                         drone_model_ids or [None]}
-#         drone_count = defaultdict(int)
-#
-#         for item in add_items:
-#             item_date = item.created_date_time.strftime('%B %Y') if group_by == "month" else item.created_date_time.strftime('%d-%m-%Y')
-#             for drone in item.dronedetails:
-#                 drone_id = drone.get('drone_id')
-#                 quantity = drone.get('quantity', 0)
-#
-#                 # Ensure drone_id is initialized in date_wise_billing_quantities
-#                 if drone_id not in date_wise_billing_quantities:
-#                     date_wise_billing_quantities[drone_id] = {date.strftime('%B %Y'): 0 for date in date_range}
-#
-#                 # Ensure item_date exists in the dictionary for the specific drone_id
-#                 if item_date not in date_wise_billing_quantities[drone_id]:
-#                     date_wise_billing_quantities[drone_id][item_date] = 0
-#
-#                 if drone_id and (not drone_model_ids or Drone.objects.filter(id=drone_id,
-#                                                                              drone_category_id__in=drone_model_ids).exists()):
-#                     drone_count[drone_id] += quantity
-#                     date_wise_billing_quantities[drone_id][item_date] += quantity
-#
-#         for model_id in drone_model_ids or [None]:
-#             billing_graph_data = [{'date': date, 'count': date_wise_billing_quantities[model_id].get(date, 0)} for date in formatted_date_range]
-#             billing_graph.append({'labels': 'Invoice Billing Count', 'Billing_Invoice_Graph': billing_graph_data})
-#
-#         # Inventory and total count calculation
-#         ownership_filters = Q()
-#
-#         # Apply drone model filter only if there are drone_model_ids
-#         if drone_model_ids:
-#             ownership_filters &= Q(drone_id__drone_category__id__in=drone_model_ids)
-#
-#         # Apply user filter based on role
-#         if role_name != "Super_admin":
-#             ownership_filters &= Q(user_id=user_id)
-#
-#         # Apply date filter
-#         ownership_filters &= Q(created_date_time__date__gte=start_time, created_date_time__date__lte=end_time)
-#
-#         # Fetch overall inventory count
-#         overall_inventory_count = DroneOwnership.objects.filter(ownership_filters).aggregate(Sum('quantity'))['quantity__sum'] or 0
-#
-#         # Calculate additems_count
-#         additems_count = AddItem.objects.filter(
-#             invoice_status__invoice_status_name__in=['Inprogress', 'Draft', 'Pending'],
-#             owner_id=user_id if role_name != "Super_admin" else None
-#         ).count()
-#
-#         total_count = overall_inventory_count + additems_count
-#
-#         # Set total_billing based on role
-#         if role_name == "Super_admin":
-#             total_billing = purchased_drones_count
-#         else:
-#             total_billing = sum(drone_count.values())
-#
-#         response_data = {
-#             'result': {
-#                 'data': {
-#                     'inventory_count': total_count,
-#                     'total_billing': total_billing,
-#                     'Purchased_drones_Graph': purchased_drones_graph,
-#                     'Billing_graph': billing_graph,
-#                 }
-#             }
-#         }
-#
-#         return Response(response_data)
-#
-
-# try 2
-# class GetDroneOrdersGraph(APIView):
-#     def get(self, request):
-#         query_params = request.query_params
-#         filters = Q()
-#
-#         user_id = query_params.get('user_id')
-#         role_name = query_params.get('role_name')
-#         drone_model_str = query_params.get('drone_model')
-#         start_time_str = query_params.get('start_time')
-#         end_time_str = query_params.get('end_time')
-#         partner_id = query_params.get('partner_id')
-#
-#         # Handle date parsing
-#         if start_time_str and end_time_str:
-#             start_time = datetime.strptime(start_time_str, '%d-%m-%Y').date()
-#             end_time = datetime.strptime(end_time_str, '%d-%m-%Y').date()
-#             group_by = "day"
-#         else:
-#             end_time = datetime.now().date()
-#             start_time = end_time - timedelta(days=291)
-#             group_by = "month"  # Aggregate by month if no date range provided
-#
-#         filters &= Q(created_date_time__date__gte=start_time, created_date_time__date__lte=end_time)
-#
-#         # Role-based filtering
-#         if role_name == "Partner" and partner_id:
-#             filters &= Q(user_id=partner_id)
-#             label = "Purchased Drones"
-#         elif role_name != "Super_admin":
-#             label = 'Drone Sales'
-#             filters &= Q(user_id=user_id)
-#
-#         # Determine the date range for day-wise or month-wise aggregation
-#         if group_by == "day":
-#             date_range = [(start_time + timedelta(days=i)).strftime('%d-%m-%Y') for i in
-#                           range((end_time - start_time).days + 1)]
-#         else:
-#             date_range = [start_time + timedelta(days=i) for i in range((end_time - start_time).days + 1)]
-#             date_range = sorted(set(date.strftime('%B %Y') for date in date_range))  # Month aggregation
-#
-#         purchased_drones_graph = []
-#         billing_graph = []
-#
-#         drone_model_ids = [int(model_id) for model_id in drone_model_str.split(',')] if drone_model_str else []
-#
-#         purchased_drones_count = 0  # Initialize the count for purchased drones
-#
-#         # Loop through drone models and fetch data
-#         for model_id in drone_model_ids or [None]:
-#             model_filters = filters & Q(drone_id__drone_category__id=model_id) if model_id else filters
-#             drone_category = DroneCategory.objects.filter(id=model_id).first() if model_id else None
-#             label = drone_category.category_name if drone_category else "Purchased Drones"
-#
-#             graph_data = defaultdict(int)  # Use defaultdict for easy summing
-#
-#             for date in date_range:
-#                 if group_by == "day":
-#                     date_obj = datetime.strptime(date, '%d-%m-%Y').date()
-#                 else:
-#                     date_obj = datetime.strptime(date, '%B %Y')
-#
-#                 if group_by == "day":
-#                     order_filter = model_filters & Q(created_date_time__date=date_obj,
-#                                                      order_status__status_name='Shipped')
-#                 else:
-#                     order_filter = model_filters & Q(created_date_time__year=date_obj.year,
-#                                                      created_date_time__month=date_obj.month,
-#                                                      order_status__status_name='Shipped')
-#
-#                 count = Order.objects.filter(order_filter).aggregate(total_quantity=Sum('quantity'))[
-#                             'total_quantity'] or 0
-#                 graph_data[date] += count
-#                 purchased_drones_count += count
-#
-#             # Convert defaultdict to list of dictionaries
-#             graph_data_list = [{'date': key, 'count': value} for key, value in graph_data.items()]
-#             purchased_drones_graph.append({'label': label, 'Purchased_drones': graph_data_list})
-#
-#         # Billing Graph Data
-#         completed_status = InvoiceStatus.objects.get(invoice_status_name='Completed')
-#         add_items = AddItem.objects.filter(invoice_status=completed_status, created_date_time__date__gte=start_time,
-#                                            created_date_time__date__lte=end_time)
-#         if role_name == "Partner" and partner_id:
-#             add_items = add_items.filter(owner_id=partner_id)
-#         elif role_name != "Super_admin":
-#             add_items = add_items.filter(owner_id=user_id)
-#
-#         date_wise_billing_quantities = {model_id: {date: 0 for date in date_range} for model_id in
-#                                         drone_model_ids or [None]}
-#         drone_count = defaultdict(int)
-#
-#         for item in add_items:
-#             item_date = item.created_date_time.strftime(
-#                 '%B %Y') if group_by == "month" else item.created_date_time.strftime('%d-%m-%Y')
-#             for drone in item.dronedetails:
-#                 drone_id = drone.get('drone_id')
-#                 quantity = drone.get('quantity', 0)
-#
-#                 # Ensure drone_id is initialized in date_wise_billing_quantities
-#                 if drone_id not in date_wise_billing_quantities:
-#                     date_wise_billing_quantities[drone_id] = {date: 0 for date in date_range}
-#
-#                 # Ensure item_date exists in the dictionary for the specific drone_id
-#                 if item_date not in date_wise_billing_quantities[drone_id]:
-#                     date_wise_billing_quantities[drone_id][item_date] = 0
-#
-#                 if drone_id and (not drone_model_ids or Drone.objects.filter(id=drone_id,
-#                                                                              drone_category_id__in=drone_model_ids).exists()):
-#                     drone_count[drone_id] += quantity
-#                     date_wise_billing_quantities[drone_id][item_date] += quantity
-#
-#         for model_id in drone_model_ids or [None]:
-#             billing_graph_data = [{'date': date, 'count': date_wise_billing_quantities[model_id].get(date, 0)} for
-#                                   date in date_range]
-#             billing_graph.append({'labels': 'Invoice Billing Count', 'Billing_Invoice_Graph': billing_graph_data})
-#
-#         # Inventory and total count calculation
-#         ownership_filters = Q(drone_id__drone_category__id__in=drone_model_ids) if drone_model_ids else Q()
-#         if role_name != "Super_admin":
-#             ownership_filters &= Q(user_id__in=[user_id])
-#         ownership_filters &= Q(created_date_time__date__gte=start_time, created_date_time__date__lte=end_time)
-#
-#         overall_inventory_count = DroneOwnership.objects.filter(ownership_filters).aggregate(Sum('quantity'))[
-#                                       'quantity__sum'] or 0
-#         additems_count = AddItem.objects.filter(
-#             invoice_status__invoice_status_name__in=['Inprogress', 'Draft', 'Pending'],
-#             owner_id__in=[user_id]).count()
-#         total_count = overall_inventory_count + additems_count
-#
-#         # Set total_billing based on role
-#         if role_name == "Super_admin":
-#             total_billing = purchased_drones_count
-#         else:
-#             total_billing = sum(drone_count.values())
-#
-#         response_data = {
-#             'result': {
-#                 'data': {
-#                     'inventory_count': total_count,
-#                     'total_billing': total_billing,
-#                     'Purchased_drones_Graph': purchased_drones_graph,
-#                     'Billing_graph': billing_graph,
-#                 }
-#             }
-#         }
-#
-#         return Response(response_data)
-
-# class GetDroneOrdersGraph(APIView):
-#     def get(self, request):
-#         query_params = request.query_params
-#         filters = Q()
-#
-#         user_id = query_params.get('user_id')
-#         role_name = query_params.get('role_name')
-#         drone_model_str = query_params.get('drone_model')
-#         start_time_str = query_params.get('start_time')
-#         end_time_str = query_params.get('end_time')
-#         partner_id = query_params.get('partner_id')
-#
-#         # Handle date parsing (from '%d-%m-%Y' to '%Y-%m-%d')
-#         if start_time_str and end_time_str:
-#             # Parse the input date format
-#             start_time = datetime.strptime(start_time_str, '%d-%m-%Y').date()
-#             end_time = datetime.strptime(end_time_str, '%d-%m-%Y').date()
-#             group_by = "day"
-#         else:
-#             end_time = datetime.now().date()
-#             start_time = end_time - timedelta(days=291)
-#             group_by = "month"  # Aggregate by month if no date range provided
-#
-#         # Use the correct format '%Y-%m-%d' for date filtering in Django
-#         filters &= Q(created_date_time__date__gte=start_time, created_date_time__date__lte=end_time)
-#
-#         # Role-based filtering
-#         if role_name == "Partner" and partner_id:
-#             filters &= Q(user_id=partner_id)
-#             label = "Purchased Drones"
-#         elif role_name != "Super_admin":
-#             label = 'Drone Sales'
-#             filters &= Q(user_id=user_id)
-#
-#         # Determine the date range for day-wise or month-wise aggregation
-#         if group_by == "day":
-#             date_range = [(start_time + timedelta(days=i)).strftime('%Y-%m-%d') for i in
-#                           range((end_time - start_time).days + 1)]
-#         else:
-#             # Generate actual date objects for months and sort by actual date
-#             date_range = [start_time + timedelta(days=i) for i in range((end_time - start_time).days + 1)]
-#             date_range = sorted(set(date.replace(day=1) for date in date_range))  # Set day=1 for month aggregation
-#             formatted_date_range = [date.strftime('%B %Y') for date in date_range]  # Store formatted months
-#
-#         purchased_drones_graph = []
-#         billing_graph = []
-#
-#         drone_model_ids = [int(model_id) for model_id in drone_model_str.split(',')] if drone_model_str else []
-#
-#         purchased_drones_count = 0  # Initialize the count for purchased drones
-#
-#         # Loop through drone models and fetch data
-#         for model_id in drone_model_ids or [None]:
-#             model_filters = filters & Q(drone_id__drone_category__id=model_id) if model_id else filters
-#             drone_category = DroneCategory.objects.filter(id=model_id).first() if model_id else None
-#             label = drone_category.category_name if drone_category else "Purchased Drones"
-#
-#             graph_data = defaultdict(int)  # Use defaultdict for easy summing
-#
-#             for date in date_range:
-#                 if group_by == "day":
-#                     date_obj = datetime.strptime(date, '%Y-%m-%d').date()
-#                 else:
-#                     date_obj = date
-#
-#                 if group_by == "day":
-#                     order_filter = model_filters & Q(created_date_time__date=date_obj,
-#                                                      order_status__status_name='Shipped')
-#                 else:
-#                     order_filter = model_filters & Q(created_date_time__year=date_obj.year,
-#                                                      created_date_time__month=date_obj.month,
-#                                                      order_status__status_name='Shipped')
-#
-#                 count = Order.objects.filter(order_filter).aggregate(total_quantity=Sum('quantity'))[
-#                             'total_quantity'] or 0
-#                 graph_data[date_obj] += count
-#                 purchased_drones_count += count
-#
-#             # Convert defaultdict to list of dictionaries
-#             graph_data_list = [{'date': date.strftime('%B %Y') if group_by == "month" else date.strftime('%Y-%m-%d'),
-#                                 'count': value} for date, value in graph_data.items()]
-#             purchased_drones_graph.append({'label': label, 'Purchased_drones': graph_data_list})
-#
-#         # Billing Graph Data
-#         completed_status = InvoiceStatus.objects.get(invoice_status_name='Completed')
-#         add_items = AddItem.objects.filter(invoice_status=completed_status, created_date_time__date__gte=start_time,
-#                                            created_date_time__date__lte=end_time)
-#         if role_name == "Partner" and partner_id:
-#             add_items = add_items.filter(owner_id=partner_id)
-#         elif role_name != "Super_admin":
-#             add_items = add_items.filter(owner_id=user_id)
-#
-#         date_wise_billing_quantities = {model_id: {date.strftime('%B %Y') if group_by == "month" else date.strftime('%Y-%m-%d'): 0 for date in date_range} for model_id in drone_model_ids or [None]}
-#         drone_count = defaultdict(int)
-#
-#         for item in add_items:
-#             item_date = item.created_date_time.strftime('%B %Y') if group_by == "month" else item.created_date_time.strftime('%Y-%m-%d')
-#             for drone in item.dronedetails:
-#                 drone_id = drone.get('drone_id')
-#                 quantity = drone.get('quantity', 0)
-#
-#                 # Ensure drone_id is initialized in date_wise_billing_quantities
-#                 if drone_id not in date_wise_billing_quantities:
-#                     date_wise_billing_quantities[drone_id] = {date.strftime('%B %Y') if group_by == "month" else date.strftime('%Y-%m-%d'): 0 for date in date_range}
-#
-#                 date_wise_billing_quantities[drone_id][item_date] += quantity
-#                 drone_count[drone_id] += quantity
-#
-#         for model_id in drone_model_ids or [None]:
-#             billing_graph_data = [{'date': date, 'count': date_wise_billing_quantities[model_id].get(date, 0)} for date in formatted_date_range]
-#             billing_graph.append({'labels': 'Invoice Billing Count', 'Billing_Invoice_Graph': billing_graph_data})
-#
-#         # Inventory and total count calculation
-#         ownership_filters = Q()
-#
-#         # Apply drone model filter only if there are drone_model_ids
-#         if drone_model_ids:
-#             ownership_filters &= Q(drone_id__drone_category__id__in=drone_model_ids)
-#
-#         # Apply user filter based on role
-#         if role_name != "Super_admin":
-#             ownership_filters &= Q(user_id=user_id)
-#
-#         # Apply date filter
-#         ownership_filters &= Q(created_date_time__date__gte=start_time, created_date_time__date__lte=end_time)
-#
-#         # Fetch overall inventory count
-#         overall_inventory_count = DroneOwnership.objects.filter(ownership_filters).aggregate(Sum('quantity'))['quantity__sum'] or 0
-#
-#         # Calculate additems_count
-#         additems_count = AddItem.objects.filter(
-#             invoice_status__invoice_status_name__in=['Inprogress', 'Draft', 'Pending'],
-#             owner_id=user_id if role_name != "Super_admin" else None
-#         ).count()
-#
-#         total_count = overall_inventory_count + additems_count
-#
-#         # Set total_billing based on role
-#         if role_name == "Super_admin":
-#             total_billing = purchased_drones_count
-#         else:
-#             total_billing = sum(drone_count.values())
-#
-#         response_data = {
-#             'result': {
-#                 'data': {
-#                     'inventory_count': total_count,
-#                     'total_billing': total_billing,
-#                     'Purchased_drones_Graph': purchased_drones_graph,
-#                     'Billing_graph': billing_graph,
-#                 }
-#             }
-#         }
-#
-#         return Response(response_data)
 
 class BatchSearchSuggestionView(APIView):
     def get(self, request, *args, **kwargs):
@@ -23249,1058 +17937,6 @@ class BatchSearchSuggestionView(APIView):
         # Return the response data (could be an empty list if no results are found)
         return Response(response_data, status=status.HTTP_200_OK)
 
-
-# class PartnerOrderSummary(APIView):
-#     def get(self, request):
-#         role_name = request.query_params.get('role_name')
-#         user_id = request.query_params.get('user_id')
-#         start_time = request.query_params.get('start_time')
-#         end_time = request.query_params.get('end_time')
-#
-#         # Check if both role_name and user_id are provided
-#         if not role_name or not user_id:
-#             return Response({'error': 'role_name and user_id are required.'}, status=status.HTTP_400_BAD_REQUEST)
-#
-#         # Check if the role exists
-#         try:
-#             partner_role = Role.objects.get(role_name__iexact=role_name)
-#         except Role.DoesNotExist:
-#             return Response({'error': 'Role not found.'}, status=status.HTTP_404_NOT_FOUND)
-#
-#         # Filter orders for the given partner and user
-#         orders = Order.objects.filter(user_id=user_id, order_status__status_name="Shipped")
-#
-#         # Prepare response structure
-#         response_data = {
-#             "Purchased_drones_Graph": [
-#                 {
-#                     "label": "Purchased Drones",
-#                     "Purchased_drones": []
-#                 }
-#             ],
-#         }
-#
-#         # If start_time and end_time are provided
-#         if start_time and end_time:
-#             try:
-#                 # Parse the start and end time
-#                 start_date = timezone.make_aware(datetime.strptime(start_time, '%d-%m-%Y'))
-#                 end_date = timezone.make_aware(datetime.strptime(end_time, '%d-%m-%Y'))
-#
-#                 # Create a list of all dates in the range
-#                 date_list = [(start_date + timedelta(days=i)).date() for i in range((end_date - start_date).days + 1)]
-#
-#                 # Sum the quantity of orders for each day using updated_date_time
-#                 daily_data = orders.values('updated_date_time__date') \
-#                     .annotate(daily_quantity=Sum('quantity'))
-#
-#                 # Create a dictionary to hold the counts for each date
-#                 date_counts = {date: 0 for date in date_list}
-#
-#                 # Map daily quantities to the date counts
-#                 for item in daily_data:
-#                     date_key = item['updated_date_time__date']
-#                     if date_key in date_counts:
-#                         date_counts[date_key] = item.get('daily_quantity', 0)
-#
-#                 # Build the response for the purchased drones graph
-#                 for date_key, count in date_counts.items():
-#                     response_data['Purchased_drones_Graph'][0]['Purchased_drones'].append({
-#                         "date": date_key.strftime('%d-%m-%Y'),  # Format as DD-MM-YYYY
-#                         "count": count
-#                     })
-#
-#             except ValueError:
-#                 return Response({'error': 'Invalid date format. Use DD-MM-YYYY.'}, status=status.HTTP_400_BAD_REQUEST)
-#         else:
-#             # If no date range is provided, aggregate by month for the current year
-#             current_year = timezone.now().year
-#
-#             monthly_data = orders.filter(updated_date_time__year=current_year) \
-#                 .values('updated_date_time__month') \
-#                 .annotate(monthly_quantity=Sum('quantity'))
-#
-#             # Create a dictionary to hold the monthly counts
-#             month_counts = {month: 0 for month in range(1, 13)}
-#
-#             # Map monthly quantities to the month counts
-#             for item in monthly_data:
-#                 month_key = item['updated_date_time__month']
-#                 month_counts[month_key] = item.get('monthly_quantity', 0)
-#
-#             # Build the response for the purchased drones graph by month
-#             for month, count in month_counts.items():
-#                 month_name = (datetime(current_year, month, 1)).strftime('%B')  # Get the month name
-#                 response_data['Purchased_drones_Graph'][0]['Purchased_drones'].append({
-#                     "date": month_name,  # Use month name
-#                     "count": count
-#                 })
-#
-#         return Response(response_data, status=status.HTTP_200_OK)
-
-
-
-###workingggggg
-# class PartnerOrderSummary(APIView):
-#     def get(self, request):
-#         role_name = request.query_params.get('role_name')
-#         user_id = request.query_params.get('user_id')
-#         start_time = request.query_params.get('start_time')
-#         end_time = request.query_params.get('end_time')
-#
-#         # Check if both role_name and user_id are provided
-#         if not role_name or not user_id:
-#             return Response({'error': 'role_name and user_id are required.'}, status=status.HTTP_400_BAD_REQUEST)
-#
-#         # Check if the role exists
-#         try:
-#             partner_role = Role.objects.get(role_name__iexact=role_name)
-#         except Role.DoesNotExist:
-#             return Response({'error': 'Role not found.'}, status=status.HTTP_404_NOT_FOUND)
-#
-#         # Filter orders for the given partner and user
-#         orders = Order.objects.filter(user_id=user_id, order_status__status_name="Shipped")
-#
-#         # Prepare response structure
-#         response_data = {
-#             "inventory_count": 0,
-#             "total_billing": 0,
-#             "Purchased_drones_Graph": [
-#                 {
-#                     "label": "Purchased Drones",
-#                     "Purchased_drones": []
-#                 }
-#             ],
-#             "Billing_graph": [
-#                 {
-#                     "labels": "Invoice Billing Count",
-#                     "Billing_Invoice_Graph": []
-#                 }
-#             ]
-#         }
-#
-#         # Define current_year outside of the conditional blocks
-#         current_year = timezone.now().year
-#
-#         # If start_time and end_time are provided
-#         if start_time and end_time:
-#             try:
-#                 # Parse the start and end time
-#                 start_date = timezone.make_aware(datetime.strptime(start_time, '%d-%m-%Y'))
-#                 end_date = timezone.make_aware(datetime.strptime(end_time, '%d-%m-%Y'))
-#
-#                 # Create a list of all dates in the range
-#                 date_list = [(start_date + timedelta(days=i)).date() for i in range((end_date - start_date).days + 1)]
-#
-#                 # Sum the quantity of orders for each day using updated_date_time
-#                 daily_data = orders.filter(updated_date_time__range=(start_date, end_date)) \
-#                     .values('updated_date_time__date') \
-#                     .annotate(daily_quantity=Sum('quantity'))
-#
-#                 # Create a dictionary to hold the counts for each date
-#                 date_counts = {date: 0 for date in date_list}
-#
-#                 # Map daily quantities to the date counts
-#                 for item in daily_data:
-#                     date_key = item['updated_date_time__date']
-#                     if date_key in date_counts:
-#                         date_counts[date_key] = item.get('daily_quantity', 0)
-#
-#                 # Build the response for the purchased drones graph
-#                 for date_key, count in date_counts.items():
-#                     response_data['Purchased_drones_Graph'][0]['Purchased_drones'].append({
-#                         "date": date_key.strftime('%d-%m-%Y'),  # Format as DD-MM-YYYY
-#                         "count": count
-#                     })
-#
-#                 # Calculate total billing for completed invoices in the date range
-#                 completed_items = AddItem.objects.filter(
-#                     owner_id=user_id,
-#                     invoice_status__invoice_status_name="Completed",
-#                     updated_date_time__range=(start_date, end_date)
-#                 )
-#
-#                 total_billing = 0
-#                 completed_day_counts = {date: 0 for date in date_list}
-#
-#                 for item in completed_items:
-#                     dronedetails = item.dronedetails  # Assuming this is a JSON field
-#                     invoice_date = item.updated_date_time  # Use updated_date_time instead of invoice_date
-#                     if dronedetails:
-#                         for drone in dronedetails:
-#                             total_billing += drone.get('quantity', 0)
-#                             # Increment the count for the corresponding date
-#                             if invoice_date.date() in completed_day_counts:
-#                                 completed_day_counts[invoice_date.date()] += drone.get('quantity', 0)
-#
-#                 # Add total billing count to the response
-#                 response_data['total_billing'] = total_billing
-#
-#                 # Calculate inventory count
-#                 total_purchased_orders = sum(date_counts.values())
-#                 response_data['inventory_count'] = total_purchased_orders - total_billing
-#
-#                 # Build the Billing graph based on completed invoices
-#                 for date, count in completed_day_counts.items():
-#                     response_data['Billing_graph'][0]['Billing_Invoice_Graph'].append({
-#                         "date": date.strftime('%d-%m-%Y'),  # Format as DD-MM-YYYY
-#                         "count": count
-#                     })
-#
-#             except ValueError:
-#                 return Response({'error': 'Invalid date format. Use DD-MM-YYYY.'}, status=status.HTTP_400_BAD_REQUEST)
-#
-#             # Wrap response data for date range in the required format
-#             return Response({"result": {"data": response_data}}, status=status.HTTP_200_OK)
-#
-#         else:
-#             # If no date range is provided, aggregate by month for the current year
-#             monthly_data = orders.filter(updated_date_time__year=current_year) \
-#                 .values('updated_date_time__month') \
-#                 .annotate(monthly_quantity=Sum('quantity'))
-#
-#             # Create a dictionary to hold the monthly counts
-#             month_counts = {month: 0 for month in range(1, 13)}
-#
-#             # Map monthly quantities to the month counts
-#             for item in monthly_data:
-#                 month_key = item['updated_date_time__month']
-#                 month_counts[month_key] = item.get('monthly_quantity', 0)
-#
-#             # Build the response for the purchased drones graph by month
-#             for month, count in month_counts.items():
-#                 month_name = datetime(current_year, month, 1).strftime('%B')  # Get the month name
-#                 response_data['Purchased_drones_Graph'][0]['Purchased_drones'].append({
-#                     "date": month_name,  # Use month name
-#                     "count": count
-#                 })
-#
-#             # Calculate the total billing for the user based on completed orders in AddItem
-#             try:
-#                 completed_items = AddItem.objects.filter(
-#                     owner_id=user_id,
-#                     invoice_status__invoice_status_name="Completed"
-#                 )
-#
-#                 total_billing = 0
-#                 completed_month_counts = {month: 0 for month in range(1, 13)}
-#
-#                 # Iterate through each completed item and sum up the quantities of drones
-#                 for item in completed_items:
-#                     dronedetails = item.dronedetails  # Assuming this is a JSON field
-#                     invoice_date = item.updated_date_time  # Use updated_date_time instead of invoice_date
-#                     if dronedetails:
-#                         for drone in dronedetails:
-#                             total_billing += drone.get('quantity', 0)
-#                             # Increment the count for the corresponding month
-#                             if invoice_date:
-#                                 completed_month_counts[invoice_date.month] += drone.get('quantity', 0)
-#
-#                 # Add total billing count to the response
-#                 response_data['total_billing'] = total_billing
-#
-#                 # Calculate inventory count
-#                 total_purchased_orders = sum(month_counts.values())
-#                 response_data['inventory_count'] = total_purchased_orders - total_billing
-#
-#                 # Build the Billing graph based on completed invoices
-#                 for month, count in completed_month_counts.items():
-#                     month_name = datetime(current_year, month, 1).strftime('%B')  # Get the month name
-#                     response_data['Billing_graph'][0]['Billing_Invoice_Graph'].append({
-#                         "date": month_name,
-#                         "count": count
-#                     })
-#
-#             except AddItem.DoesNotExist:
-#                 response_data['total_billing'] = 0  # No completed items for this user
-#
-#             # Wrap response data for month aggregation in the required format
-#             return Response({"result": {"data": response_data}}, status=status.HTTP_200_OK)
-
-
-# class PartnerOrderSummary(APIView):
-#     def get(self, request):
-#         role_name = request.query_params.get('role_name')
-#         user_id = request.query_params.get('user_id')
-#         start_time = request.query_params.get('start_time')
-#         end_time = request.query_params.get('end_time')
-#         drone_model_ids = request.query_params.get('drone_model')  # Multiple IDs can be passed as a string
-#
-#         # Check if both role_name and user_id are provided
-#         if not role_name or not user_id:
-#             return Response({'error': 'role_name and user_id are required.'}, status=status.HTTP_400_BAD_REQUEST)
-#
-#         # Check if the role exists
-#         try:
-#             partner_role = Role.objects.get(role_name__iexact=role_name)
-#         except Role.DoesNotExist:
-#             return Response({'error': 'Role not found.'}, status=status.HTTP_404_NOT_FOUND)
-#
-#         # Retrieve drone IDs from the specified drone categories
-#         drone_ids = []
-#         valid_drone_ids = []
-#         if drone_model_ids:
-#             try:
-#                 # Split the string by commas and convert to integers
-#                 drone_ids = list(map(int, drone_model_ids.split(',')))
-#
-#                 # Validate that these IDs exist in the DroneCategory
-#                 for model_id in drone_ids:
-#                     if Drone.objects.filter(drone_category_id=model_id).exists():
-#                         valid_drone_ids.append(model_id)
-#
-#             except ValueError:
-#                 return Response({'error': 'Invalid drone model IDs format. Use comma-separated integers.'}, status=status.HTTP_400_BAD_REQUEST)
-#
-#         # Proceed with filtering orders for the given partner and user
-#         orders = Order.objects.filter(user_id=user_id, order_status__status_name="Shipped", drone_id__in=valid_drone_ids)
-#
-#         # Prepare response structure
-#         response_data = {
-#             "inventory_count": 0,
-#             "total_billing": 0,
-#             "Purchased_drones_Graph": [
-#                 {
-#                     "label": "Purchased Drones",
-#                     "Purchased_drones": []
-#                 }
-#             ],
-#             "Billing_graph": [
-#                 {
-#                     "labels": "Invoice Billing Count",
-#                     "Billing_Invoice_Graph": []
-#                 }
-#             ]
-#         }
-#
-#         # Define current_year outside of the conditional blocks
-#         current_year = timezone.now().year
-#
-#         # If start_time and end_time are provided
-#         if start_time and end_time:
-#             try:
-#                 # Parse the start and end time
-#                 start_date = timezone.make_aware(datetime.strptime(start_time, '%d-%m-%Y'))
-#                 end_date = timezone.make_aware(datetime.strptime(end_time, '%d-%m-%Y'))
-#
-#                 # Create a list of all dates in the range
-#                 date_list = [(start_date + timedelta(days=i)).date() for i in range((end_date - start_date).days + 1)]
-#
-#                 # Initialize counts for all dates in the range
-#                 date_counts = {date: 0 for date in date_list}
-#
-#                 # Filter orders by user and drone IDs, then sum the quantity of orders for each day
-#                 daily_data = orders.filter(updated_date_time__range=(start_date, end_date)) \
-#                     .values('updated_date_time__date') \
-#                     .annotate(daily_quantity=Sum('quantity'))
-#
-#                 # Map daily quantities to the date counts
-#                 for item in daily_data:
-#                     date_key = item['updated_date_time__date']
-#                     if date_key in date_counts:
-#                         date_counts[date_key] = item.get('daily_quantity', 0)
-#
-#                 # Build the response for the purchased drones graph
-#                 for date_key, count in date_counts.items():
-#                     response_data['Purchased_drones_Graph'][0]['Purchased_drones'].append({
-#                         "date": date_key.strftime('%d-%m-%Y'),  # Format as DD-MM-YYYY
-#                         "count": count
-#                     })
-#
-#                 # Calculate total billing for completed invoices in the date range
-#                 completed_items = AddItem.objects.filter(
-#                     owner_id=user_id,
-#                     invoice_status__invoice_status_name="Completed",
-#                     updated_date_time__range=(start_date, end_date)  # Only include items within the date range
-#                 )
-#
-#                 total_billing = 0
-#                 completed_day_counts = {date: 0 for date in date_list}
-#
-#                 for item in completed_items:
-#                     dronedetails = item.dronedetails  # Assuming this is a JSON field
-#                     invoice_date = item.updated_date_time  # Use updated_date_time instead of invoice_date
-#                     if dronedetails:
-#                         for drone in dronedetails:
-#                             drone_id = drone.get('drone_id')  # Assuming you have a 'drone_id' in your JSON
-#                             if drone_id in valid_drone_ids:  # Check against valid drone IDs
-#                                 quantity = drone.get('quantity', 0)  # Get quantity for this drone
-#                                 total_billing += quantity
-#                                 # Increment the count for the corresponding date
-#                                 if invoice_date.date() in completed_day_counts:
-#                                     completed_day_counts[invoice_date.date()] += quantity
-#
-#                 # Add total billing count to the response
-#                 response_data['total_billing'] = total_billing
-#
-#                 # Calculate inventory count
-#                 total_purchased_orders = sum(date_counts.values())
-#                 response_data['inventory_count'] = total_purchased_orders - total_billing
-#
-#                 # Build the Billing graph based on completed invoices
-#                 for date, count in completed_day_counts.items():
-#                     response_data['Billing_graph'][0]['Billing_Invoice_Graph'].append({
-#                         "date": date.strftime('%d-%m-%Y'),  # Format as DD-MM-YYYY
-#                         "count": count
-#                     })
-#
-#             except ValueError:
-#                 return Response({'error': 'Invalid date format. Use DD-MM-YYYY.'}, status=status.HTTP_400_BAD_REQUEST)
-#
-#             # Wrap response data for date range in the required format
-#             return Response({"result": {"data": response_data}}, status=status.HTTP_200_OK)
-#
-#         else:
-#             # If no date range is provided, aggregate by month for the current year
-#             completed_items = AddItem.objects.filter(
-#                 owner_id=user_id,
-#                 invoice_status__invoice_status_name="Completed"
-#             )
-#
-#             total_billing = 0
-#             completed_month_counts = {month: 0 for month in range(1, 13)}
-#
-#             for item in completed_items:
-#                 dronedetails = item.dronedetails  # Assuming this is a JSON field
-#                 invoice_date = item.updated_date_time  # Use updated_date_time instead of invoice_date
-#                 if dronedetails:
-#                     for drone in dronedetails:
-#                         drone_id = drone.get('drone_id')  # Assuming you have a 'drone_id' in your JSON
-#                         if drone_id in valid_drone_ids:  # Check against valid drone IDs
-#                             quantity = drone.get('quantity', 0)  # Get quantity for this drone
-#                             total_billing += quantity
-#                             # Increment the count for the corresponding month
-#                             completed_month_counts[invoice_date.month] += quantity
-#
-#             # Add total billing count to the response
-#             response_data['total_billing'] = total_billing
-#
-#             # Calculate inventory count based on total orders and total billing
-#             total_purchased_orders = sum(completed_month_counts.values())
-#             response_data['inventory_count'] = total_purchased_orders - total_billing
-#
-#             # Build the Billing graph based on completed invoices for the current year
-#             for month, count in completed_month_counts.items():
-#                 month_name = datetime(current_year, month, 1).strftime('%B')  # Get the month name
-#                 response_data['Billing_graph'][0]['Billing_Invoice_Graph'].append({
-#                     "date": month_name,  # Use month name
-#                     "count": count
-#                 })
-#
-#             # Wrap response data for the current year in the required format
-#             return Response({"result": {"data": response_data}}, status=status.HTTP_200_OK)
-
-
-
-##working code of dronemodels in purchased
-# class PartnerOrderSummary(APIView):
-#     def get(self, request):
-#         role_name = request.query_params.get('role_name')
-#         user_id = request.query_params.get('user_id')
-#         start_time = request.query_params.get('start_time')
-#         end_time = request.query_params.get('end_time')
-#         drone_model = request.query_params.get('drone_model')
-#
-#         # Check if both role_name and user_id are provided
-#         if not role_name or not user_id:
-#             return Response({'error': 'role_name and user_id are required.'}, status=status.HTTP_400_BAD_REQUEST)
-#
-#         # Check if the role exists
-#         try:
-#             partner_role = Role.objects.get(role_name__iexact=role_name)
-#         except Role.DoesNotExist:
-#             return Response({'error': 'Role not found.'}, status=status.HTTP_404_NOT_FOUND)
-#
-#         # Filter orders for the given partner and user
-#         orders = Order.objects.filter(user_id=user_id, order_status__status_name="Shipped")
-#
-#         # Filter by drone categories if `drone_model` is provided
-#         if drone_model:
-#             drone_category_ids = [int(id) for id in drone_model.split(',') if id.isdigit()]
-#             # Retrieve drones that belong to the specified drone categories
-#             relevant_drones = Drone.objects.filter(drone_category_id__in=drone_category_ids)
-#             orders = orders.filter(drone_id__in=relevant_drones)
-#
-#         # Prepare response structure
-#         response_data = {
-#             "inventory_count": 0,
-#             "total_billing": 0,
-#             "Purchased_drones_Graph": [
-#                 {
-#                     "label": "Purchased Drones",
-#                     "Purchased_drones": []
-#                 }
-#             ],
-#             "Billing_graph": [
-#                 {
-#                     "labels": "Invoice Billing Count",
-#                     "Billing_Invoice_Graph": []
-#                 }
-#             ]
-#         }
-#
-#         # Define current_year outside of the conditional blocks
-#         current_year = timezone.now().year
-#
-#         # If start_time and end_time are provided
-#         if start_time and end_time:
-#             try:
-#                 # Parse the start and end time
-#                 start_date = timezone.make_aware(datetime.strptime(start_time, '%d-%m-%Y'))
-#                 end_date = timezone.make_aware(datetime.strptime(end_time, '%d-%m-%Y'))
-#
-#                 # Create a list of all dates in the range
-#                 date_list = [(start_date + timedelta(days=i)).date() for i in range((end_date - start_date).days + 1)]
-#
-#                 # Sum the quantity of orders for each day using updated_date_time
-#                 daily_data = orders.filter(updated_date_time__range=(start_date, end_date)) \
-#                     .values('updated_date_time__date') \
-#                     .annotate(daily_quantity=Sum('quantity'))
-#
-#                 # Create a dictionary to hold the counts for each date
-#                 date_counts = {date: 0 for date in date_list}
-#
-#                 # Map daily quantities to the date counts
-#                 for item in daily_data:
-#                     date_key = item['updated_date_time__date']
-#                     if date_key in date_counts:
-#                         date_counts[date_key] = item.get('daily_quantity', 0)
-#
-#                 # Build the response for the purchased drones graph
-#                 for date_key, count in date_counts.items():
-#                     response_data['Purchased_drones_Graph'][0]['Purchased_drones'].append({
-#                         "date": date_key.strftime('%d-%m-%Y'),  # Format as DD-MM-YYYY
-#                         "count": count
-#                     })
-#
-#                 # Calculate total billing for completed invoices in the date range
-#                 completed_items = AddItem.objects.filter(
-#                     owner_id=user_id,
-#                     invoice_status__invoice_status_name="Completed",
-#                     updated_date_time__range=(start_date, end_date)
-#                 )
-#
-#                 total_billing = 0
-#                 completed_day_counts = {date: 0 for date in date_list}
-#
-#                 for item in completed_items:
-#                     dronedetails = item.dronedetails  # Assuming this is a JSON field
-#                     invoice_date = item.updated_date_time  # Use updated_date_time instead of invoice_date
-#                     if dronedetails:
-#                         for drone in dronedetails:
-#                             total_billing += drone.get('quantity', 0)
-#                             # Increment the count for the corresponding date
-#                             if invoice_date.date() in completed_day_counts:
-#                                 completed_day_counts[invoice_date.date()] += drone.get('quantity', 0)
-#
-#                 # Add total billing count to the response
-#                 response_data['total_billing'] = total_billing
-#
-#                 # Calculate inventory count
-#                 total_purchased_orders = sum(date_counts.values())
-#                 response_data['inventory_count'] = total_purchased_orders - total_billing
-#
-#                 # Build the Billing graph based on completed invoices
-#                 for date, count in completed_day_counts.items():
-#                     response_data['Billing_graph'][0]['Billing_Invoice_Graph'].append({
-#                         "date": date.strftime('%d-%m-%Y'),  # Format as DD-MM-YYYY
-#                         "count": count
-#                     })
-#
-#             except ValueError:
-#                 return Response({'error': 'Invalid date format. Use DD-MM-YYYY.'}, status=status.HTTP_400_BAD_REQUEST)
-#
-#             # Wrap response data for date range in the required format
-#             return Response({"result": {"data": response_data}}, status=status.HTTP_200_OK)
-#
-#         else:
-#             # If no date range is provided, aggregate by month for the current year
-#             monthly_data = orders.filter(updated_date_time__year=current_year) \
-#                 .values('updated_date_time__month') \
-#                 .annotate(monthly_quantity=Sum('quantity'))
-#
-#             # Create a dictionary to hold the monthly counts
-#             month_counts = {month: 0 for month in range(1, 13)}
-#
-#             # Map monthly quantities to the month counts
-#             for item in monthly_data:
-#                 month_key = item['updated_date_time__month']
-#                 month_counts[month_key] = item.get('monthly_quantity', 0)
-#
-#             # Build the response for the purchased drones graph by month
-#             for month, count in month_counts.items():
-#                 month_name = datetime(current_year, month, 1).strftime('%B')  # Get the month name
-#                 response_data['Purchased_drones_Graph'][0]['Purchased_drones'].append({
-#                     "date": month_name,  # Use month name
-#                     "count": count
-#                 })
-#
-#             # Calculate the total billing for the user based on completed orders in AddItem
-#             try:
-#                 completed_items = AddItem.objects.filter(
-#                     owner_id=user_id,
-#                     invoice_status__invoice_status_name="Completed"
-#                 )
-#
-#                 total_billing = 0
-#                 completed_month_counts = {month: 0 for month in range(1, 13)}
-#
-#                 # Iterate through each completed item and sum up the quantities of drones
-#                 for item in completed_items:
-#                     dronedetails = item.dronedetails  # Assuming this is a JSON field
-#                     invoice_date = item.updated_date_time  # Use updated_date_time instead of invoice_date
-#                     if dronedetails:
-#                         for drone in dronedetails:
-#                             total_billing += drone.get('quantity', 0)
-#                             # Increment the count for the corresponding month
-#                             if invoice_date:
-#                                 completed_month_counts[invoice_date.month] += drone.get('quantity', 0)
-#
-#                 # Add total billing count to the response
-#                 response_data['total_billing'] = total_billing
-#
-#                 # Calculate inventory count
-#                 total_purchased_orders = sum(month_counts.values())
-#                 response_data['inventory_count'] = total_purchased_orders - total_billing
-#
-#                 # Build the Billing graph based on completed invoices
-#                 for month, count in completed_month_counts.items():
-#                     month_name = datetime(current_year, month, 1).strftime('%B')  # Get the month name
-#                     response_data['Billing_graph'][0]['Billing_Invoice_Graph'].append({
-#                         "date": month_name,
-#                         "count": count
-#                     })
-#
-#             except AddItem.DoesNotExist:
-#                 response_data['total_billing'] = 0  # No completed items for this user
-#
-#             # Wrap response data for month aggregation in the required format
-#             return Response({"result": {"data": response_data}}, status=status.HTTP_200_OK)
-
-#######################################################working but date is error
-# class PartnerOrderSummary(APIView):
-#     def get(self, request):
-#         role_name = request.query_params.get('role_name')
-#         user_id = request.query_params.get('user_id')
-#         start_time = request.query_params.get('start_time')
-#         end_time = request.query_params.get('end_time')
-#         drone_model = request.query_params.get('drone_model')
-#
-#         # Check if both role_name and user_id are provided
-#         if not role_name or not user_id:
-#             return Response({'error': 'role_name and user_id are required.'}, status=status.HTTP_400_BAD_REQUEST)
-#
-#         # Check if the role exists
-#         try:
-#             partner_role = Role.objects.get(role_name__iexact=role_name)
-#         except Role.DoesNotExist:
-#             return Response({'error': 'Role not found.'}, status=status.HTTP_404_NOT_FOUND)
-#
-#         # Filter orders for the given partner and user
-#         orders = Order.objects.filter(user_id=user_id, order_status__status_name="Shipped")
-#
-#         # Filter by drone categories if `drone_model` is provided
-#         relevant_drones = None
-#         if drone_model:
-#             drone_category_ids = [int(id) for id in drone_model.split(',') if id.isdigit()]
-#             relevant_drones = Drone.objects.filter(drone_category_id__in=drone_category_ids)
-#             orders = orders.filter(drone_id__in=relevant_drones)
-#
-#         # Prepare response structure
-#         response_data = {
-#             "inventory_count": 0,
-#             "total_billing": 0,
-#             "Purchased_drones_Graph": [],
-#             "Billing_graph": [
-#                 {
-#                     "labels": "Invoice Billing Count",
-#                     "Billing_Invoice_Graph": []
-#                 }
-#             ]
-#         }
-#
-#         # Define current_year outside of the conditional blocks
-#         current_year = timezone.now().year
-#
-#         # If start_time and end_time are provided
-#         if start_time and end_time:
-#             try:
-#                 # Parse the start and end time
-#                 start_date = timezone.make_aware(datetime.strptime(start_time, '%d-%m-%Y'))
-#                 end_date = timezone.make_aware(datetime.strptime(end_time, '%d-%m-%Y'))
-#
-#                 # Create a list of all dates in the range
-#                 date_list = [(start_date + timedelta(days=i)).date() for i in range((end_date - start_date).days + 1)]
-#
-#                 # Sum the quantity of orders for each day using updated_date_time
-#                 daily_data = orders.filter(updated_date_time__range=(start_date, end_date)) \
-#                     .values('updated_date_time__date') \
-#                     .annotate(daily_quantity=Sum('quantity'))
-#
-#                 # Create a dictionary to hold the counts for each date
-#                 date_counts = {date: 0 for date in date_list}
-#
-#                 # Map daily quantities to the date counts
-#                 for item in daily_data:
-#                     date_key = item['updated_date_time__date']
-#                     if date_key in date_counts:
-#                         date_counts[date_key] = item.get('daily_quantity', 0)
-#
-#                 # If drone models are provided, prepare the purchased drones graph with categories
-#                 if relevant_drones:
-#                     # Get unique drone categories
-#                     categories = relevant_drones.values_list('drone_category__category_name', flat=True).distinct()
-#
-#                     for category in categories:
-#                         # Initialize the Purchased_drones list with zero counts
-#                         purchased_drones = [{"date": date.strftime('%d-%m-%Y'), "count": 0} for date in date_list]
-#
-#                         # Fill the purchased drones count for each category
-#                         for item in daily_data:
-#                             date_key = item['updated_date_time__date']
-#                             if date_key in date_counts:
-#                                 # Get the corresponding drones for this category
-#                                 drones_in_category = relevant_drones.filter(drone_category__category_name=category)
-#                                 if drones_in_category.exists():
-#                                     purchased_drones_index = date_list.index(date_key)
-#                                     purchased_drones[purchased_drones_index]['count'] = date_counts[date_key]
-#
-#                         # Append to the response regardless of purchase history
-#                         response_data['Purchased_drones_Graph'].append({
-#                             "label": category,
-#                             "Purchased_drones": purchased_drones
-#                         })
-#
-#                 else:
-#                     # Default response when no drone models are provided
-#                     response_data['Purchased_drones_Graph'].append({
-#                         "label": "Purchased Drones",
-#                         "Purchased_drones": [{"date": date.strftime('%d-%m-%Y'), "count": count} for date, count in
-#                                              date_counts.items()]
-#                     })
-#
-#                 # Calculate total billing for completed invoices in the date range
-#                 completed_items = AddItem.objects.filter(
-#                     owner_id=user_id,
-#                     invoice_status__invoice_status_name="Completed",
-#                     updated_date_time__range=(start_date, end_date)
-#                 )
-#
-#                 total_billing = 0
-#                 completed_day_counts = {date: 0 for date in date_list}
-#
-#                 # Check and sum quantities based on `drone_model`
-#                 for item in completed_items:
-#                     dronedetails = item.dronedetails  # Assuming this is a JSON field
-#                     invoice_date = item.updated_date_time  # Use updated_date_time instead of invoice_date
-#                     if dronedetails:
-#                         for drone in dronedetails:
-#                             # If `drone_model` filter is provided, check drone_id
-#                             if not drone_model or drone['drone_id'] in relevant_drones.values_list('id', flat=True):
-#                                 quantity = drone.get('quantity', 0)
-#                                 total_billing += quantity
-#                                 # Increment the count for the corresponding date
-#                                 if invoice_date.date() in completed_day_counts:
-#                                     completed_day_counts[invoice_date.date()] += quantity
-#
-#                 # Add total billing count to the response
-#                 response_data['total_billing'] = total_billing
-#
-#                 # Calculate inventory count
-#                 total_purchased_orders = sum(date_counts.values())
-#                 response_data['inventory_count'] = total_purchased_orders - total_billing
-#
-#                 # Build the Billing graph based on completed invoices
-#                 for date, count in completed_day_counts.items():
-#                     response_data['Billing_graph'][0]['Billing_Invoice_Graph'].append({
-#                         "date": date.strftime('%d-%m-%Y'),  # Format as DD-MM-YYYY
-#                         "count": count
-#                     })
-#
-#             except ValueError:
-#                 return Response({'error': 'Invalid date format. Use DD-MM-YYYY.'}, status=status.HTTP_400_BAD_REQUEST)
-#
-#             # Wrap response data for date range in the required format
-#             return Response({"result": {"data": response_data}}, status=status.HTTP_200_OK)
-#
-#         else:
-#             # If no date range is provided, aggregate by month for the current year
-#             monthly_data = orders.filter(updated_date_time__year=current_year) \
-#                 .values('updated_date_time__month') \
-#                 .annotate(monthly_quantity=Sum('quantity'))
-#
-#             # Create a dictionary to hold the monthly counts
-#             month_counts = {month: 0 for month in range(1, 13)}
-#
-#             # Map monthly quantities to the month counts
-#             for item in monthly_data:
-#                 month_key = item['updated_date_time__month']
-#                 month_counts[month_key] = item.get('monthly_quantity', 0)
-#
-#             # Build the response for the purchased drones graph by month
-#             if relevant_drones:
-#                 # Get unique drone categories
-#                 categories = relevant_drones.values_list('drone_category__category_name', flat=True).distinct()
-#
-#                 for category in categories:
-#                     purchased_drones = [{"date": datetime(current_year, month, 1).strftime('%B'), "count": 0} for
-#                                          month in range(1, 13)]
-#
-#                     for month, count in month_counts.items():
-#                         for idx, category_data in enumerate(purchased_drones):
-#                             if category_data["date"] == datetime(current_year, month, 1).strftime('%B'):
-#                                 purchased_drones[idx]['count'] = count
-#
-#                     response_data['Purchased_drones_Graph'].append({
-#                         "label": category,
-#                         "Purchased_drones": purchased_drones
-#                     })
-#
-#             else:
-#                 # Default response when no drone models are provided
-#                 response_data['Purchased_drones_Graph'].append({
-#                     "label": "Purchased Drones",
-#                     "Purchased_drones": [{"date": datetime(current_year, month, 1).strftime('%B'), "count": count} for
-#                                          month, count in month_counts.items()]
-#                 })
-#
-#             # Calculate the total billing for the user based on completed orders in AddItem
-#             try:
-#                 completed_items = AddItem.objects.filter(
-#                     owner_id=user_id,
-#                     invoice_status__invoice_status_name="Completed"
-#                 )
-#
-#                 total_billing = 0
-#                 completed_month_counts = {month: 0 for month in range(1, 13)}
-#
-#                 for item in completed_items:
-#                     dronedetails = item.dronedetails  # JSON field
-#                     invoice_date = item.updated_date_time  # Use updated_date_time instead of invoice_date
-#                     if dronedetails:
-#                         for drone in dronedetails:
-#                             if not drone_model or drone['drone_id'] in relevant_drones.values_list('id', flat=True):
-#                                 quantity = drone.get('quantity', 0)
-#                                 total_billing += quantity
-#                                 # Increment the count for the corresponding month
-#                                 completed_month_counts[invoice_date.month] += quantity
-#
-#                 # Add total billing count to the response
-#                 response_data['total_billing'] = total_billing
-#
-#                 # Calculate inventory count
-#                 total_purchased_orders = sum(month_counts.values())
-#                 response_data['inventory_count'] = total_purchased_orders - total_billing
-#
-#                 # Build the Billing graph based on completed invoices by month
-#                 for month, count in completed_month_counts.items():
-#                     response_data['Billing_graph'][0]['Billing_Invoice_Graph'].append({
-#                         "date": datetime(current_year, month, 1).strftime('%B'),  # Format as Month
-#                         "count": count
-#                     })
-#
-#             except Exception as e:
-#                 return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-#
-#             # Wrap response data for current year in the required format
-#             return Response({"result": {"data": response_data}}, status=status.HTTP_200_OK)
-
-
-##lstttt workinggg
-# class PartnerOrderSummary(APIView):
-#     def get(self, request):
-#         role_name = request.query_params.get('role_name')
-#         user_id = request.query_params.get('user_id')
-#         start_time = request.query_params.get('start_time')
-#         end_time = request.query_params.get('end_time')
-#         drone_model = request.query_params.get('drone_model')
-#
-#         # Check if both role_name and user_id are provided
-#         if not role_name or not user_id:
-#             return Response({'error': 'role_name and user_id are required.'}, status=status.HTTP_400_BAD_REQUEST)
-#
-#         # Check if the role exists
-#         try:
-#             partner_role = Role.objects.get(role_name__iexact=role_name)
-#         except Role.DoesNotExist:
-#             return Response({'error': 'Role not found.'}, status=status.HTTP_404_NOT_FOUND)
-#
-#         # Filter orders for the given partner and user
-#         orders = Order.objects.filter(user_id=user_id, order_status__status_name="Shipped")
-#
-#         # Filter by drone categories if `drone_model` is provided
-#         relevant_drones = None
-#         if drone_model:
-#             drone_category_ids = [int(id) for id in drone_model.split(',') if id.isdigit()]
-#             relevant_drones = Drone.objects.filter(drone_category_id__in=drone_category_ids)
-#             orders = orders.filter(drone_id__in=relevant_drones)
-#
-#         # Prepare response structure
-#         response_data = {
-#             "inventory_count": 0,
-#             "total_billing": 0,
-#             "Purchased_drones_Graph": [],
-#             "Billing_graph": [
-#                 {
-#                     "labels": "Invoice Billing Count",
-#                     "Billing_Invoice_Graph": []
-#                 }
-#             ]
-#         }
-#
-#         current_year = timezone.now().year
-#
-#         # If start_time and end_time are provided
-#         if start_time and end_time:
-#             try:
-#                 # Parse the start and end time
-#                 start_date = timezone.make_aware(datetime.strptime(start_time, '%d-%m-%Y'))
-#                 end_date = timezone.make_aware(datetime.strptime(end_time, '%d-%m-%Y')) + timedelta(days=1)  # Extend to the next day
-#
-#                 # Create a list of all dates in the range
-#                 date_list = [(start_date + timedelta(days=i)).date() for i in range((end_date - start_date).days)]
-#
-#                 # Sum the quantity of orders for each day using updated_date_time
-#                 daily_data = orders.filter(updated_date_time__range=(start_date, end_date)) \
-#                     .values('updated_date_time__date') \
-#                     .annotate(daily_quantity=Sum('quantity'))
-#
-#                 # Create a dictionary to hold the counts for each date
-#                 date_counts = {date: 0 for date in date_list}
-#
-#                 # Map daily quantities to the date counts
-#                 for item in daily_data:
-#                     date_key = item['updated_date_time__date']
-#                     if date_key in date_counts:
-#                         date_counts[date_key] = item.get('daily_quantity', 0)
-#
-#                 # If drone models are provided, prepare the purchased drones graph with categories
-#                 if relevant_drones:
-#                     categories = relevant_drones.values_list('drone_category__category_name', flat=True).distinct()
-#
-#                     for category in categories:
-#                         purchased_drones = [{"date": date.strftime('%d-%m-%Y'), "count": 0} for date in date_list]
-#
-#                         for item in daily_data:
-#                             date_key = item['updated_date_time__date']
-#                             if date_key in date_counts:
-#                                 drones_in_category = relevant_drones.filter(drone_category__category_name=category)
-#                                 if drones_in_category.exists():
-#                                     purchased_drones_index = date_list.index(date_key)
-#                                     purchased_drones[purchased_drones_index]['count'] = date_counts[date_key]
-#
-#                         response_data['Purchased_drones_Graph'].append({
-#                             "label": category,
-#                             "Purchased_drones": purchased_drones
-#                         })
-#
-#                 else:
-#                     response_data['Purchased_drones_Graph'].append({
-#                         "label": "Purchased Drones",
-#                         "Purchased_drones": [{"date": date.strftime('%d-%m-%Y'), "count": count} for date, count in date_counts.items()]
-#                     })
-#
-#                 completed_items = AddItem.objects.filter(
-#                     owner_id=user_id,
-#                     invoice_status__invoice_status_name="Completed",
-#                     updated_date_time__range=(start_date, end_date)
-#                 )
-#
-#                 total_billing = 0
-#                 completed_day_counts = {date: 0 for date in date_list}
-#
-#                 for item in completed_items:
-#                     dronedetails = item.dronedetails
-#                     invoice_date = item.updated_date_time
-#                     if dronedetails:
-#                         for drone in dronedetails:
-#                             if not drone_model or drone['drone_id'] in relevant_drones.values_list('id', flat=True):
-#                                 quantity = drone.get('quantity', 0)
-#                                 total_billing += quantity
-#                                 if invoice_date.date() in completed_day_counts:
-#                                     completed_day_counts[invoice_date.date()] += quantity
-#
-#                 response_data['total_billing'] = total_billing
-#                 total_purchased_orders = sum(date_counts.values())
-#                 response_data['inventory_count'] = total_purchased_orders - total_billing
-#
-#                 for date, count in completed_day_counts.items():
-#                     response_data['Billing_graph'][0]['Billing_Invoice_Graph'].append({
-#                         "date": date.strftime('%d-%m-%Y'),
-#                         "count": count
-#                     })
-#
-#             except ValueError:
-#                 return Response({'error': 'Invalid date format. Use DD-MM-YYYY.'}, status=status.HTTP_400_BAD_REQUEST)
-#
-#             return Response({"result": {"data": response_data}}, status=status.HTTP_200_OK)
-#
-#         else:
-#             monthly_data = orders.filter(updated_date_time__year=current_year) \
-#                 .values('updated_date_time__month') \
-#                 .annotate(monthly_quantity=Sum('quantity'))
-#
-#             month_counts = {month: 0 for month in range(1, 13)}
-#
-#             for item in monthly_data:
-#                 month_key = item['updated_date_time__month']
-#                 month_counts[month_key] = item.get('monthly_quantity', 0)
-#
-#             if relevant_drones:
-#                 categories = relevant_drones.values_list('drone_category__category_name', flat=True).distinct()
-#
-#                 for category in categories:
-#                     purchased_drones = [{"date": datetime(current_year, month, 1).strftime('%B'), "count": 0} for month in range(1, 13)]
-#
-#                     for month, count in month_counts.items():
-#                         for idx, category_data in enumerate(purchased_drones):
-#                             if category_data["date"] == datetime(current_year, month, 1).strftime('%B'):
-#                                 purchased_drones[idx]['count'] = count
-#
-#                     response_data['Purchased_drones_Graph'].append({
-#                         "label": category,
-#                         "Purchased_drones": purchased_drones
-#                     })
-#
-#             else:
-#                 response_data['Purchased_drones_Graph'].append({
-#                     "label": "Purchased Drones",
-#                     "Purchased_drones": [{"date": datetime(current_year, month, 1).strftime('%B'), "count": count} for month, count in month_counts.items()]
-#                 })
-#
-#             try:
-#                 completed_items = AddItem.objects.filter(
-#                     owner_id=user_id,
-#                     invoice_status__invoice_status_name="Completed"
-#                 )
-#
-#                 total_billing = 0
-#                 completed_month_counts = {month: 0 for month in range(1, 13)}
-#
-#                 for item in completed_items:
-#                     dronedetails = item.dronedetails
-#                     invoice_date = item.updated_date_time
-#                     if dronedetails:
-#                         for drone in dronedetails:
-#                             if not drone_model or drone['drone_id'] in relevant_drones.values_list('id', flat=True):
-#                                 quantity = drone.get('quantity', 0)
-#                                 total_billing += quantity
-#                                 completed_month_counts[invoice_date.month] += quantity
-#
-#                 response_data['total_billing'] = total_billing
-#                 total_purchased_orders = sum(month_counts.values())
-#                 response_data['inventory_count'] = total_purchased_orders - total_billing
-#
-#                 for month, count in completed_month_counts.items():
-#                     response_data['Billing_graph'][0]['Billing_Invoice_Graph'].append({
-#                         "date": datetime(current_year, month, 1).strftime('%B'),
-#                         "count": count
-#                     })
-#
-#             except Exception as e:
-#                 return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-#
-#             return Response({"result": {"data": response_data}}, status=status.HTTP_200_OK)
 
 class PartnerOrderSummary(APIView):
     def get(self, request):
@@ -24365,14 +18001,16 @@ class PartnerOrderSummary(APIView):
 
                 # Handle purchased drones graph
                 if relevant_drones:
-                    categories = relevant_drones.values_list('drone_category__category_name', 'drone_category__id').distinct()
+                    categories = relevant_drones.values_list('drone_category__category_name',
+                                                             'drone_category__id').distinct()
                     for category, category_id in categories:
                         purchased_drones = [{"date": date.strftime('%d-%m-%Y'), "count": 0} for date in date_list]
                         for item in daily_data:
                             if item['drone_id__drone_category'] == category_id:
                                 date_key = item['updated_date_time__date']
                                 if date_key in date_counts:
-                                    purchased_drones[date_list.index(date_key)]['count'] += item.get('daily_quantity', 0)  # Accumulate counts
+                                    purchased_drones[date_list.index(date_key)]['count'] += item.get('daily_quantity',
+                                                                                                     0)  # Accumulate counts
                         response_data['Purchased_drones_Graph'].append({
                             "label": category,
                             "Purchased_drones": purchased_drones
@@ -24380,7 +18018,8 @@ class PartnerOrderSummary(APIView):
                 else:
                     response_data['Purchased_drones_Graph'].append({
                         "label": "Purchased Drones",
-                        "Purchased_drones": [{"date": date.strftime('%d-%m-%Y'), "count": count} for date, count in date_counts.items()]
+                        "Purchased_drones": [{"date": date.strftime('%d-%m-%Y'), "count": count} for date, count in
+                                             date_counts.items()]
                     })
 
                 # Billing for daily data
@@ -24426,9 +18065,11 @@ class PartnerOrderSummary(APIView):
 
             # Monthly Purchased Drones Graph
             if relevant_drones:
-                categories = relevant_drones.values_list('drone_category__category_name', 'drone_category__id').distinct()
+                categories = relevant_drones.values_list('drone_category__category_name',
+                                                         'drone_category__id').distinct()
                 for category, category_id in categories:
-                    purchased_drones = [{"date": datetime(current_year, month, 1).strftime('%B'), "count": 0} for month in range(1, 13)]
+                    purchased_drones = [{"date": datetime(current_year, month, 1).strftime('%B'), "count": 0} for month
+                                        in range(1, 13)]
                     for item in monthly_data:
                         if item['drone_id__drone_category'] == category_id:
                             month_key = item['updated_date_time__month']
@@ -24440,7 +18081,8 @@ class PartnerOrderSummary(APIView):
             else:
                 response_data['Purchased_drones_Graph'].append({
                     "label": "Purchased Drones",
-                    "Purchased_drones": [{"date": datetime(current_year, month, 1).strftime('%B'), "count": count} for month, count in month_counts.items()]
+                    "Purchased_drones": [{"date": datetime(current_year, month, 1).strftime('%B'), "count": count} for
+                                         month, count in month_counts.items()]
                 })
 
             # Monthly Billing Graph
@@ -24467,839 +18109,6 @@ class PartnerOrderSummary(APIView):
 
             return Response({"result": {"data": response_data}}, status=status.HTTP_200_OK)
 
-# class SuperAdminOrderSummary(APIView):
-#     def get(self, request):
-#         role_name = request.query_params.get('role_name')
-#         user_id = request.query_params.get('user_id')  # Super admin's user ID
-#         start_time = request.query_params.get('start_time')
-#         end_time = request.query_params.get('end_time')
-#         drone_model = request.query_params.get('drone_model')
-#
-#         # Check if user_id and role_name are provided
-#         if not role_name or not user_id:
-#             return Response({'error': 'role_name and user_id are required.'}, status=status.HTTP_400_BAD_REQUEST)
-#
-#         # Prepare orders query based on role
-#         if role_name.lower() == "super_admin":
-#             # If the role is Super Admin, fetch orders for the specific Super Admin user_id
-#             orders = Order.objects.filter(user_id=user_id, order_status__status_name="Shipped")
-#         elif role_name.lower() == "partner":
-#             # If the role is Partner, fetch orders for all users except the super admin's user_id
-#             orders = Order.objects.exclude(user_id=user_id).filter(order_status__status_name="Shipped")
-#         else:
-#             return Response({'error': 'Invalid role name.'}, status=status.HTTP_400_BAD_REQUEST)
-#
-#         # Filter by drone categories if `drone_model` is provided
-#         relevant_drones = None
-#         if drone_model:
-#             drone_category_ids = [int(id) for id in drone_model.split(',') if id.isdigit()]
-#             relevant_drones = Drone.objects.filter(drone_category_id__in=drone_category_ids)
-#             orders = orders.filter(drone_id__in=relevant_drones)
-#
-#         # Prepare response structure
-#         response_data = {
-#             "inventory_count": 0,
-#             "total_billing": 0,
-#             "Purchased_drones_Graph": [],
-#             "Billing_graph": [
-#                 {
-#                     "labels": "Invoice Billing Count",
-#                     "Billing_Invoice_Graph": []
-#                 }
-#             ]
-#         }
-#
-#         # Handle date range filtering if provided
-#         if start_time and end_time:
-#             try:
-#                 # Parse the start and end time
-#                 start_date = timezone.make_aware(datetime.strptime(start_time, '%d-%m-%Y'))
-#                 end_date = timezone.make_aware(datetime.strptime(end_time, '%d-%m-%Y'))
-#
-#                 # Create a list of all dates in the range
-#                 date_list = [(start_date + timedelta(days=i)).date() for i in range((end_date - start_date).days + 1)]
-#
-#                 # Daily order quantities
-#                 daily_data = orders.filter(updated_date_time__range=(start_date, end_date)) \
-#                     .values('updated_date_time__date') \
-#                     .annotate(daily_quantity=Sum('quantity'))
-#
-#                 # Create a dictionary to hold the counts for each date
-#                 date_counts = {date: 0 for date in date_list}
-#                 for item in daily_data:
-#                     date_key = item['updated_date_time__date']
-#                     if date_key in date_counts:
-#                         date_counts[date_key] = item.get('daily_quantity', 0)
-#
-#                 # Purchased drones graph data
-#                 if relevant_drones:
-#                     categories = relevant_drones.values_list('drone_category__category_name', flat=True).distinct()
-#                     for category in categories:
-#                         purchased_drones = [{"date": date.strftime('%d-%m-%Y'), "count": 0} for date in date_list]
-#                         for item in daily_data:
-#                             date_key = item['updated_date_time__date']
-#                             if date_key in date_counts:
-#                                 drones_in_category = relevant_drones.filter(drone_category__category_name=category)
-#                                 if drones_in_category.exists():
-#                                     purchased_drones_index = date_list.index(date_key)
-#                                     purchased_drones[purchased_drones_index]['count'] = date_counts[date_key]
-#
-#                         response_data['Purchased_drones_Graph'].append({
-#                             "label": category,
-#                             "Purchased_drones": purchased_drones
-#                         })
-#                 else:
-#                     # Default response when no drone models are provided
-#                     response_data['Purchased_drones_Graph'].append({
-#                         "label": "Purchased Drones",
-#                         "Purchased_drones": [{"date": date.strftime('%d-%m-%Y'), "count": count} for date, count in date_counts.items()]
-#                     })
-#
-#                 # Calculate total billing for completed invoices in the date range
-#                 completed_items = AddItem.objects.filter(
-#                     owner_id=user_id,
-#                     invoice_status__invoice_status_name="Completed",
-#                     updated_date_time__range=(start_date, end_date)
-#                 )
-#
-#                 total_billing = 0
-#                 completed_day_counts = {date: 0 for date in date_list}
-#
-#                 # Check and sum quantities based on `drone_model`
-#                 for item in completed_items:
-#                     dronedetails = item.dronedetails  # Assuming this is a JSON field
-#                     invoice_date = item.updated_date_time
-#                     if dronedetails:
-#                         for drone in dronedetails:
-#                             if not drone_model or drone['drone_id'] in relevant_drones.values_list('id', flat=True):
-#                                 quantity = drone.get('quantity', 0)
-#                                 total_billing += quantity
-#                                 if invoice_date.date() in completed_day_counts:
-#                                     completed_day_counts[invoice_date.date()] += quantity
-#
-#                 # Add total billing count to the response
-#                 response_data['total_billing'] = total_billing
-#
-#                 # Calculate inventory count
-#                 total_purchased_orders = sum(date_counts.values())
-#                 response_data['inventory_count'] = total_purchased_orders - total_billing
-#
-#                 # Build the Billing graph based on completed invoices
-#                 for date, count in completed_day_counts.items():
-#                     response_data['Billing_graph'][0]['Billing_Invoice_Graph'].append({
-#                         "date": date.strftime('%d-%m-%Y'),
-#                         "count": count
-#                     })
-#
-#             except ValueError:
-#                 return Response({'error': 'Invalid date format. Use DD-MM-YYYY.'}, status=status.HTTP_400_BAD_REQUEST)
-#
-#             # Wrap response data for date range
-#             return Response({"result": {"data": response_data}}, status=status.HTTP_200_OK)
-#
-#         else:
-#             # If no date range is provided, aggregate by month for the current year
-#             current_year = timezone.now().year
-#             monthly_data = orders.filter(updated_date_time__year=current_year) \
-#                 .values('updated_date_time__month') \
-#                 .annotate(monthly_quantity=Sum('quantity'))
-#
-#             month_counts = {month: 0 for month in range(1, 13)}
-#             for item in monthly_data:
-#                 month_key = item['updated_date_time__month']
-#                 month_counts[month_key] = item.get('monthly_quantity', 0)
-#
-#             # Build response for purchased drones graph by month
-#             if relevant_drones:
-#                 categories = relevant_drones.values_list('drone_category__category_name', flat=True).distinct()
-#                 for category in categories:
-#                     purchased_drones = [{"date": datetime(current_year, month, 1).strftime('%B'), "count": 0} for month in range(1, 13)]
-#                     for month, count in month_counts.items():
-#                         for idx, category_data in enumerate(purchased_drones):
-#                             if category_data["date"] == datetime(current_year, month, 1).strftime('%B'):
-#                                 purchased_drones[idx]['count'] = count
-#
-#                     response_data['Purchased_drones_Graph'].append({
-#                         "label": category,
-#                         "Purchased_drones": purchased_drones
-#                     })
-#             else:
-#                 # Default response when no drone models are provided
-#                 response_data['Purchased_drones_Graph'].append({
-#                     "label": "Purchased Drones",
-#                     "Purchased_drones": [{"date": datetime(current_year, month, 1).strftime('%B'), "count": count} for month, count in month_counts.items()]
-#                 })
-#
-#             # Calculate total billing for the user based on completed orders in AddItem
-#             try:
-#                 completed_items = AddItem.objects.filter(
-#                     owner_id=user_id,
-#                     invoice_status__invoice_status_name="Completed"
-#                 )
-#
-#                 total_billing = 0
-#                 completed_month_counts = {month: 0 for month in range(1, 13)}
-#
-#                 for item in completed_items:
-#                     dronedetails = item.dronedetails  # JSON field
-#                     invoice_date = item.updated_date_time
-#                     if dronedetails:
-#                         for drone in dronedetails:
-#                             if not drone_model or drone['drone_id'] in relevant_drones.values_list('id', flat=True):
-#                                 quantity = drone.get('quantity', 0)
-#                                 total_billing += quantity
-#                                 completed_month_counts[invoice_date.month] += quantity
-#
-#                 # Add total billing count to the response
-#                 response_data['total_billing'] = total_billing
-#
-#                 # Calculate inventory count
-#                 total_purchased_orders = sum(month_counts.values())
-#                 response_data['inventory_count'] = total_purchased_orders - total_billing
-#
-#                 # Build the Billing graph based on completed invoices for months
-#                 for month, count in completed_month_counts.items():
-#                     response_data['Billing_graph'][0]['Billing_Invoice_Graph'].append({
-#                         "date": datetime(current_year, month, 1).strftime('%B'),
-#                         "count": count
-#                     })
-#
-#             except Exception as e:
-#                 return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-#
-#             return Response({"result": {"data": response_data}}, status=status.HTTP_200_OK)
-
-# class SuperAdminOrderSummary(APIView):
-#     def get(self, request):
-#         role_name = request.query_params.get('role_name')
-#         user_id = request.query_params.get('user_id')
-#         partner_id = request.query_params.get('partner_id')  # New parameter for partner ID
-#         start_time = request.query_params.get('start_time')
-#         end_time = request.query_params.get('end_time')
-#         drone_model = request.query_params.get('drone_model')
-#
-#         # Check if role_name and user_id are provided
-#         if not role_name or not user_id:
-#             return Response({'error': 'role_name and user_id are required.'}, status=status.HTTP_400_BAD_REQUEST)
-#
-#         # Determine the target_user_id based on role and partner_id
-#         target_user_id = user_id
-#         if role_name.lower() == "partner" and partner_id:
-#             # Use partner_id as user_id if partner_id is provided in the Partner role scenario
-#             target_user_id = partner_id
-#
-#         # Prepare orders query based on role
-#         if role_name.lower() == "super_admin":
-#             # Super Admin case: Filter orders for this Super Admin's user_id only
-#             orders = Order.objects.filter(user_id=user_id, order_status__status_name="Shipped")
-#         elif role_name.lower() == "partner":
-#             if partner_id:
-#                 # Partner case with partner_id: Filter orders for that specific partner_id only
-#                 orders = Order.objects.filter(user_id=target_user_id, order_status__status_name="Shipped")
-#             else:
-#                 # Partner case without partner_id: Filter orders for all user IDs except the Super Admin's user_id
-#                 orders = Order.objects.exclude(user_id=user_id).filter(order_status__status_name="Shipped")
-#         else:
-#             return Response({'error': 'Invalid role name.'}, status=status.HTTP_400_BAD_REQUEST)
-#
-#         # Filter by drone categories if `drone_model` is provided
-#         relevant_drones = None
-#         if drone_model:
-#             drone_category_ids = [int(id) for id in drone_model.split(',') if id.isdigit()]
-#             relevant_drones = Drone.objects.filter(drone_category_id__in=drone_category_ids)
-#             orders = orders.filter(drone_id__in=relevant_drones)
-#
-#         # Prepare response structure
-#         response_data = {
-#             "inventory_count": 0,
-#             "total_billing": 0,
-#             "Purchased_drones_Graph": [],
-#             "Billing_graph": [
-#                 {
-#                     "labels": "Invoice Billing Count",
-#                     "Billing_Invoice_Graph": []
-#                 }
-#             ]
-#         }
-#
-#         # Handle date range filtering if provided
-#         if start_time and end_time:
-#             try:
-#                 # Parse the start and end time
-#                 start_date = timezone.make_aware(datetime.strptime(start_time, '%d-%m-%Y'))
-#                 end_date = timezone.make_aware(datetime.strptime(end_time, '%d-%m-%Y'))
-#
-#                 # Create a list of all dates in the range
-#                 date_list = [(start_date + timedelta(days=i)).date() for i in range((end_date - start_date).days + 1)]
-#
-#                 # Daily order quantities
-#                 daily_data = orders.filter(updated_date_time__range=(start_date, end_date)) \
-#                     .values('updated_date_time__date') \
-#                     .annotate(daily_quantity=Sum('quantity'))
-#
-#                 # Create a dictionary to hold the counts for each date
-#                 date_counts = {date: 0 for date in date_list}
-#                 for item in daily_data:
-#                     date_key = item['updated_date_time__date']
-#                     if date_key in date_counts:
-#                         date_counts[date_key] = item.get('daily_quantity', 0)
-#
-#                 # Purchased drones graph data
-#                 if relevant_drones:
-#                     categories = relevant_drones.values_list('drone_category__category_name', flat=True).distinct()
-#                     for category in categories:
-#                         purchased_drones = [{"date": date.strftime('%d-%m-%Y'), "count": 0} for date in date_list]
-#                         for item in daily_data:
-#                             date_key = item['updated_date_time__date']
-#                             if date_key in date_counts:
-#                                 drones_in_category = relevant_drones.filter(drone_category__category_name=category)
-#                                 if drones_in_category.exists():
-#                                     purchased_drones_index = date_list.index(date_key)
-#                                     purchased_drones[purchased_drones_index]['count'] = date_counts[date_key]
-#
-#                         response_data['Purchased_drones_Graph'].append({
-#                             "label": category,
-#                             "Purchased_drones": purchased_drones
-#                         })
-#                 else:
-#                     # Default response when no drone models are provided
-#                     response_data['Purchased_drones_Graph'].append({
-#                         "label": "Purchased Drones",
-#                         "Purchased_drones": [{"date": date.strftime('%d-%m-%Y'), "count": count} for date, count in date_counts.items()]
-#                     })
-#
-#                 # Calculate total billing for completed invoices in the date range
-#                 completed_items = AddItem.objects.filter(
-#                     owner_id=target_user_id,
-#                     invoice_status__invoice_status_name="Completed",
-#                     updated_date_time__range=(start_date, end_date)
-#                 )
-#
-#                 total_billing = 0
-#                 completed_day_counts = {date: 0 for date in date_list}
-#
-#                 # Check and sum quantities based on `drone_model`
-#                 for item in completed_items:
-#                     dronedetails = item.dronedetails  # Assuming this is a JSON field
-#                     invoice_date = item.updated_date_time
-#                     if dronedetails:
-#                         for drone in dronedetails:
-#                             if not drone_model or drone['drone_id'] in relevant_drones.values_list('id', flat=True):
-#                                 quantity = drone.get('quantity', 0)
-#                                 total_billing += quantity
-#                                 if invoice_date.date() in completed_day_counts:
-#                                     completed_day_counts[invoice_date.date()] += quantity
-#
-#                 # Add total billing count to the response
-#                 response_data['total_billing'] = total_billing
-#
-#                 # Calculate inventory count
-#                 total_purchased_orders = sum(date_counts.values())
-#                 response_data['inventory_count'] = total_purchased_orders - total_billing
-#
-#                 # Build the Billing graph based on completed invoices
-#                 for date, count in completed_day_counts.items():
-#                     response_data['Billing_graph'][0]['Billing_Invoice_Graph'].append({
-#                         "date": date.strftime('%d-%m-%Y'),
-#                         "count": count
-#                     })
-#
-#             except ValueError:
-#                 return Response({'error': 'Invalid date format. Use DD-MM-YYYY.'}, status=status.HTTP_400_BAD_REQUEST)
-#
-#             # Wrap response data for date range
-#             return Response({"result": {"data": response_data}}, status=status.HTTP_200_OK)
-#
-#         else:
-#             # If no date range is provided, aggregate by month for the current year
-#             current_year = timezone.now().year
-#             monthly_data = orders.filter(updated_date_time__year=current_year) \
-#                 .values('updated_date_time__month') \
-#                 .annotate(monthly_quantity=Sum('quantity'))
-#
-#             month_counts = {month: 0 for month in range(1, 13)}
-#             for item in monthly_data:
-#                 month_key = item['updated_date_time__month']
-#                 month_counts[month_key] = item.get('monthly_quantity', 0)
-#
-#             # Build response for purchased drones graph by month
-#             if relevant_drones:
-#                 categories = relevant_drones.values_list('drone_category__category_name', flat=True).distinct()
-#                 for category in categories:
-#                     purchased_drones = [{"date": datetime(current_year, month, 1).strftime('%B'), "count": 0} for month in range(1, 13)]
-#                     for month, count in month_counts.items():
-#                         for idx, category_data in enumerate(purchased_drones):
-#                             if category_data["date"] == datetime(current_year, month, 1).strftime('%B'):
-#                                 purchased_drones[idx]['count'] = count
-#
-#                     response_data['Purchased_drones_Graph'].append({
-#                         "label": category,
-#                         "Purchased_drones": purchased_drones
-#                     })
-#             else:
-#                 # Default response when no drone models are provided
-#                 response_data['Purchased_drones_Graph'].append({
-#                     "label": "Purchased Drones",
-#                     "Purchased_drones": [{"date": datetime(current_year, month, 1).strftime('%B'), "count": count} for month, count in month_counts.items()]
-#                 })
-#
-#             # Calculate total billing for the user based on completed orders in AddItem
-#             try:
-#                 completed_items = AddItem.objects.filter(
-#                     owner_id=target_user_id,
-#                     invoice_status__invoice_status_name="Completed"
-#                 )
-#
-#                 total_billing = 0
-#                 completed_month_counts = {month: 0 for month in range(1, 13)}
-#
-#                 for item in completed_items:
-#                     dronedetails = item.dronedetails  # JSON field
-#                     invoice_date = item.updated_date_time
-#                     if dronedetails:
-#                         for drone in dronedetails:
-#                             if not drone_model or drone['drone_id'] in relevant_drones.values_list('id', flat=True):
-#                                 quantity = drone.get('quantity', 0)
-#                                 total_billing += quantity
-#                                 completed_month_counts[invoice_date.month] += quantity
-#
-#                 # Add total billing count to the response
-#                 response_data['total_billing'] = total_billing
-#
-#                 # Calculate inventory count
-#                 total_purchased_orders = sum(month_counts.values())
-#                 response_data['inventory_count'] = total_purchased_orders - total_billing
-#
-#                 # Build the Billing graph based on completed invoices for months
-#                 for month, count in completed_month_counts.items():
-#                     response_data['Billing_graph'][0]['Billing_Invoice_Graph'].append({
-#                         "date": datetime(current_year, month, 1).strftime('%B'),
-#                         "count": count
-#                     })
-#
-#             except Exception as e:
-#                 return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-#
-#             return Response({"result": {"data": response_data}}, status=status.HTTP_200_OK)
-
-# class SuperAdminOrderSummary(APIView):
-#     def get(self, request):
-#         role_name = request.query_params.get('role_name')
-#         user_id = request.query_params.get('user_id')
-#         partner_id = request.query_params.get('partner_id')  # New parameter for partner ID
-#         start_time = request.query_params.get('start_time')  # New parameter for start time
-#         end_time = request.query_params.get('end_time')      # New parameter for end time
-#         drone_model = request.query_params.get('drone_model')  # New parameter for drone model
-#
-#         # Check if role_name and user_id are provided
-#         if not role_name or not user_id:
-#             return Response({'error': 'role_name and user_id are required.'}, status=status.HTTP_400_BAD_REQUEST)
-#
-#         # Determine the target_user_id based on role and partner_id
-#         target_user_id = user_id
-#         if role_name.lower() == "partner" and partner_id:
-#             target_user_id = partner_id  # Use partner_id as user_id if partner_id is provided in the Partner role scenario
-#
-#         # Prepare orders query based on role
-#         orders = Order.objects.filter(order_status__status_name="Shipped")
-#
-#         # Apply date range filters if provided
-#         if start_time and end_time:
-#             try:
-#                 start_date = timezone.make_aware(datetime.strptime(start_time, '%d-%m-%Y'))
-#                 end_date = timezone.make_aware(datetime.strptime(end_time, '%d-%m-%Y'))
-#                 orders = orders.filter(updated_date_time__range=(start_date, end_date))
-#             except ValueError:
-#                 return Response({'error': 'Invalid date format. Use DD-MM-YYYY.'}, status=status.HTTP_400_BAD_REQUEST)
-#
-#         # Filter orders based on role
-#         if role_name.lower() == "super_admin":
-#             orders = orders.filter(user_id=user_id)
-#         elif role_name.lower() == "partner":
-#             if partner_id:
-#                 orders = orders.filter(user_id=target_user_id)
-#             else:
-#                 orders = orders.exclude(user_id=user_id)
-#         else:
-#             return Response({'error': 'Invalid role name.'}, status=status.HTTP_400_BAD_REQUEST)
-#
-#         # Filter by drone categories if `drone_model` is provided
-#         relevant_drones = None
-#         if drone_model:
-#             drone_category_ids = [int(id) for id in drone_model.split(',') if id.isdigit()]
-#             relevant_drones = Drone.objects.filter(drone_category_id__in=drone_category_ids)
-#             orders = orders.filter(drone_id__in=relevant_drones)
-#
-#         # Prepare response structure
-#         response_data = {
-#             "inventory_count": 0,
-#             "total_billing": 0,
-#             "Purchased_drones_Graph": [],
-#             "Billing_graph": [
-#                 {
-#                     "labels": "Invoice Billing Count",
-#                     "Billing_Invoice_Graph": []
-#                 }
-#             ]
-#         }
-#
-#         # Create a list of all dates in the range if a date range was specified
-#         if start_time and end_time:
-#             date_list = [(start_date + timedelta(days=i)).date() for i in range((end_date - start_date).days + 1)]
-#
-#             # Daily order quantities
-#             daily_data = orders.values('updated_date_time__date') \
-#                 .annotate(daily_quantity=Sum('quantity'))
-#
-#             # Create a dictionary to hold the counts for each date
-#             date_counts = {date: 0 for date in date_list}
-#             for item in daily_data:
-#                 date_key = item['updated_date_time__date']
-#                 if date_key in date_counts:
-#                     date_counts[date_key] = item.get('daily_quantity', 0)
-#
-#             # Purchased drones graph data
-#             if relevant_drones:
-#                 categories = relevant_drones.values_list('drone_category__category_name', flat=True).distinct()
-#                 for category in categories:
-#                     purchased_drones = [{"date": date.strftime('%d-%m-%Y'), "count": 0} for date in date_list]
-#                     for item in daily_data:
-#                         date_key = item['updated_date_time__date']
-#                         if date_key in date_counts:
-#                             drones_in_category = relevant_drones.filter(drone_category__category_name=category)
-#                             if drones_in_category.exists():
-#                                 purchased_drones_index = date_list.index(date_key)
-#                                 purchased_drones[purchased_drones_index]['count'] = date_counts[date_key]
-#
-#                     response_data['Purchased_drones_Graph'].append({
-#                         "label": category,
-#                         "Purchased_drones": purchased_drones
-#                     })
-#             else:
-#                 # Default response when no drone models are provided
-#                 response_data['Purchased_drones_Graph'].append({
-#                     "label": "Purchased Drones",
-#                     "Purchased_drones": [{"date": date.strftime('%d-%m-%Y'), "count": count} for date, count in date_counts.items()]
-#                 })
-#
-#             # Calculate total billing for completed invoices in the date range
-#             completed_items = AddItem.objects.filter(
-#                 owner_id=target_user_id,
-#                 invoice_status__invoice_status_name="Completed",
-#                 updated_date_time__range=(start_date, end_date)
-#             )
-#
-#             total_billing = 0
-#             completed_day_counts = {date: 0 for date in date_list}
-#
-#             # Check and sum quantities based on `drone_model`
-#             for item in completed_items:
-#                 dronedetails = item.dronedetails  # Assuming this is a JSON field
-#                 invoice_date = item.updated_date_time
-#                 if dronedetails:
-#                     for drone in dronedetails:
-#                         if not drone_model or drone['drone_id'] in relevant_drones.values_list('id', flat=True):
-#                             quantity = drone.get('quantity', 0)
-#                             total_billing += quantity
-#                             if invoice_date.date() in completed_day_counts:
-#                                 completed_day_counts[invoice_date.date()] += quantity
-#
-#             # Add total billing count to the response
-#             response_data['total_billing'] = total_billing
-#
-#             # Calculate inventory count
-#             total_purchased_orders = sum(date_counts.values())
-#             response_data['inventory_count'] = total_purchased_orders - total_billing
-#
-#             # Build the Billing graph based on completed invoices
-#             for date, count in completed_day_counts.items():
-#                 response_data['Billing_graph'][0]['Billing_Invoice_Graph'].append({
-#                     "date": date.strftime('%d-%m-%Y'),
-#                     "count": count
-#                 })
-#
-#         else:
-#             # If no date range is provided, aggregate by month for the current year
-#             current_year = timezone.now().year
-#             monthly_data = orders.filter(updated_date_time__year=current_year) \
-#                 .values('updated_date_time__month') \
-#                 .annotate(monthly_quantity=Sum('quantity'))
-#
-#             month_counts = {month: 0 for month in range(1, 13)}
-#             for item in monthly_data:
-#                 month_key = item['updated_date_time__month']
-#                 month_counts[month_key] = item.get('monthly_quantity', 0)
-#
-#             # Build response for purchased drones graph by month
-#             if relevant_drones:
-#                 categories = relevant_drones.values_list('drone_category__category_name', flat=True).distinct()
-#                 for category in categories:
-#                     purchased_drones = [{"date": datetime(current_year, month, 1).strftime('%B'), "count": 0} for month in range(1, 13)]
-#                     for month, count in month_counts.items():
-#                         for idx, category_data in enumerate(purchased_drones):
-#                             if category_data["date"] == datetime(current_year, month, 1).strftime('%B'):
-#                                 purchased_drones[idx]['count'] = count
-#
-#                     response_data['Purchased_drones_Graph'].append({
-#                         "label": category,
-#                         "Purchased_drones": purchased_drones
-#                     })
-#             else:
-#                 # Default response when no drone models are provided
-#                 response_data['Purchased_drones_Graph'].append({
-#                     "label": "Purchased Drones",
-#                     "Purchased_drones": [{"date": datetime(current_year, month, 1).strftime('%B'), "count": count} for month, count in month_counts.items()]
-#                 })
-#
-#             # Calculate total billing for the user based on completed orders in AddItem
-#             completed_items = AddItem.objects.filter(
-#                 owner_id=target_user_id,
-#                 invoice_status__invoice_status_name="Completed"
-#             )
-#
-#             total_billing = 0
-#             completed_month_counts = {month: 0 for month in range(1, 13)}
-#
-#             for item in completed_items:
-#                 dronedetails = item.dronedetails  # JSON field
-#                 invoice_date = item.updated_date_time
-#                 if dronedetails:
-#                     for drone in dronedetails:
-#                         if not drone_model or drone['drone_id'] in relevant_drones.values_list('id', flat=True):
-#                             quantity = drone.get('quantity', 0)
-#                             total_billing += quantity
-#                             completed_month_counts[invoice_date.month] += quantity
-#
-#             # Add total billing count to the response
-#             response_data['total_billing'] = total_billing
-#
-#             # Calculate inventory count
-#             total_purchased_orders = sum(month_counts.values())
-#             response_data['inventory_count'] = total_purchased_orders - total_billing
-#
-#             # Build the Billing graph based on completed invoices for months
-#             for month, count in completed_month_counts.items():
-#                 response_data['Billing_graph'][0]['Billing_Invoice_Graph'].append({
-#                     "date": datetime(current_year, month, 1).strftime('%B'),
-#                     "count": count
-#                 })
-#
-#         return Response({"result": {"data": response_data}}, status=status.HTTP_200_OK)
-
-
-##workingggggggggggggggggggggg
-# class SuperAdminOrderSummary(APIView):
-#     def get(self, request):
-#         role_name = request.query_params.get('role_name')
-#         user_id = request.query_params.get('user_id')
-#         partner_id = request.query_params.get('partner_id')  # New parameter for partner ID
-#         start_time = request.query_params.get('start_time')
-#         end_time = request.query_params.get('end_time')
-#         drone_model = request.query_params.get('drone_model')
-#
-#         # Check if role_name and user_id are provided
-#         if not role_name or not user_id:
-#             return Response({'error': 'role_name and user_id are required.'}, status=status.HTTP_400_BAD_REQUEST)
-#
-#         # Determine the target_user_id based on role and partner_id
-#         target_user_id = user_id
-#         if role_name.lower() == "partner" and partner_id:
-#             # Use partner_id as user_id if partner_id is provided in the Partner role scenario
-#             target_user_id = partner_id
-#
-#         # Prepare orders query based on role
-#         if role_name.lower() == "super_admin":
-#             # Super Admin case: Filter orders for this Super Admin's user_id only
-#             orders = Order.objects.filter(user_id=user_id, order_status__status_name="Shipped")
-#         elif role_name.lower() == "partner":
-#             if partner_id:
-#                 # Partner case with partner_id: Filter orders for that specific partner_id only
-#                 orders = Order.objects.filter(user_id=target_user_id, order_status__status_name="Shipped")
-#             else:
-#                 # Partner case without partner_id: Filter orders for all user IDs except the Super Admin's user_id
-#                 orders = Order.objects.exclude(user_id=user_id).filter(order_status__status_name="Shipped")
-#         else:
-#             return Response({'error': 'Invalid role name.'}, status=status.HTTP_400_BAD_REQUEST)
-#
-#         # Filter by drone categories if `drone_model` is provided
-#         relevant_drones = None
-#         if drone_model:
-#             drone_category_ids = [int(id) for id in drone_model.split(',') if id.isdigit()]
-#             relevant_drones = Drone.objects.filter(drone_category_id__in=drone_category_ids)
-#             orders = orders.filter(drone_id__in=relevant_drones)
-#
-#         # Prepare response structure
-#         response_data = {
-#             "inventory_count": 0,
-#             "total_billing": 0,
-#             "Purchased_drones_Graph": [],
-#             "Billing_graph": [
-#                 {
-#                     "labels": "Invoice Billing Count",
-#                     "Billing_Invoice_Graph": []
-#                 }
-#             ]
-#         }
-#
-#         # Handle date range filtering if provided
-#         if start_time and end_time:
-#             try:
-#                 # Parse the start and end time
-#                 start_date = timezone.make_aware(datetime.strptime(start_time, '%d-%m-%Y'))
-#                 end_date = timezone.make_aware(datetime.strptime(end_time, '%d-%m-%Y'))
-#
-#                 # Create a list of all dates in the range
-#                 date_list = [(start_date + timedelta(days=i)).date() for i in range((end_date - start_date).days + 1)]
-#
-#                 # Daily order quantities
-#                 daily_data = orders.filter(updated_date_time__range=(start_date, end_date)) \
-#                     .values('updated_date_time__date') \
-#                     .annotate(daily_quantity=Sum('quantity'))
-#
-#                 # Create a dictionary to hold the counts for each date
-#                 date_counts = {date: 0 for date in date_list}
-#                 for item in daily_data:
-#                     date_key = item['updated_date_time__date']
-#                     if date_key in date_counts:
-#                         date_counts[date_key] = item.get('daily_quantity', 0)
-#
-#                 # Purchased drones graph data
-#                 if relevant_drones:
-#                     categories = relevant_drones.values_list('drone_category__category_name', flat=True).distinct()
-#                     for category in categories:
-#                         purchased_drones = [{"date": date.strftime('%d-%m-%Y'), "count": 0} for date in date_list]
-#                         for item in daily_data:
-#                             date_key = item['updated_date_time__date']
-#                             if date_key in date_counts:
-#                                 drones_in_category = relevant_drones.filter(drone_category__category_name=category)
-#                                 if drones_in_category.exists():
-#                                     purchased_drones_index = date_list.index(date_key)
-#                                     purchased_drones[purchased_drones_index]['count'] = date_counts[date_key]
-#
-#                         response_data['Purchased_drones_Graph'].append({
-#                             "label": category,
-#                             "Purchased_drones": purchased_drones
-#                         })
-#                 else:
-#                     # Default response when no drone models are provided
-#                     response_data['Purchased_drones_Graph'].append({
-#                         "label": "Purchased Drones",
-#                         "Purchased_drones": [{"date": date.strftime('%d-%m-%Y'), "count": count} for date, count in date_counts.items()]
-#                     })
-#
-#                 # Calculate total billing for completed invoices in the date range
-#                 completed_items = AddItem.objects.filter(
-#                     owner_id=target_user_id,
-#                     invoice_status__invoice_status_name="Completed",
-#                     updated_date_time__range=(start_date, end_date)
-#                 )
-#
-#                 total_billing = 0
-#                 completed_day_counts = {date: 0 for date in date_list}
-#
-#                 # Check and sum quantities based on `drone_model`
-#                 for item in completed_items:
-#                     dronedetails = item.dronedetails  # Assuming this is a JSON field
-#                     invoice_date = item.updated_date_time
-#                     if dronedetails:
-#                         for drone in dronedetails:
-#                             if not drone_model or drone['drone_id'] in relevant_drones.values_list('id', flat=True):
-#                                 quantity = drone.get('quantity', 0)
-#                                 total_billing += quantity
-#                                 if invoice_date.date() in completed_day_counts:
-#                                     completed_day_counts[invoice_date.date()] += quantity
-#
-#                 # Add total billing count to the response
-#                 response_data['total_billing'] = total_billing
-#
-#                 # Calculate inventory count
-#                 total_purchased_orders = sum(date_counts.values())
-#                 response_data['inventory_count'] = total_purchased_orders - total_billing
-#
-#                 # Build the Billing graph based on completed invoices
-#                 for date, count in completed_day_counts.items():
-#                     response_data['Billing_graph'][0]['Billing_Invoice_Graph'].append({
-#                         "date": date.strftime('%d-%m-%Y'),
-#                         "count": count
-#                     })
-#
-#             except ValueError:
-#                 return Response({'error': 'Invalid date format. Use DD-MM-YYYY.'}, status=status.HTTP_400_BAD_REQUEST)
-#
-#             # Wrap response data for date range
-#             return Response({"result": {"data": response_data}}, status=status.HTTP_200_OK)
-#
-#         else:
-#             # If no date range is provided, aggregate by month for the current year
-#             current_year = timezone.now().year
-#             monthly_data = orders.filter(updated_date_time__year=current_year) \
-#                 .values('updated_date_time__month') \
-#                 .annotate(monthly_quantity=Sum('quantity'))
-#
-#             month_counts = {month: 0 for month in range(1, 13)}
-#             for item in monthly_data:
-#                 month_key = item['updated_date_time__month']
-#                 month_counts[month_key] = item.get('monthly_quantity', 0)
-#
-#             # Build response for purchased drones graph by month
-#             if relevant_drones:
-#                 categories = relevant_drones.values_list('drone_category__category_name', flat=True).distinct()
-#                 for category in categories:
-#                     purchased_drones = [{"date": datetime(current_year, month, 1).strftime('%B'), "count": 0} for month in range(1, 13)]
-#                     for month, count in month_counts.items():
-#                         for idx, category_data in enumerate(purchased_drones):
-#                             if category_data["date"] == datetime(current_year, month, 1).strftime('%B'):
-#                                 purchased_drones[idx]['count'] = count
-#
-#                     response_data['Purchased_drones_Graph'].append({
-#                         "label": category,
-#                         "Purchased_drones": purchased_drones
-#                     })
-#             else:
-#                 # Default response when no drone models are provided
-#                 response_data['Purchased_drones_Graph'].append({
-#                     "label": "Purchased Drones",
-#                     "Purchased_drones": [{"date": datetime(current_year, month, 1).strftime('%B'), "count": count} for month, count in month_counts.items()]
-#                 })
-#
-#             # Calculate total billing for the user based on completed orders in AddItem
-#             try:
-#                 completed_items = AddItem.objects.filter(
-#                     owner_id=target_user_id,
-#                     invoice_status__invoice_status_name="Completed"
-#                 )
-#
-#                 total_billing = 0
-#                 completed_month_counts = {month: 0 for month in range(1, 13)}
-#
-#                 for item in completed_items:
-#                     dronedetails = item.dronedetails  # JSON field
-#                     invoice_date = item.updated_date_time
-#                     if dronedetails:
-#                         for drone in dronedetails:
-#                             if not drone_model or drone['drone_id'] in relevant_drones.values_list('id', flat=True):
-#                                 quantity = drone.get('quantity', 0)
-#                                 total_billing += quantity
-#                                 completed_month_counts[invoice_date.month] += quantity
-#
-#                 # Add total billing count to the response
-#                 response_data['total_billing'] = total_billing
-#
-#                 # Calculate inventory count
-#                 total_purchased_orders = sum(month_counts.values())
-#                 response_data['inventory_count'] = total_purchased_orders - total_billing
-#
-#                 # Build the Billing graph based on completed invoices for months
-#                 for month, count in completed_month_counts.items():
-#                     response_data['Billing_graph'][0]['Billing_Invoice_Graph'].append({
-#                         "date": datetime(current_year, month, 1).strftime('%B'),
-#                         "count": count
-#                     })
-#
-#             except Exception as e:
-#                 return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-#
-#             return Response({"result": {"data": response_data}}, status=status.HTTP_200_OK)
 
 class SuperAdminOrderSummary(APIView):
     def get(self, request):
@@ -25323,7 +18132,7 @@ class SuperAdminOrderSummary(APIView):
                 return Response({'error': 'Role not found.'}, status=status.HTTP_404_NOT_FOUND)
 
             if role_name == "super_admin":
-                orders = Order.objects.filter( order_status__status_name="Shipped")
+                orders = Order.objects.filter(order_status__status_name="Shipped")
 
                 # Filter relevant drones if `drone_model` is provided
                 relevant_drones = None
@@ -25702,7 +18511,8 @@ class SuperAdminOrderSummary(APIView):
                             else:
                                 response_data['Purchased_drones_Graph'].append({
                                     "label": "Purchased Drones",
-                                    "Purchased_drones": [{"date": date.strftime('%d-%m-%Y'), "count": count} for date, count
+                                    "Purchased_drones": [{"date": date.strftime('%d-%m-%Y'), "count": count} for
+                                                         date, count
                                                          in date_counts.items()]
                                 })
 
@@ -25758,8 +18568,9 @@ class SuperAdminOrderSummary(APIView):
                             categories = relevant_drones.values_list('drone_category__category_name',
                                                                      'drone_category__id').distinct()
                             for category, category_id in categories:
-                                purchased_drones = [{"date": datetime(current_year, month, 1).strftime('%B'), "count": 0}
-                                                    for month in range(1, 13)]
+                                purchased_drones = [
+                                    {"date": datetime(current_year, month, 1).strftime('%B'), "count": 0}
+                                    for month in range(1, 13)]
                                 for item in monthly_data:
                                     if item['drone_id__drone_category'] == category_id:
                                         month_key = item['updated_date_time__month']
@@ -25789,7 +18600,8 @@ class SuperAdminOrderSummary(APIView):
                             dronedetails = item.dronedetails
                             if dronedetails:
                                 for drone in dronedetails:
-                                    if not drone_model or drone['drone_id'] in relevant_drones.values_list('id', flat=True):
+                                    if not drone_model or drone['drone_id'] in relevant_drones.values_list('id',
+                                                                                                           flat=True):
                                         quantity = drone.get('quantity', 0)
                                         total_billing += quantity
                                         completed_month_counts[item.updated_date_time.month] += quantity
@@ -25805,629 +18617,6 @@ class SuperAdminOrderSummary(APIView):
                         return Response({"result": {"data": response_data}}, status=status.HTTP_200_OK)
 
         return Response({'error': 'Missing user ID or role name.'}, status=status.HTTP_400_BAD_REQUEST)
-
-
-####pusheddd codeee
-# class SuperAdminOrderSummary(APIView):
-#     def get(self, request):
-#         role_name = request.query_params.get('role_name')
-#         user_id = request.query_params.get('user_id')
-#         start_time = request.query_params.get('start_time')
-#         end_time = request.query_params.get('end_time')
-#         drone_model = request.query_params.get('drone_model')
-#         partner_id = request.query_params.get('partner_id')
-#
-#         if not role_name or not user_id:
-#             return Response({"error": "Missing user ID or role name."}, status=status.HTTP_400_BAD_REQUEST)
-#
-#         if role_name and user_id:
-#             role_name = role_name.lower()  # Normalize to lowercase for comparison
-#
-#             # Check if the role exists
-#             try:
-#                 partner_role = Role.objects.get(role_name__iexact=role_name)
-#                 print(partner_role,"yyyyyyyyy")
-#             except Role.DoesNotExist:
-#                 return Response({'error': 'Role not found.'}, status=status.HTTP_404_NOT_FOUND)
-#
-#             if role_name == "super_admin":
-#                 # Filter orders for the given partner and user
-#                 orders = Order.objects.filter(order_status__status_name="Shipped")
-#
-#                 # Filter by drone categories if `drone_model` is provided
-#                 relevant_drones = None
-#                 if drone_model:
-#                     drone_category_ids = [int(id) for id in drone_model.split(',') if id.isdigit()]
-#                     relevant_drones = Drone.objects.filter(drone_category_id__in=drone_category_ids)
-#                     orders = orders.filter(drone_id__in=relevant_drones)
-#
-#                 response_data = {
-#                     "inventory_count": 0,
-#                     "total_billing": 0,
-#                     "total_orders": 0,
-#                     "Purchased_drones_Graph": [],
-#                     "Billing_graph": [{
-#                         "labels": "Invoice Billing Count",
-#                         "Billing_Invoice_Graph": []
-#                     }]
-#                 }
-#
-#                 current_year = timezone.now().year
-#
-#                 # Process date range filtering
-#                 if start_time and end_time:
-#                     try:
-#                         start_date = timezone.make_aware(datetime.strptime(start_time, '%d-%m-%Y'))
-#                         end_date = timezone.make_aware(datetime.strptime(end_time, '%d-%m-%Y'))
-#
-#                         date_list = [(start_date + timedelta(days=i)).date() for i in range((end_date - start_date).days + 1)]
-#
-#                         daily_data = orders.filter(updated_date_time__range=(start_date, end_date)) \
-#                             .values('updated_date_time__date') \
-#                             .annotate(daily_quantity=Sum('quantity'))
-#
-#                         date_counts = {date: 0 for date in date_list}
-#                         for item in daily_data:
-#                             date_key = item['updated_date_time__date']
-#                             date_counts[date_key] = item.get('daily_quantity', 0)
-#
-#                         total_orders = sum(date_counts.values())
-#                         response_data['total_orders'] = total_orders
-#
-#                         if relevant_drones:
-#                             categories = relevant_drones.values_list('drone_category__category_name', flat=True).distinct()
-#                             for category in categories:
-#                                 purchased_drones = [{"date": date.strftime('%d-%m-%Y'), "count": 0} for date in date_list]
-#                                 for item in daily_data:
-#                                     date_key = item['updated_date_time__date']
-#                                     if date_key in date_counts:
-#                                         drones_in_category = relevant_drones.filter(drone_category__category_name=category)
-#                                         if drones_in_category.exists():
-#                                             purchased_drones_index = date_list.index(date_key)
-#                                             purchased_drones[purchased_drones_index]['count'] = date_counts[date_key]
-#
-#                                 response_data['Purchased_drones_Graph'].append({
-#                                     "label": category,
-#                                     "Purchased_drones": purchased_drones
-#                                 })
-#
-#                         completed_items = AddItem.objects.filter(
-#                             owner_id=user_id,
-#                             invoice_status__invoice_status_name="Completed",
-#                             updated_date_time__range=(start_date, end_date)
-#                         )
-#
-#                         total_billing = 0
-#                         completed_day_counts = {date: 0 for date in date_list}
-#
-#                         for item in completed_items:
-#                             dronedetails = item.dronedetails  # Assuming this is a JSON field
-#                             invoice_date = item.updated_date_time
-#                             if dronedetails:
-#                                 for drone in dronedetails:
-#                                     if not drone_model or drone['drone_id'] in relevant_drones.values_list('id', flat=True):
-#                                         quantity = drone.get('quantity', 0)
-#                                         total_billing += quantity
-#                                         if invoice_date.date() in completed_day_counts:
-#                                             completed_day_counts[invoice_date.date()] += quantity
-#
-#                         response_data['total_billing'] = total_billing
-#                         total_purchased_orders = sum(date_counts.values())
-#                         response_data['inventory_count'] = total_purchased_orders - total_billing
-#
-#                         for date, count in completed_day_counts.items():
-#                             response_data['Billing_graph'][0]['Billing_Invoice_Graph'].append({
-#                                 "date": date.strftime('%d-%m-%Y'),
-#                                 "count": count
-#                             })
-#
-#                     except ValueError:
-#                         return Response({'error': 'Invalid date format. Use DD-MM-YYYY.'}, status=status.HTTP_400_BAD_REQUEST)
-#
-#                     return Response({"result": {"data": response_data}}, status=status.HTTP_200_OK)
-#
-#                 else:
-#                     monthly_data = orders.filter(updated_date_time__year=current_year) \
-#                         .values('updated_date_time__month') \
-#                         .annotate(monthly_quantity=Sum('quantity'))
-#
-#                     month_counts = {month: 0 for month in range(1, 13)}
-#                     for item in monthly_data:
-#                         month_key = item['updated_date_time__month']
-#                         month_counts[month_key] = item.get('monthly_quantity', 0)
-#
-#                     total_orders = sum(month_counts.values())
-#                     response_data['total_orders'] = total_orders
-#
-#                     if relevant_drones:
-#                         categories = relevant_drones.values_list('drone_category__category_name', flat=True).distinct()
-#                         for category in categories:
-#                             purchased_drones = [{"date": datetime(current_year, month, 1).strftime('%B'), "count": 0} for month in range(1, 13)]
-#                             for month, count in month_counts.items():
-#                                 for idx, category_data in enumerate(purchased_drones):
-#                                     if category_data["date"] == datetime(current_year, month, 1).strftime('%B'):
-#                                         purchased_drones[idx]['count'] = count
-#
-#                             response_data['Purchased_drones_Graph'].append({
-#                                 "label": category,
-#                                 "Purchased_drones": purchased_drones
-#                             })
-#
-#                     completed_items = AddItem.objects.filter(
-#                         owner_id=user_id,
-#                         invoice_status__invoice_status_name="Completed",
-#                         updated_date_time__year=current_year
-#                     )
-#
-#                     total_billing = 0
-#                     monthly_billing_counts = {month: 0 for month in range(1, 13)}
-#
-#                     for item in completed_items:
-#                         dronedetails = item.dronedetails
-#                         invoice_date = item.updated_date_time
-#                         if dronedetails:
-#                             for drone in dronedetails:
-#                                 if not drone_model or drone['drone_id'] in relevant_drones.values_list('id', flat=True):
-#                                     quantity = drone.get('quantity', 0)
-#                                     total_billing += quantity
-#                                     monthly_billing_counts[invoice_date.month] += quantity
-#
-#                     response_data['total_billing'] = total_billing
-#                     total_purchased_orders = sum(month_counts.values())
-#                     response_data['inventory_count'] = total_purchased_orders - total_billing
-#
-#                     for month, count in monthly_billing_counts.items():
-#                         response_data['Billing_graph'][0]['Billing_Invoice_Graph'].append({
-#                             "date": datetime(current_year, month, 1).strftime('%B'),
-#                             "count": count
-#                         })
-#
-#                     return Response({"result": {"data": response_data}}, status=status.HTTP_200_OK)
-#
-#             elif role_name == "partner":
-#                 if partner_id:
-#                     orders = Order.objects.filter(user_id=partner_id, order_status__status_name="Shipped")
-#
-#                     # Filter by drone categories if `drone_model` is provided
-#                     relevant_drones = None
-#                     if drone_model:
-#                         drone_category_ids = [int(id) for id in drone_model.split(',') if id.isdigit()]
-#                         relevant_drones = Drone.objects.filter(drone_category_id__in=drone_category_ids)
-#                         orders = orders.filter(drone_id__in=relevant_drones)
-#
-#                     # Prepare response structure
-#                     response_data = {
-#                         "inventory_count": 0,
-#                         "total_billing": 0,
-#                         "Purchased_drones_Graph": [],
-#                         "Billing_graph": [
-#                             {
-#                                 "labels": "Invoice Billing Count",
-#                                 "Billing_Invoice_Graph": []
-#                             }
-#                         ]
-#                     }
-#
-#                     # Define current_year outside of the conditional blocks
-#                     current_year = timezone.now().year
-#
-#                     # If start_time and end_time are provided
-#                     if start_time and end_time:
-#                         try:
-#                             # Parse the start and end time
-#                             start_date = timezone.make_aware(datetime.strptime(start_time, '%d-%m-%Y'))
-#                             end_date = timezone.make_aware(datetime.strptime(end_time, '%d-%m-%Y'))
-#
-#                             # Create a list of all dates in the range
-#                             date_list = [(start_date + timedelta(days=i)).date() for i in
-#                                          range((end_date - start_date).days + 1)]
-#
-#                             # Sum the quantity of orders for each day using updated_date_time
-#                             daily_data = orders.filter(updated_date_time__range=(start_date, end_date)) \
-#                                 .values('updated_date_time__date') \
-#                                 .annotate(daily_quantity=Sum('quantity'))
-#
-#                             # Create a dictionary to hold the counts for each date
-#                             date_counts = {date: 0 for date in date_list}
-#
-#                             # Map daily quantities to the date counts
-#                             for item in daily_data:
-#                                 date_key = item['updated_date_time__date']
-#                                 if date_key in date_counts:
-#                                     date_counts[date_key] = item.get('daily_quantity', 0)
-#
-#                             # If drone models are provided, prepare the purchased drones graph with categories
-#                             if relevant_drones:
-#                                 # Get unique drone categories
-#                                 categories = relevant_drones.values_list('drone_category__category_name',
-#                                                                          flat=True).distinct()
-#
-#                                 for category in categories:
-#                                     # Initialize the Purchased_drones list with zero counts
-#                                     purchased_drones = [{"date": date.strftime('%d-%m-%Y'), "count": 0} for date in
-#                                                         date_list]
-#
-#                                     # Fill the purchased drones count for each category
-#                                     for item in daily_data:
-#                                         date_key = item['updated_date_time__date']
-#                                         if date_key in date_counts:
-#                                             # Get the corresponding drones for this category
-#                                             drones_in_category = relevant_drones.filter(
-#                                                 drone_category__category_name=category)
-#                                             if drones_in_category.exists():
-#                                                 purchased_drones_index = date_list.index(date_key)
-#                                                 purchased_drones[purchased_drones_index]['count'] = date_counts[
-#                                                     date_key]
-#
-#                                     # Append to the response regardless of purchase history
-#                                     response_data['Purchased_drones_Graph'].append({
-#                                         "label": category,
-#                                         "Purchased_drones": purchased_drones
-#                                     })
-#
-#                             else:
-#                                 # Default response when no drone models are provided
-#                                 response_data['Purchased_drones_Graph'].append({
-#                                     "label": "Purchased Drones",
-#                                     "Purchased_drones": [{"date": date.strftime('%d-%m-%Y'), "count": count} for
-#                                                          date, count in
-#                                                          date_counts.items()]
-#                                 })
-#
-#                             # Calculate total billing for completed invoices in the date range
-#                             completed_items = AddItem.objects.filter(
-#                                 owner_id=partner_id,
-#                                 invoice_status__invoice_status_name="Completed",
-#                                 updated_date_time__range=(start_date, end_date)
-#                             )
-#
-#                             total_billing = 0
-#                             completed_day_counts = {date: 0 for date in date_list}
-#
-#                             # Check and sum quantities based on `drone_model`
-#                             for item in completed_items:
-#                                 dronedetails = item.dronedetails  # Assuming this is a JSON field
-#                                 invoice_date = item.updated_date_time  # Use updated_date_time instead of invoice_date
-#                                 if dronedetails:
-#                                     for drone in dronedetails:
-#                                         # If `drone_model` filter is provided, check drone_id
-#                                         if not drone_model or drone['drone_id'] in relevant_drones.values_list('id',
-#                                                                                                                flat=True):
-#                                             quantity = drone.get('quantity', 0)
-#                                             total_billing += quantity
-#                                             # Increment the count for the corresponding date
-#                                             if invoice_date.date() in completed_day_counts:
-#                                                 completed_day_counts[invoice_date.date()] += quantity
-#
-#                             # Add total billing count to the response
-#                             response_data['total_billing'] = total_billing
-#
-#                             # Calculate inventory count
-#                             total_purchased_orders = sum(date_counts.values())
-#                             response_data['inventory_count'] = total_purchased_orders - total_billing
-#
-#                             # Build the Billing graph based on completed invoices
-#                             for date, count in completed_day_counts.items():
-#                                 response_data['Billing_graph'][0]['Billing_Invoice_Graph'].append({
-#                                     "date": date.strftime('%d-%m-%Y'),  # Format as DD-MM-YYYY
-#                                     "count": count
-#                                 })
-#
-#                         except ValueError:
-#                             return Response({'error': 'Invalid date format. Use DD-MM-YYYY.'},
-#                                             status=status.HTTP_400_BAD_REQUEST)
-#
-#                         # Wrap response data for date range in the required format
-#                         return Response({"result": {"data": response_data}}, status=status.HTTP_200_OK)
-#
-#                     else:
-#                         # If no date range is provided, aggregate by month for the current year
-#                         monthly_data = orders.filter(updated_date_time__year=current_year) \
-#                             .values('updated_date_time__month') \
-#                             .annotate(monthly_quantity=Sum('quantity'))
-#
-#                         # Create a dictionary to hold the monthly counts
-#                         month_counts = {month: 0 for month in range(1, 13)}
-#
-#                         # Map monthly quantities to the month counts
-#                         for item in monthly_data:
-#                             month_key = item['updated_date_time__month']
-#                             month_counts[month_key] = item.get('monthly_quantity', 0)
-#
-#                         # Build the response for the purchased drones graph by month
-#                         if relevant_drones:
-#                             # Get unique drone categories
-#                             categories = relevant_drones.values_list('drone_category__category_name',
-#                                                                      flat=True).distinct()
-#
-#                             for category in categories:
-#                                 purchased_drones = [
-#                                     {"date": datetime(current_year, month, 1).strftime('%B'), "count": 0} for
-#                                     month in range(1, 13)]
-#
-#                                 for month, count in month_counts.items():
-#                                     for idx, category_data in enumerate(purchased_drones):
-#                                         if category_data["date"] == datetime(current_year, month, 1).strftime('%B'):
-#                                             purchased_drones[idx]['count'] = count
-#
-#                                 response_data['Purchased_drones_Graph'].append({
-#                                     "label": category,
-#                                     "Purchased_drones": purchased_drones
-#                                 })
-#
-#                         else:
-#                             # Default response when no drone models are provided
-#                             response_data['Purchased_drones_Graph'].append({
-#                                 "label": "Purchased Drones",
-#                                 "Purchased_drones": [
-#                                     {"date": datetime(current_year, month, 1).strftime('%B'), "count": count} for
-#                                     month, count in month_counts.items()]
-#                             })
-#
-#                         # Calculate the total billing for the user based on completed orders in AddItem
-#                         try:
-#                             completed_items = AddItem.objects.filter(
-#                                 owner_id=partner_id,
-#                                 invoice_status__invoice_status_name="Completed"
-#                             )
-#
-#                             total_billing = 0
-#                             completed_month_counts = {month: 0 for month in range(1, 13)}
-#
-#                             for item in completed_items:
-#                                 dronedetails = item.dronedetails  # JSON field
-#                                 invoice_date = item.updated_date_time  # Use updated_date_time instead of invoice_date
-#                                 if dronedetails:
-#                                     for drone in dronedetails:
-#                                         if not drone_model or drone['drone_id'] in relevant_drones.values_list('id',
-#                                                                                                                flat=True):
-#                                             quantity = drone.get('quantity', 0)
-#                                             total_billing += quantity
-#                                             # Increment the count for the corresponding month
-#                                             completed_month_counts[invoice_date.month] += quantity
-#
-#                             # Add total billing count to the response
-#                             response_data['total_billing'] = total_billing
-#
-#                             # Calculate inventory count
-#                             total_purchased_orders = sum(month_counts.values())
-#                             response_data['inventory_count'] = total_purchased_orders - total_billing
-#
-#                             # Build the Billing graph based on completed invoices by month
-#                             for month, count in completed_month_counts.items():
-#                                 response_data['Billing_graph'][0]['Billing_Invoice_Graph'].append({
-#                                     "date": datetime(current_year, month, 1).strftime('%B'),  # Format as Month
-#                                     "count": count
-#                                 })
-#
-#                         except Exception as e:
-#                             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-#
-#                         # Wrap response data for current year in the required format
-#                         return Response({"result": {"data": response_data}}, status=status.HTTP_200_OK)
-#                 else:
-#
-#                     orders = Order.objects.filter(order_status__status_name="Shipped")
-#
-#                     # Filter by drone categories if `drone_model` is provided
-#                     relevant_drones = None
-#                     if drone_model:
-#                         drone_category_ids = [int(id) for id in drone_model.split(',') if id.isdigit()]
-#                         relevant_drones = Drone.objects.filter(drone_category_id__in=drone_category_ids)
-#                         orders = orders.filter(drone_id__in=relevant_drones)
-#
-#                     # Prepare response structure
-#                     response_data = {
-#                         "inventory_count": 0,
-#                         "total_billing": 0,
-#                         "Purchased_drones_Graph": [],
-#                         "Billing_graph": [
-#                             {
-#                                 "labels": "Invoice Billing Count",
-#                                 "Billing_Invoice_Graph": []
-#                             }
-#                         ]
-#                     }
-#
-#                     # Define current_year outside of the conditional blocks
-#                     current_year = timezone.now().year
-#
-#                     # If start_time and end_time are provided
-#                     if start_time and end_time:
-#                         try:
-#                             # Parse the start and end time
-#                             start_date = timezone.make_aware(datetime.strptime(start_time, '%d-%m-%Y'))
-#                             end_date = timezone.make_aware(datetime.strptime(end_time, '%d-%m-%Y'))
-#
-#                             # Create a list of all dates in the range
-#                             date_list = [(start_date + timedelta(days=i)).date() for i in
-#                                          range((end_date - start_date).days + 1)]
-#
-#                             # Sum the quantity of orders for each day using updated_date_time
-#                             daily_data = orders.filter(updated_date_time__range=(start_date, end_date)) \
-#                                 .values('updated_date_time__date') \
-#                                 .annotate(daily_quantity=Sum('quantity'))
-#
-#                             # Create a dictionary to hold the counts for each date
-#                             date_counts = {date: 0 for date in date_list}
-#
-#                             # Map daily quantities to the date counts
-#                             for item in daily_data:
-#                                 date_key = item['updated_date_time__date']
-#                                 if date_key in date_counts:
-#                                     date_counts[date_key] = item.get('daily_quantity', 0)
-#
-#                             # If drone models are provided, prepare the purchased drones graph with categories
-#                             if relevant_drones:
-#                                 # Get unique drone categories
-#                                 categories = relevant_drones.values_list('drone_category__category_name',
-#                                                                          flat=True).distinct()
-#
-#                                 for category in categories:
-#                                     # Initialize the Purchased_drones list with zero counts
-#                                     purchased_drones = [{"date": date.strftime('%d-%m-%Y'), "count": 0} for date in
-#                                                         date_list]
-#
-#                                     # Fill the purchased drones count for each category
-#                                     for item in daily_data:
-#                                         date_key = item['updated_date_time__date']
-#                                         if date_key in date_counts:
-#                                             # Get the corresponding drones for this category
-#                                             drones_in_category = relevant_drones.filter(
-#                                                 drone_category__category_name=category)
-#                                             if drones_in_category.exists():
-#                                                 purchased_drones_index = date_list.index(date_key)
-#                                                 purchased_drones[purchased_drones_index]['count'] = date_counts[date_key]
-#
-#                                     # Append to the response regardless of purchase history
-#                                     response_data['Purchased_drones_Graph'].append({
-#                                         "label": category,
-#                                         "Purchased_drones": purchased_drones
-#                                     })
-#
-#                             else:
-#                                 # Default response when no drone models are provided
-#                                 response_data['Purchased_drones_Graph'].append({
-#                                     "label": "Purchased Drones",
-#                                     "Purchased_drones": [{"date": date.strftime('%d-%m-%Y'), "count": count} for date, count
-#                                                          in
-#                                                          date_counts.items()]
-#                                 })
-#
-#                             # Calculate total billing for completed invoices in the date range
-#                             completed_items = AddItem.objects.exclude(
-#                                 owner_id=user_id  # Exclude the specified user_id
-#                             ).filter(
-#                                 invoice_status__invoice_status_name="Completed",
-#                                 updated_date_time__range=(start_date, end_date)
-#                             )
-#
-#                             total_billing = 0
-#                             completed_day_counts = {date: 0 for date in date_list}
-#
-#                             # Check and sum quantities based on `drone_model`
-#                             for item in completed_items:
-#                                 dronedetails = item.dronedetails  # Assuming this is a JSON field
-#                                 invoice_date = item.updated_date_time  # Use updated_date_time instead of invoice_date
-#                                 if dronedetails:
-#                                     for drone in dronedetails:
-#                                         # If `drone_model` filter is provided, check drone_id
-#                                         if not drone_model or drone['drone_id'] in relevant_drones.values_list('id',
-#                                                                                                                flat=True):
-#                                             quantity = drone.get('quantity', 0)
-#                                             total_billing += quantity
-#                                             # Increment the count for the corresponding date
-#                                             if invoice_date.date() in completed_day_counts:
-#                                                 completed_day_counts[invoice_date.date()] += quantity
-#
-#                             # Add total billing count to the response
-#                             response_data['total_billing'] = total_billing
-#
-#                             # Calculate inventory count
-#                             total_purchased_orders = sum(date_counts.values())
-#                             response_data['inventory_count'] = total_purchased_orders - total_billing
-#
-#                             # Build the Billing graph based on completed invoices
-#                             for date, count in completed_day_counts.items():
-#                                 response_data['Billing_graph'][0]['Billing_Invoice_Graph'].append({
-#                                     "date": date.strftime('%d-%m-%Y'),  # Format as DD-MM-YYYY
-#                                     "count": count
-#                                 })
-#
-#                         except ValueError:
-#                             return Response({'error': 'Invalid date format. Use DD-MM-YYYY.'},
-#                                             status=status.HTTP_400_BAD_REQUEST)
-#
-#                         # Wrap response data for date range in the required format
-#                         return Response({"result": {"data": response_data}}, status=status.HTTP_200_OK)
-#
-#                     else:
-#                         # If no date range is provided, aggregate by month for the current year
-#                         monthly_data = orders.filter(updated_date_time__year=current_year) \
-#                             .values('updated_date_time__month') \
-#                             .annotate(monthly_quantity=Sum('quantity'))
-#
-#                         # Create a dictionary to hold the monthly counts
-#                         month_counts = {month: 0 for month in range(1, 13)}
-#
-#                         # Map monthly quantities to the month counts
-#                         for item in monthly_data:
-#                             month_key = item['updated_date_time__month']
-#                             month_counts[month_key] = item.get('monthly_quantity', 0)
-#
-#                         # Build the response for the purchased drones graph by month
-#                         if relevant_drones:
-#                             # Get unique drone categories
-#                             categories = relevant_drones.values_list('drone_category__category_name', flat=True).distinct()
-#
-#                             for category in categories:
-#                                 purchased_drones = [{"date": datetime(current_year, month, 1).strftime('%B'), "count": 0}
-#                                                     for
-#                                                     month in range(1, 13)]
-#
-#                                 for month, count in month_counts.items():
-#                                     for idx, category_data in enumerate(purchased_drones):
-#                                         if category_data["date"] == datetime(current_year, month, 1).strftime('%B'):
-#                                             purchased_drones[idx]['count'] = count
-#
-#                                 response_data['Purchased_drones_Graph'].append({
-#                                     "label": category,
-#                                     "Purchased_drones": purchased_drones
-#                                 })
-#
-#                         else:
-#                             # Default response when no drone models are provided
-#                             response_data['Purchased_drones_Graph'].append({
-#                                 "label": "Purchased Drones",
-#                                 "Purchased_drones": [
-#                                     {"date": datetime(current_year, month, 1).strftime('%B'), "count": count} for
-#                                     month, count in month_counts.items()]
-#                             })
-#
-#                         # Calculate the total billing for the user based on completed orders in AddItem
-#                         try:
-#                             completed_items = AddItem.objects.exclude(
-#                                 owner_id=user_id  # Exclude the specified user_id
-#                             ).filter(
-#                                 invoice_status__invoice_status_name="Completed"
-#                             )
-#
-#                             total_billing = 0
-#                             completed_month_counts = {month: 0 for month in range(1, 13)}
-#
-#                             for item in completed_items:
-#                                 dronedetails = item.dronedetails  # JSON field
-#                                 invoice_date = item.updated_date_time  # Use updated_date_time instead of invoice_date
-#                                 if dronedetails:
-#                                     for drone in dronedetails:
-#                                         if not drone_model or drone['drone_id'] in relevant_drones.values_list('id',
-#                                                                                                                flat=True):
-#                                             quantity = drone.get('quantity', 0)
-#                                             total_billing += quantity
-#                                             # Increment the count for the corresponding month
-#                                             completed_month_counts[invoice_date.month] += quantity
-#
-#                             # Add total billing count to the response
-#                             response_data['total_billing'] = total_billing
-#
-#                             # Calculate inventory count
-#                             total_purchased_orders = sum(month_counts.values())
-#                             response_data['inventory_count'] = total_purchased_orders - total_billing
-#
-#                             # Build the Billing graph based on completed invoices by month
-#                             for month, count in completed_month_counts.items():
-#                                 response_data['Billing_graph'][0]['Billing_Invoice_Graph'].append({
-#                                     "date": datetime(current_year, month, 1).strftime('%B'),  # Format as Month
-#                                     "count": count
-#                                 })
-#
-#                         except Exception as e:
-#                             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-#
-#                         # Wrap response data for current year in the required format
-#                         return Response({"result": {"data": response_data}}, status=status.HTTP_200_OK)
-#
-#         return Response({'error': 'Missing user ID or role name.'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 from datetime import datetime, timedelta
@@ -26485,6 +18674,7 @@ class AuthenticateAPIView(APIView):
 
 
 import string
+
 
 class GenerateCompanydetailsGST(APIView):
     def clean_string(self, input_string):
@@ -26571,58 +18761,9 @@ class GenerateCompanydetailsGST(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-# def Mytem(request):
-#
-#     return render(request, 'email/pdf-redesign.html')
-# @method_decorator([authorization_required], name='dispatch')
-# class UpdateInvoiceView(APIView):
-#     def put(self, request, invoice_number):
-#         try:
-#             # First, check if the invoice_number exists in AddItem
-#             invoice = AddItem.objects.filter(invoice_number=invoice_number).first()
-#
-#             # If not found, check in CustomInvoice
-#             if not invoice:
-#                 invoice = CustomInvoice.objects.filter(invoice_number=invoice_number).first()
-#
-#             # If the invoice is not found in either table, raise an error
-#             if not invoice:
-#                 return Response({"message": "Invoice not found in both AddItem and CustomInvoice"}, status=status.HTTP_404_NOT_FOUND)
-#
-#             # Update fields based on the request payload
-#             invoice.customer_first_name = request.data.get("first_name", invoice.customer_first_name)
-#             invoice.customer_last_name = request.data.get("last_name", invoice.customer_last_name)
-#             invoice.customer_email = request.data.get("email", invoice.customer_email)
-#             invoice.customer_mobile_number = request.data.get("phone", invoice.customer_mobile_number)
-#             invoice.customer_pan_number = request.data.get("pan", invoice.customer_pan_number)
-#             invoice.customer_company_name = request.data.get("company_name", invoice.customer_company_name)
-#             invoice.customer_shipping_address = request.data.get("shipping_address", invoice.customer_shipping_address)
-#             invoice.customer_billing_address = request.data.get("billing_address", invoice.customer_billing_address)
-#             invoice.customer_company_cin_num = request.data.get("cin", invoice.customer_company_cin_num)
-#             invoice.customer_gst_number = request.data.get("gst", invoice.customer_gst_number)
-#             invoice.customer_gender = request.data.get("gender", invoice.customer_gender)
-#             invoice.customer_date_of_birth = request.data.get("date_of_birth", invoice.customer_date_of_birth)
-#             invoice.customer_shipping_pincode = request.data.get("shipping_address", invoice.customer_shipping_pincode)
-#             invoice.customer_billing_pincode = request.data.get("shipping_pincode", invoice.customer_billing_pincode)
-#
-#
-#             # Save the updated invoice
-#             invoice.save()
-#
-#             return Response({"message": "Customer updated successfully"}, status=status.HTTP_200_OK)
-#
-#         except Exception as e:
-#             return Response({"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from .models import AddItem, CustomInvoice, InvoiceType  # Assuming these models are defined in your project
-
 
 class UpdateInvoiceView(APIView):
-    def put(self, request,itemid):
+    def put(self, request, itemid):
         try:
             # Get the invoice_id from the request payload
             invoice_id = request.data.get("invoice_id")
@@ -26664,7 +18805,8 @@ class UpdateInvoiceView(APIView):
 
                 # Save the updated invoice in AddItem
                 invoice.save()
-                return Response({"message": "Invoice customer details updated successfully."}, status=status.HTTP_200_OK)
+                return Response({"message": "Invoice customer details updated successfully."},
+                                status=status.HTTP_200_OK)
 
             elif invoice_type_name == "Custom":
                 # If invoice type is "custom", check in CustomInvoice
@@ -26693,7 +18835,8 @@ class UpdateInvoiceView(APIView):
 
                 # Save the updated invoice in CustomInvoice
                 invoice.save()
-                return Response({"message": "Invoice customer details updated successfully."}, status=status.HTTP_200_OK)
+                return Response({"message": "Invoice customer details updated successfully."},
+                                status=status.HTTP_200_OK)
 
             else:
                 return Response({"message": "Invalid invoice type"}, status=status.HTTP_400_BAD_REQUEST)
